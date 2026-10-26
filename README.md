@@ -6,6 +6,8 @@
 
 基于 [Pacalini/PicaComic](https://github.com/Pacalini/PicaComic) 的 Android 分支，将整套界面迁移到 **HyperOS / MIUIX 设计风格**（使用 [flutter_miuix](https://github.com/ChuxinNeko/flutter_miuix)）。漫画源与核心功能沿用上游。
 
+> ⚠️ 本版本的 UI 迁移与代码修改在 AI 辅助下完成，可能存在未发现的问题，欢迎反馈。
+
 > 本仓库只包含 Android 源码，iOS / macOS / Windows / Linux / Web 平台请使用上游项目。
 
 ## 下载
