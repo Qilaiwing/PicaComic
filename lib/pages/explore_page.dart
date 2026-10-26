@@ -208,15 +208,17 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
         key: ValueKey(key),
       );
     } else if (data.overridePageBuilder != null) {
-      return Builder(
-        builder: (context) {
-          return data.overridePageBuilder!(context);
-        },
+      return TopInsetPadding(
         key: ValueKey(key),
+        child: Builder(
+          builder: (context) {
+            return data.overridePageBuilder!(context);
+          },
+        ),
       );
     } else {
-      return const Center(
-        child: Text("Empty Page"),
+      return const TopInsetPadding(
+        child: Center(child: Text("Empty Page")),
       );
     }
   }
@@ -241,14 +243,16 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
   Widget buildMultiPart() {
     if (loading) {
       load();
-      return const Center(
-        child: MiuixCircularProgressIndicator(),
+      return const TopInsetPadding(
+        child: Center(child: MiuixCircularProgressIndicator()),
       );
     } else if (message != null) {
-      return NetworkError(
-        message: message!,
-        retry: refresh,
-        withAppbar: false,
+      return TopInsetPadding(
+        child: NetworkError(
+          message: message!,
+          retry: refresh,
+          withAppbar: false,
+        ),
       );
     } else {
       return buildPage();
@@ -257,7 +261,7 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
 
   Widget buildPage() {
     return SmoothCustomScrollView(
-      slivers: _buildPage().toList(),
+      slivers: [const TopInsetSliver(), ..._buildPage()],
     );
   }
 
@@ -311,7 +315,10 @@ class _ComicList extends ComicsPage<BaseComic> {
   String? get title => null;
 
   @override
-  Widget? get header => const SliverToBoxAdapter(child: SizedBox(height: 12));
+  Widget? get header => MultiSliver(children: const [
+        TopInsetSliver(),
+        SliverToBoxAdapter(child: SizedBox(height: 12)),
+      ]);
 }
 
 class _MixedExplorePage extends StatefulWidget {
@@ -363,6 +370,7 @@ class _MixedExplorePageState
   Widget buildContent(BuildContext context, List<Object> data) {
     return SmoothCustomScrollView(
       slivers: [
+        const TopInsetSliver(),
         ...buildSlivers(context, data),
         if (haveNextPage) const ListLoadingIndicator().toSliver()
       ],

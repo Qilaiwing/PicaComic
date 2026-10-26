@@ -19,6 +19,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_miuix/miuix.dart' as m;
+import 'package:pica_comic/components/components.dart' show FrostedBackground;
 
 /// Neutral text style for top bars: keeps family/color, drops the inherited
 /// Material line height so TextPainter measurements match rendering.
@@ -143,7 +144,30 @@ class MiuixScaffold extends StatelessWidget {
             builder: content,
           );
     }
-    if (bar != null) effectiveBar = MiuixBarTextStyle(child: bar);
+    if (bar is m.MiuixSmallTopAppBar) {
+      // 小顶栏没有自带模糊：去掉实色背景，套统一毛玻璃。
+      effectiveBar = FrostedBackground(
+        child: m.MiuixSmallTopAppBar(
+          key: bar.key,
+          title: bar.title,
+          color: Colors.transparent,
+          titleColor: bar.titleColor,
+          subtitle: bar.subtitle,
+          subtitleColor: bar.subtitleColor,
+          navigationIcon: bar.navigationIcon,
+          actions: bar.actions,
+          scrollBehavior: bar.scrollBehavior,
+          defaultWindowInsetsPadding: bar.defaultWindowInsetsPadding,
+          titlePadding: bar.titlePadding,
+          navigationIconPadding: bar.navigationIconPadding,
+          actionIconPadding: bar.actionIconPadding,
+          bottomContent: bar.bottomContent,
+        ),
+      );
+    }
+    if (effectiveBar != null) {
+      effectiveBar = MiuixBarTextStyle(child: effectiveBar);
+    }
     return m.MiuixScaffold(
       topBar: effectiveBar,
       bottomBar: bottomBar,

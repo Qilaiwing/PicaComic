@@ -133,24 +133,12 @@ class _AppbarState extends State<Appbar> {
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final baseColor =
           widget.backgroundColor ?? MiuixTheme.of(context).colors.background;
-      final translucentColor = baseColor.withOpacity(isDark ? 0.45 : 0.52);
+      final translucentColor = baseColor.withValues(alpha: frostTintAlpha(context));
       return ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-          child: Container(
-            decoration: BoxDecoration(
-              color: translucentColor,
-              border: _scrolledUnder
-                  ? Border(
-                      bottom: BorderSide(
-                        color: isDark
-                            ? const Color(0x18FFFFFF)
-                            : const Color(0x0F000000),
-                        width: 0.6,
-                      ),
-                    )
-                  : null,
-            ),
+          filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+          child: ColoredBox(
+            color: translucentColor,
             child: content,
           ),
         ),
@@ -283,31 +271,16 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     final smallTitleOpacity = ((progress - 0.45) / 0.55).clamp(0.0, 1.0);
 
     final baseColor = color ?? MiuixTheme.of(context).colors.background;
-    // 顶部未滚动时与页面同色，滚动后转为半透明毛玻璃。
-    final scrolled = overlapsContent || progress > 0.02;
-    final bgColor = scrolled
-        ? baseColor.withValues(alpha: isDark ? 0.72 : 0.78)
-        : baseColor;
+    // 全局统一的毛玻璃：与吸顶分区头同 tint/sigma，无分割线，融为一体。
+    final bgColor = baseColor.withValues(alpha: frostTintAlpha(context));
     final fg = isDark ? Colors.white : const Color(0xFF111111);
 
     return SizedBox.expand(
       child: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
           child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              border: (overlapsContent || progress >= 0.9)
-                  ? Border(
-                      bottom: BorderSide(
-                        color: isDark
-                            ? const Color(0x18FFFFFF)
-                            : const Color(0x0F000000),
-                        width: 0.6,
-                      ),
-                    )
-                  : null,
-            ),
+            color: bgColor,
             child: Stack(
               children: [
                 // 大标题层：位于折叠带下方，随收缩上移并在折叠带下缘被裁掉。

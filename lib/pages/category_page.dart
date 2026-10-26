@@ -175,6 +175,7 @@ class CategoryPage extends StatelessWidget {
     // 每个分组标题吸顶（毛玻璃），下一组的标题会把它顶走。
     return CustomScrollView(
       slivers: [
+        const TopInsetSliver(),
         const SliverToBoxAdapter(child: SizedBox(height: 4)),
         ...children,
         const SliverToBoxAdapter(child: SizedBox(height: 110)),

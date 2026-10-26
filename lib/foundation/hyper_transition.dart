@@ -42,7 +42,7 @@ class HyperPageTransition extends StatelessWidget {
       child: AnimatedBuilder(
         animation: secondary,
         builder: (context, child) {
-          final dim = 0.10 * secondary.value;
+          final dim = 0.06 * secondaryAnimation.value;
           if (dim <= 0) return child!;
           return Stack(fit: StackFit.passthrough, children: [
             child!,
@@ -57,8 +57,9 @@ class HyperPageTransition extends StatelessWidget {
         child: SlideTransition(
           position: Tween(begin: Offset(dir, 0), end: Offset.zero)
               .animate(primary),
-          child: FadeTransition(
-            opacity: Tween(begin: 0.55, end: 1.0).animate(primary),
+          // No fade on the incoming page: a half-transparent page over the
+          // dimmed page below read as a gray scrim popping up first.
+          child: RepaintBoundary(
             child: DecoratedBox(
               decoration: BoxDecoration(boxShadow: [
                 BoxShadow(
