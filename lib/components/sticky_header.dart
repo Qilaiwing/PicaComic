@@ -4,18 +4,19 @@ part of 'components.dart';
 /// headers, pinned search bars): content scrolling underneath is blurred,
 /// matching the Miuix top bar.
 class FrostedBackground extends StatelessWidget {
-  const FrostedBackground({super.key, required this.child, this.alpha = 0.82});
+  const FrostedBackground({super.key, required this.child, this.alpha});
 
   final Widget child;
-  final double alpha;
+  /// Defaults to the Miuix top bar's tint so pinned areas fuse with it.
+  final double? alpha;
 
   @override
   Widget build(BuildContext context) {
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        filter: ImageFilter.blur(sigmaX: 22.5, sigmaY: 22.5),
         child: ColoredBox(
-          color: MiuixTheme.of(context).colors.background.withValues(alpha: alpha),
+          color: MiuixTheme.of(context).colors.background.withValues(alpha: alpha ?? (Theme.of(context).brightness == Brightness.dark ? 0.42 : 0.48)),
           child: child,
         ),
       ),

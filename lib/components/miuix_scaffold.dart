@@ -30,7 +30,27 @@ class MiuixBarTextStyle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = DefaultTextStyle.of(context).style;
-    return DefaultTextStyle(
+    // The bar itself wraps its content in a (transparent) Material, which
+    // re-applies Theme.textTheme.bodyMedium (M3: height 1.43) as the default
+    // style. Give that inner Material a bodyMedium without a line height too.
+    final theme = Theme.of(context);
+    final bm = theme.textTheme.bodyMedium ?? const TextStyle();
+    // inherit:false so Theme.localize() does not merge the typography's
+    // height 1.43 back in (TextStyle.merge returns a non-inheriting style as is).
+    final neutralBody = TextStyle(
+      inherit: false,
+      fontFamily: bm.fontFamily,
+      fontFamilyFallback: bm.fontFamilyFallback,
+      fontSize: bm.fontSize,
+      fontWeight: bm.fontWeight,
+      letterSpacing: bm.letterSpacing,
+      color: bm.color,
+      textBaseline: bm.textBaseline,
+    );
+    return Theme(
+      data: theme.copyWith(
+          textTheme: theme.textTheme.copyWith(bodyMedium: neutralBody)),
+      child: DefaultTextStyle(
       style: TextStyle(
         fontFamily: base.fontFamily,
         fontFamilyFallback: base.fontFamilyFallback,
@@ -39,6 +59,7 @@ class MiuixBarTextStyle extends StatelessWidget {
         locale: base.locale,
       ),
       child: child,
+    ),
     );
   }
 }

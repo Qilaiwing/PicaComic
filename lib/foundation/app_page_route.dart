@@ -79,7 +79,12 @@ mixin _AppRouteTransitionMixin<T> on PageRoute<T> {
   @override
   bool canTransitionTo(TransitionRoute<dynamic> nextRoute) {
     // Don't perform outgoing animation if the next route is a fullscreen dialog.
-    return nextRoute is PageRoute && !nextRoute.fullscreenDialog;
+    // Only a full, opaque page pushed on top may move this page (parallax).
+    // Dialogs / sheets / menus (non-opaque routes) must leave it in place,
+    // otherwise the page slides left and exposes a black area.
+    return nextRoute is PageRoute &&
+        nextRoute.opaque &&
+        !nextRoute.fullscreenDialog;
   }
 
   bool get enableIOSGesture;
