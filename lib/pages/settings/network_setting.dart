@@ -13,75 +13,43 @@ class _NetworkSettingsState extends State<NetworkSettings> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const ListTile(
-          title: Text("Http Proxy"),
+        MiuixSmallTitle("HTTP 代理".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.network_ping),
+              title: "设置代理".tl,
+              onClick: () => setProxy(context),
+            ),
+          ],
         ),
-        ListTile(
-          leading: const Icon(Icons.network_ping),
-          title: Text("设置代理".tl),
-          trailing: const Icon(
-            Icons.arrow_right,
-          ),
-          onTap: () {
-            setProxy(context);
-          },
+        MiuixSmallTitle("Hosts 代理".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixSwitchPreference(
+              startAction: const Icon(Icons.dns),
+              title: "启用".tl,
+              value: appdata.settings[58] == "1",
+              onChanged: (value) {
+                setState(() {
+                  appdata.settings[58] = value ? "1" : "0";
+                });
+                appdata.updateSettings();
+                if (value) {
+                  HttpProxyServer.reload();
+                }
+              },
+            ),
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.rule),
+              title: "规则".tl,
+              onClick: () {
+                App.globalTo(() => const EditRuleView());
+              },
+            ),
+          ],
         ),
-        ListTile(
-          title: Row(
-            children: [
-              const Text("Hosts"),
-              const SizedBox(
-                width: 2,
-              ),
-              InkWell(
-                borderRadius: const BorderRadius.all(Radius.circular(18)),
-                onTap: () => showDialogMessage(
-                  context,
-                  "警告".tl,
-                  "${"此功能已不再受支持".tl}\n${"请勿反馈相关问题".tl}"
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.red,
-                  size: 18,
-                ),
-              )
-            ]
-          )
-        ),
-        ListTile(
-          leading: const Icon(Icons.dns),
-          title: Text("启用".tl),
-          trailing: Switch(
-            value: appdata.settings[58] == "1",
-            onChanged: (value){
-              setState(() {
-                appdata.settings[58] = value ? "1" : "0";
-              });
-              appdata.updateSettings();
-              if(value){
-                HttpProxyServer.reload();
-              }
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.rule),
-          title: Text("规则".tl),
-          trailing: const Icon(Icons.arrow_right),
-          onTap: (){
-            App.globalTo(() => const EditRuleView());
-          },
-        ),
-        // ListTile(
-        //   leading: const Icon(Icons.help),
-        //   title: Text("帮助".tl),
-        //   trailing: const Icon(Icons.arrow_right),
-        //   onTap: (){
-        //     launchUrlString("https://github.com/user/repo/blob/master/help.md");
-        //   },
-        // ),
-        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom))
+        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16))
       ],
     );
   }
@@ -114,24 +82,27 @@ class _EditRuleViewState extends State<EditRuleView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("rule.json"),
-      ),
-      body: SingleChildScrollView(
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
+ title: "rule.json",
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => ScrollUnderBar(
+ padding: padding,
+ child: SingleChildScrollView(
+        padding: EdgeInsets.only(top: padding.top),
         child: Padding(
           padding: EdgeInsets.fromLTRB(8, 0, 8, MediaQuery.of(context).padding.bottom),
-          child: TextField(
+          child: MiuixTextField(
             keyboardType: TextInputType.multiline,
             maxLines: null,
-            decoration: const InputDecoration(
-                border: InputBorder.none
-            ),
+            singleLine: false,
             controller: controller,
           ),
         )
-      )
-    );
+      ),
+ ),
+);
   }
 }
 

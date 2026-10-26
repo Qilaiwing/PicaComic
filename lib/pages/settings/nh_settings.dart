@@ -36,15 +36,16 @@ class _NhSettingsState extends State<NhSettings> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ListTile(
-          title: Text("nhentai".tl),
+        MiuixSmallTitle("nhentai".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.delete_forever),
+              title: "${"删除".tl} cookie",
+              onClick: () => deleteAllCookie(),
+            ),
+          ],
         ),
-        ListTile(
-          leading: const Icon(Icons.delete_forever),
-          title: Text("${"删除".tl} cookie"),
-          onTap: () => deleteAllCookie(),
-          trailing: const Icon(Icons.arrow_right),
-        )
       ],
     );
   }

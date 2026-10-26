@@ -13,73 +13,64 @@ class _EhSettingsState extends State<EhSettings> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const ListTile(
-          title: Text("E-Hentai"),
+        MiuixSmallTitle("E-Hentai".tl),
+        MiuixSettingsCard(
+          children: [
+            SelectSetting(
+              leading: const Icon(Icons.dns),
+              title: "画廊站点".tl,
+              initialValue: int.parse(appdata.settings[20]),
+              values: const [
+                "e-hentai.org",
+                "exhentai.org",
+              ],
+              onChanged: (i) {
+                appdata.settings[20] = i.toString();
+                appdata.updateSettings();
+              },
+            ),
+            MiuixSwitchPreference(
+              startAction: const Icon(Icons.image),
+              title: "优先加载原图".tl,
+              summary: "可能导致加载失败".tl,
+              value: appdata.settings[29] == "1",
+              onChanged: (b) {
+                setState(() {
+                  appdata.settings[29] = b ? "1" : "0";
+                });
+                appdata.updateSettings();
+              },
+            ),
+            MiuixSwitchPreference(
+              startAction: const Icon(Icons.notifications_off_outlined),
+              title: "忽略警告".tl,
+              value: appdata.settings[47] == "1",
+              onChanged: (b) {
+                setState(() {
+                  appdata.settings[47] = b ? "1" : "0";
+                });
+                appdata.updateSettings();
+              },
+            ),
+            MiuixSwitchPreference(
+              startAction: const Icon(Icons.notes),
+              title: "优先显示副标题".tl,
+              summary: "适用于已下载的画廊".tl,
+              value: appdata.settings[78] == "1",
+              onChanged: (b) {
+                setState(() {
+                  appdata.settings[78] = b ? "1" : "0";
+                });
+                appdata.updateSettings();
+              },
+            ),
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.request_page_rounded),
+              title: "配置文件".tl,
+              onClick: () => App.to(context, () => const EhProfileSelectPage()),
+            ),
+          ],
         ),
-        ListTile(
-          leading: const Icon(Icons.dns),
-          title: Text("画廊站点".tl),
-          trailing: Select(
-            initialValue: int.parse(appdata.settings[20]),
-            width: 150,
-            values: const [
-              "e-hentai.org",
-              "exhentai.org",
-            ],
-            onChange: (i) {
-              appdata.settings[20] = i.toString();
-              appdata.updateSettings();
-            },
-          ),
-          //onTap: () => setEhDomain(context),
-        ),
-        ListTile(
-          leading: const Icon(Icons.image),
-          title: Text("优先加载原图".tl),
-          subtitle: Text("可能导致加载失败".tl),
-          trailing: Switch(
-            value: appdata.settings[29] == "1",
-            onChanged: (b) {
-              setState(() {
-                appdata.settings[29] = b ? "1" : "0";
-              });
-              appdata.updateSettings();
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.notifications_off_outlined),
-          title: Text("忽略警告".tl),
-          trailing: Switch(
-            value: appdata.settings[47] == "1",
-            onChanged: (b) {
-              setState(() {
-                appdata.settings[47] = b ? "1" : "0";
-              });
-              appdata.updateSettings();
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.notes),
-          title: Text("优先显示副标题".tl),
-          subtitle: Text("适用于已下载的画廊".tl),
-          trailing: Switch(
-            value: appdata.settings[78] == "1",
-            onChanged: (b) {
-              setState(() {
-                appdata.settings[78] = b ? "1" : "0";
-              });
-              appdata.updateSettings();
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.request_page_rounded),
-          title: Text("配置文件".tl),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => App.to(context, () => const EhProfileSelectPage()),
-        )
       ],
     );
   }
@@ -118,20 +109,24 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
     if (loading) {
       loadData();
     }
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-      ),
-      body: loading
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
+ title: "Profile",
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => ScrollUnderBar(
+ padding: padding,
+ child: loading
           ? const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixCircularProgressIndicator(),
             )
           : error != null
               ? Center(child: Text(error!))
               : profiles == null
                   ? const Center(child: Text("Unknown Error"))
                   : buildBody(),
-    );
+ ),
+);
   }
 
   Widget buildBody(){

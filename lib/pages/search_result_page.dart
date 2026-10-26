@@ -151,8 +151,8 @@ class _SearchResultPageState extends State<_SearchResultPage> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: Material(
-              child: _Suggestions(
+            child: MiuixScaffold(
+              content: (_) => _Suggestions(
                 controller: suggestionsController,
               ),
             ),
@@ -176,7 +176,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
     Widget trailing;
     if (context.width < 400) {
       trailing = Button.icon(
-        icon: const Icon(Icons.more_horiz),
+        icon: MiuixIcon(vector: MiuixIcons.os4.more, size: 20),
         onPressed: more,
       );
     } else {
@@ -184,33 +184,62 @@ class _SearchResultPageState extends State<_SearchResultPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Button.icon(
-            icon: const Icon(Icons.dataset_outlined),
+            icon: MiuixIcon(
+              vector: MiuixIcons.extended.byName('all') ??
+                  MiuixIcons.os4.settings,
+              size: 20,
+            ),
             onPressed: changeSource,
           ),
           const SizedBox(
             width: 4,
           ),
           Button.icon(
-            icon: const Icon(Icons.tune),
+            icon: MiuixIcon(vector: MiuixIcons.os4.filter, size: 20),
             onPressed: showSearchOptions,
           ),
         ],
       );
     }
 
-    return Scaffold(
-      floatingActionButton: _showFab
-          ? FloatingActionButton(
-              child: const Icon(Icons.search),
-              onPressed: () {
-                var s = controller.text;
-                setState(() {
-                  keyword = s;
-                });
-              },
+    return MiuixScaffold(
+ floatingActionButton: _showFab
+          ? Container(
+              width: 54,
+              height: 54,
+              decoration: ShapeDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: const MiuixSquircleBorder(cornerRadius: 18),
+                shadows: [
+                  BoxShadow(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.38),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: MiuixPressable(
+ onPressed: () {
+                    var s = controller.text;
+                    setState(() {
+                      keyword = s;
+                    });
+                  },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Center(
+                    child: MiuixIcon(
+                      vector: MiuixIcons.basic.search,
+                      size: 24,
+                      tint: Colors.white,
+                    ),
+                  ),
+),
             )
           : null,
-      body: NotificationListener<ScrollUpdateNotification>(
+ content: (_) => NotificationListener<ScrollUpdateNotification>(
         onNotification: (notification) {
           if (suggestionsController.entry != null) {
             suggestionsController.remove();
@@ -233,12 +262,11 @@ class _SearchResultPageState extends State<_SearchResultPage> {
           sourceKey: sourceKey,
           key: Key(keyword + options.toString() + sourceKey),
           header: SliverPersistentHeader(
-            pinned: _showFab && SmoothScrollProvider.isMouseScroll,
-            floating: !SmoothScrollProvider.isMouseScroll,
+            pinned: true,
             delegate: _SliverAppBarDelegate(
               minHeight: 60,
               maxHeight: 60,
-              child: FloatingSearchBar(
+              child: FrostedBackground(child: FloatingSearchBar(
                 onSearch: (s) {
                   suggestionsController.suggestions.clear();
                   suggestionsController.remove();
@@ -250,112 +278,94 @@ class _SearchResultPageState extends State<_SearchResultPage> {
                 controller: controller,
                 onChanged: onChanged,
                 trailing: trailing,
-              ),
+              )),
             ),
           ),
           options: options,
         ),
       ),
-    );
+);
   }
 
-  void more() {
-    showMenu(
+  void more() async {
+    final value = await showMiuixMenu(
       context: context,
-      elevation: 2,
-      color: context.colorScheme.surface,
-      position: RelativeRect.fromLTRB(
-        MediaQuery.of(context).size.width - 48,
-        56,
-        0,
-        0,
-      ),
-      items: [
-        PopupMenuItem(
-          value: 0,
-          child: Text("切换源".tl),
-        ),
-        PopupMenuItem(
-          value: 1,
-          child: Text("搜索选项".tl),
-        ),
-      ],
-    ).then((value) {
-      if (value == 0) {
-        changeSource();
-      } else if (value == 1) {
-        showSearchOptions();
-      }
-    });
+      anchorBounds: Rect.fromLTWH(MediaQuery.of(context).size.width - 48, 56, 0, 0),
+      alignment: MiuixPopupAlign.end,
+      items: ["切换源".tl, "搜索选项".tl],
+    );
+    if (value == 0) {
+      changeSource();
+    } else if (value == 1) {
+      showSearchOptions();
+    }
   }
 
-  void changeSource() {
+  void changeSource() async {
     var sources = ComicSource.sources.where((e) => e.searchPageData != null);
     String? sourceKey = this.sourceKey;
-    showDialog(
-      useSafeArea: false,
+    final confirmed = await showMiuixDialog<bool>(
       context: context,
-      builder: (context) {
+      title: "切换源".tl,
+      contentBuilder: (context, close) {
         return StatefulBuilder(builder: (context, setState) {
-          return ContentDialog(
-            title: "切换源".tl,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var source in sources)
-                  RadioListTile<String>(
-                    title: Text(source.name),
-                    value: source.key,
-                    groupValue: sourceKey,
-                    onChanged: (value) {
-                      setState(() {
-                        sourceKey = value;
-                      });
-                    },
-                  )
-              ],
-            ),
-            actions: [
-              Button.filled(
-                child: Text("确认".tl),
-                onPressed: () {
-                  if (sourceKey != null) {
-                    context.pop();
-                    var searchData =
-                        ComicSource.find(sourceKey!)!.searchPageData!;
-                    options = (searchData.searchOptions ?? [])
-                        .map((e) => e.defaultValue)
-                        .toList();
-                    if (searchData.overrideSearchResultBuilder != null) {
-                      this.context.off(() {
-                        return SearchResultPage(
-                          keyword: keyword,
-                          options: options,
-                          sourceKey: sourceKey!,
-                        );
-                      });
-                    } else {
-                      this.setState(() {
-                        this.sourceKey = sourceKey!;
-                      });
-                    }
-                  }
-                },
-              )
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var source in sources)
+                MiuixRadioButtonPreference(
+                  title: source.name,
+                  selected: sourceKey == source.key,
+                  onClick: () {
+                    setState(() {
+                      sourceKey = source.key;
+                    });
+                  },
+                )
             ],
           );
         });
       },
+      actionsBuilder: (context, close) => [
+        MiuixButton(
+          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+          child: Text("确认".tl),
+          onPressed: () {
+            if (sourceKey != null) {
+              close(true);
+            }
+          },
+        )
+      ],
     );
+    // 导航在弹窗关闭后执行
+    if (confirmed != true || sourceKey == null || !mounted) return;
+    var searchData = ComicSource.find(sourceKey!)!.searchPageData!;
+    options =
+        (searchData.searchOptions ?? []).map((e) => e.defaultValue).toList();
+    if (searchData.overrideSearchResultBuilder != null) {
+      context.off(() {
+        return SearchResultPage(
+          keyword: keyword,
+          options: options,
+          sourceKey: sourceKey!,
+        );
+      });
+    } else {
+      setState(() {
+        this.sourceKey = sourceKey!;
+      });
+    }
   }
 
   void showSearchOptions() {
-    showDialog(
+    showMiuixDialog(
       context: context,
-      useSafeArea: false,
-      builder: (context) => _SearchOptions(
+      title: "搜索选项".tl,
+      contentBuilder: (context, close) => _SearchOptions(
         current: options,
         sourceKey: sourceKey,
+        close: () => close(),
         onChanged: (options) {
           setState(() {
             this.options = options;
@@ -501,8 +511,9 @@ class _SuggestionsState extends State<_Suggestions> {
     Widget buildItem(Pair<String, TranslationType> value) {
       var subTitle = TagsTranslation.translationTagWithNamespace(
           value.left, value.right.name);
-      return ListTile(
-        title: Row(
+      return MiuixBasicComponent(
+        content: [
+          Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Expanded(
@@ -523,12 +534,15 @@ class _SuggestionsState extends State<_Suggestions> {
               )
           ],
         ),
-        subtitle: (showMethod && showTranslation) ? Text(subTitle) : null,
-        trailing: Text(
-          value.right.name,
-          style: const TextStyle(fontSize: 13),
-        ),
-        onTap: () => onSelected(value.left, value.right),
+          if (showMethod && showTranslation) Text(subTitle),
+        ],
+        endActions: [
+          Text(
+            value.right.name,
+            style: const TextStyle(fontSize: 13),
+          ),
+        ],
+        onClick: () => onSelected(value.left, value.right),
       );
     }
 
@@ -543,20 +557,20 @@ class _SuggestionsState extends State<_Suggestions> {
               ),
               Text("建议".tl),
               const Spacer(),
-              InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () {
+              MiuixPressable(
+ onPressed: () {
                   widget.controller.suggestions.clear();
                   widget.controller.remove();
                 },
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(
-                    Icons.close,
-                    size: 20,
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(14),
+ child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: MiuixIcon(
+                    vector: MiuixIcons.basic.close,
+                    size: 18,
                   ),
                 ),
-              ),
+),
               const SizedBox(
                 width: 36,
               ),
@@ -617,6 +631,7 @@ class _SearchOptions extends StatefulWidget {
     required this.current,
     required this.sourceKey,
     required this.onChanged,
+    required this.close,
   });
 
   final List<String> current;
@@ -624,6 +639,9 @@ class _SearchOptions extends StatefulWidget {
   final String sourceKey;
 
   final void Function(List<String>) onChanged;
+
+  /// 关闭外层 showMiuixDialog
+  final void Function() close;
 
   @override
   State<_SearchOptions> createState() => _SearchOptionsState();
@@ -647,16 +665,21 @@ class _SearchOptionsState extends State<_SearchOptions> {
 
   @override
   Widget build(BuildContext context) {
-    return ContentDialog(
-      title: "搜索选项".tl,
-      content: buildSearchOptions(context),
-      actions: [
-        Button.filled(
-          child: Text("确认".tl),
-          onPressed: () {
-            context.pop();
-            widget.onChanged(options);
-          },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        buildSearchOptions(context),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: MiuixButton(
+            colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+            child: Text("确认".tl),
+            onPressed: () {
+              widget.close();
+              widget.onChanged(options);
+            },
+          ),
         )
       ],
     );
@@ -674,21 +697,21 @@ class _SearchOptionsState extends State<_SearchOptions> {
       final searchOptions = data.searchOptions ?? <SearchOptions>[];
       for (int i = 0; i < searchOptions.length; i++) {
         final option = searchOptions[i];
-        children.add(ListTile(
-          title: Text(option.label),
-        ));
+        children.add(MiuixBasicComponent(
+                       title: option.label,
+                     ));
         children.add(Wrap(
           runSpacing: 8,
           spacing: 8,
           children: option.options.entries.map((e) {
-            return InkWell(
-              onTap: () {
+            return MiuixPressable(
+ onPressed: () {
                 setState(() {
                   options[i] = e.key;
                 });
               },
-              borderRadius: BorderRadius.circular(8),
-              child: AnimatedContainer(
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(8),
+ child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 decoration: BoxDecoration(
                   color: options[i] == e.key
@@ -702,7 +725,7 @@ class _SearchOptionsState extends State<_SearchOptions> {
                   child: Text(e.value.tl),
                 ),
               ),
-            );
+);
           }).toList(),
         ).paddingHorizontal(16));
       }

@@ -11,6 +11,32 @@ class HtHomePageData {
   const HtHomePageData(this.comics, this.links);
 }
 
+/// 绅士漫画滑块拼图验证题目。
+///
+/// 对应 `index.php?ctl=slider&act=create` 返回的 JSON：
+/// `token` 题目令牌、`bg` 背景图 data URL、`piece` 拼图块 data URL、
+/// `y` 缺口纵向位置、`w`/`h` 原图尺寸、`s` 拼图块边长。
+@immutable
+class HtSliderChallenge {
+  const HtSliderChallenge({
+    required this.token,
+    required this.background,
+    required this.piece,
+    required this.y,
+    required this.width,
+    required this.height,
+    required this.pieceSize,
+  });
+
+  final String token;
+  final String background;
+  final String piece;
+  final double y;
+  final double width;
+  final double height;
+  final double pieceSize;
+}
+
 @immutable
 class HtComicBrief extends BaseComic{
   final String name;

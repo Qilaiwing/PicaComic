@@ -2,6 +2,7 @@ import "dart:async";
 
 import "package:collection/collection.dart";
 import "package:flutter/material.dart";
+import "package:sliver_tools/sliver_tools.dart";
 import "package:flutter_reorderable_grid_view/widgets/reorderable_builder.dart";
 import "package:pica_comic/base.dart";
 import "package:pica_comic/comic_source/comic_source.dart";
@@ -71,7 +72,7 @@ class FavoritesPageController extends StateController {
   }
 }
 
-const _kSecondaryTopBarHeight = 48.0;
+const _kSecondaryTopBarHeight = 38.0;
 
 class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
   FavoritesPage({super.key});
@@ -82,241 +83,326 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
   @override
   Widget build(BuildContext context) {
     return StateBuilder<FavoritesPageController>(builder: (controller) {
-      return buildPage(context);
-    });
-  }
-
-  Widget buildPage(BuildContext context) {
-    return LayoutBuilder(
-        builder: (context, constrains) => Stack(
-              children: [
-                Positioned(
-                  top: _kSecondaryTopBarHeight,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: buildContent(context),
-                ),
-                AnimatedPositioned(
-                  key: const Key("folders"),
-                  duration: const Duration(milliseconds: 180),
-                  left: 0,
-                  right: 0,
-                  bottom: controller.selectingFolder
-                      ? 0
-                      : constrains.maxHeight - _kSecondaryTopBarHeight,
-                  child: buildFoldersList(
-                      context, constrains.maxHeight - _kSecondaryTopBarHeight),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: buildTopBar(context),
-                ),
-              ],
-            ));
-  }
-
-  void multiSelectedMenu() {
-    final size = MediaQuery.of(App.globalContext!).size;
-    showMenu(
-        context: App.globalContext!,
-        position: RelativeRect.fromLTRB(size.width, 0, 0, size.height),
-        items: [
-          PopupMenuItem(
-            child: Text("删除".tl),
-            onTap: () {
-              for (var comic in controller.selectedComics) {
-                LocalFavoritesManager().deleteComic(controller.current!, comic);
-              }
-              controller.selectedComics.clear();
-              controller.update();
-            },
-          ),
-          PopupMenuItem(
-            child: Text("复制到".tl),
-            onTap: () {
-              Future.delayed(
-                const Duration(milliseconds: 200),
-                () => copyAllTo(controller.current!, controller.selectedComics),
-              );
-            },
-          ),
-          PopupMenuItem(
-            child: Text("下载".tl),
-            onTap: () {
-              Future.delayed(
-                const Duration(milliseconds: 200),
-                () {
-                  var comics = controller.selectedComics;
-                  for (var comic in comics) {
-                    DownloadManager().addFavoriteDownload(comic);
-                  }
-                  showToast(message: "已添加下载任务".tl);
-                },
-              );
-            },
-          ),
-          PopupMenuItem(
-            child: Text("更新漫画信息".tl),
-            onTap: () {
-              Future.delayed(
-                const Duration(milliseconds: 200),
-                () {
-                  var comics = controller.selectedComics;
-                  UpdateFavoritesInfoDialog.show(comics, controller.current!);
-                },
-              );
-            },
-          ),
-        ]);
-  }
-
-  Widget buildTopBar(BuildContext context) {
-    final iconColor = Theme.of(context).colorScheme.primary;
-
-    if (controller.isSelectingComics) {
-      return Material(
-        elevation: 1,
-        child: SizedBox(
-          height: _kSecondaryTopBarHeight,
-          child: Row(children: [
-            Icon(
-              Icons.rule_folder,
-              color: iconColor,
-            ),
-            const SizedBox(
-              width: 8,
-            ),
-            Text(
-              "已选择 @num 个项目".tlParams(
-                  {"num": controller.selectedComics.length.toString()}),
-              style: const TextStyle(fontSize: 16),
-            ).paddingBottom(3),
-            const Spacer(),
-            Tooltip(
-              message: "全选".tl,
-              child: IconButton(
-                icon: const Icon(Icons.select_all),
-                onPressed: () {
-                  controller.selectedComics = LocalFavoritesManager()
-                      .getAllComics(controller.current!)
-                      .toList();
-                  controller.update();
-                },
-              ),
-            ),
-            Tooltip(
-              message: "取消".tl,
-              child: IconButton(
-                icon: const Icon(Icons.deselect),
-                onPressed: () {
-                  controller.selectedComics.clear();
-                  controller.update();
-                },
-              ),
-            ),
-            Tooltip(
-              message: "菜单".tl,
-              child: IconButton(
-                icon: const Icon(Icons.more_horiz),
-                onPressed: () {
-                  if (controller.selectedComics.length == 1) {
-                    controller.openComicMenuFuncs[controller.selectedComics[0]]
-                        ?.call();
-                  } else {
-                    multiSelectedMenu();
-                  }
-                },
-              ),
-            ),
-          ]).paddingHorizontal(16),
-        ),
-      );
-    }
-
-    return Material(
-      elevation: 1,
-      child: InkWell(
-        hoverColor: Colors.transparent,
-        onTap: () {
-          if (controller.selectingFolder) {
-            if (controller.current == null) {
-              showToast(message: "选择收藏夹".tl);
-              return;
-            }
-            controller.selectingFolder = false;
+      final isViewingFolder = !controller.selectingFolder && controller.current != null;
+      final canPop = !isViewingFolder && !controller.isSelectingComics;
+      return PopScope(
+        canPop: canPop,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (controller.isSelectingComics) {
+            controller.selectedComics.clear();
             controller.update();
-          } else {
+            return;
+          }
+          if (!controller.selectingFolder) {
             controller.selectingFolder = true;
             controller.update();
             appdata.implicitData[0] = "1;;";
             appdata.writeImplicitData();
+            return;
           }
         },
-        child: SizedBox(
-          height: _kSecondaryTopBarHeight,
-          child: Row(children: [
-            if (controller.isNetwork == null)
-              Icon(
-                Icons.folder_outlined,
-                color: iconColor,
-              )
-            else if (controller.isNetwork!)
-              Icon(
-                Icons.folder_special,
-                color: iconColor,
-              )
-            else
-              Icon(
-                Icons.folder,
-                color: iconColor,
-              ),
-            const SizedBox(
-              width: 8,
-            ),
-            Text(
-              controller.current != null ? controller.current!.tl : "未选择".tl,
-              style: const TextStyle(fontSize: 16),
-            ).paddingBottom(3),
-            const Spacer(),
-            if (controller.selectingFolder)
-              const Icon(Icons.keyboard_arrow_up)
-            else
-              const Icon(Icons.keyboard_arrow_down),
-          ]).paddingHorizontal(16),
+        child: buildPage(context),
+      );
+    });
+  }
+
+  Widget buildPage(BuildContext context) {
+    final isViewingComics = !controller.selectingFolder && controller.current != null;
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            layoutBuilder: (currentChild, previousChildren) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              );
+            },
+            child: isViewingComics
+                ? KeyedSubtree(
+                    key: ValueKey('content_${controller.current}'),
+                    child: buildContent(context),
+                  )
+                : KeyedSubtree(
+                    key: const ValueKey('folders_list'),
+                    child: buildFoldersList(context),
+                  ),
+          ),
         ),
+        if (controller.isSelectingComics)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: buildTopBar(context),
+          ),
+      ],
+    );
+  }
+
+  void multiSelectedMenu() async {
+    final size = MediaQuery.of(App.globalContext!).size;
+    final actions = <String, VoidCallback>{
+      "删除".tl: () {
+        for (var comic in controller.selectedComics) {
+          LocalFavoritesManager().deleteComic(controller.current!, comic);
+        }
+        controller.selectedComics.clear();
+        controller.update();
+      },
+      "复制到".tl: () {
+        Future.delayed(
+          const Duration(milliseconds: 200),
+          () => copyAllTo(controller.current!, controller.selectedComics),
+        );
+      },
+      "下载".tl: () {
+        Future.delayed(
+          const Duration(milliseconds: 200),
+          () {
+            var comics = controller.selectedComics;
+            for (var comic in comics) {
+              DownloadManager().addFavoriteDownload(comic);
+            }
+            showToast(message: "已添加下载任务".tl);
+          },
+        );
+      },
+      "更新漫画信息".tl: () {
+        Future.delayed(
+          const Duration(milliseconds: 200),
+          () {
+            var comics = controller.selectedComics;
+            UpdateFavoritesInfoDialog.show(comics, controller.current!);
+          },
+        );
+      },
+    };
+    final i = await showMiuixMenu(
+      context: App.globalContext!,
+      anchorBounds: Rect.fromLTWH(size.width, 0, 0, 0),
+      alignment: MiuixPopupAlign.end,
+      items: actions.keys.toList(),
+    );
+    if (i != null) actions.values.elementAt(i)();
+  }
+
+
+  Widget buildTopBar(BuildContext context) {
+    final iconColor = Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (controller.isSelectingComics) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        child: Container(
+          height: _kSecondaryTopBarHeight,
+          decoration: ShapeDecoration(
+            shape: MiuixSquircleBorder(
+              cornerRadius: 16,
+              side: BorderSide(
+                color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                width: 0.6,
+              ),
+            ),
+            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+            shadows: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: SizedBox(
+              height: _kSecondaryTopBarHeight,
+              child: Row(children: [
+                Icon(
+                  Icons.rule_folder,
+                  color: iconColor,
+                ),
+                const SizedBox(
+                  width: 8,
+                ),
+                Text(
+                  "已选择 @num 个项目".tlParams(
+                      {"num": controller.selectedComics.length.toString()}),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ).paddingBottom(3),
+                const Spacer(),
+                MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("全选".tl)),
+ child: MiuixIconButton(
+                    child: MiuixIcon(
+                      vector: MiuixIcons.extended.byName('selectAll') ??
+                          MiuixIcons.basic.check,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      controller.selectedComics = LocalFavoritesManager()
+                          .getAllComics(controller.current!)
+                          .toList();
+                      controller.update();
+                    },
+                  ),
+),
+                MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("取消".tl)),
+ child: MiuixIconButton(
+                    child: MiuixIcon(
+                      vector: MiuixIcons.basic.close,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      controller.selectedComics.clear();
+                      controller.update();
+                    },
+                  ),
+),
+                MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("菜单".tl)),
+ child: MiuixIconButton(
+                    child: MiuixIcon(
+                      vector: MiuixIcons.os4.more,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      if (controller.selectedComics.length == 1) {
+                        controller.openComicMenuFuncs[controller.selectedComics[0]]
+                            ?.call();
+                      } else {
+                        multiSelectedMenu();
+                      }
+                    },
+                  ),
+),
+              ]).paddingHorizontal(16),
+            ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+      child: Container(
+        height: _kSecondaryTopBarHeight,
+        decoration: ShapeDecoration(
+          shape: MiuixSquircleBorder(
+            cornerRadius: 12,
+            side: BorderSide(
+              color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+              width: 0.6,
+            ),
+          ),
+          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: MiuixPressable(
+ onPressed: () {
+              if (controller.selectingFolder) {
+                if (controller.current == null) {
+                  showToast(message: "选择收藏夹".tl);
+                  return;
+                }
+                controller.selectingFolder = false;
+                controller.update();
+              } else {
+                controller.selectingFolder = true;
+                controller.update();
+                appdata.implicitData[0] = "1;;";
+                appdata.writeImplicitData();
+              }
+            },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: SizedBox(
+              height: _kSecondaryTopBarHeight,
+              child: Row(children: [
+                MiuixIcon(
+                  vector: controller.isNetwork == true
+                      ? (MiuixIcons.extended.byName('favoriteFolder') ?? MiuixIcons.os4.folder)
+                      : MiuixIcons.os4.folder,
+                  tint: iconColor,
+                  size: 17,
+                ),
+                const SizedBox(
+                  width: 8,
+                ),
+                Text(
+                  controller.selectingFolder
+                      ? (controller.current != null ? controller.current!.tl : "所有收藏夹".tl)
+                      : (controller.current != null ? controller.current!.tl : "未选择".tl),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                ).paddingBottom(2),
+                const Spacer(),
+                if (controller.selectingFolder)
+                  const Icon(Icons.keyboard_arrow_up, size: 18)
+                else
+                  MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("切换收藏夹".tl)),
+ child: const Icon(Icons.unfold_more, size: 18),
+),
+              ]).paddingHorizontal(14),
+            ),
+),
       ),
     );
   }
 
-  Widget buildFoldersList(BuildContext context, double height) {
-    return Material(
-      child: SizedBox(
-        height: height,
-        width: double.infinity,
-        child: SmoothCustomScrollView(
-          slivers: [
-            buildTitle("网络".tl)
-                .sliverPadding(const EdgeInsets.fromLTRB(12, 8, 12, 0)),
-            buildNetwork().sliverPaddingHorizontal(12),
-            const SliverToBoxAdapter(child: Divider())
-                .sliverPaddingHorizontal(12),
-            buildTitle("本地".tl).sliverPaddingHorizontal(12),
+  Widget buildFoldersList(BuildContext context) {
+    var networkFolders = appdata.appSettings.networkFavorites
+        .map((e) => getFavoriteDataOrNull(e))
+        .whereType<FavoriteData>();
+    final hasNetwork = networkFolders.isNotEmpty;
+
+    return SmoothCustomScrollView(
+        slivers: [
+          const TopInsetSliver(),
+          if (hasNetwork)
+            MultiSliver(pushPinnedChildren: true, children: [
+              StickySectionHeader(title: "网络".tl),
+              buildNetwork().sliverPaddingHorizontal(14),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: MiuixHorizontalDivider(thickness: 0.6),
+                ),
+              ),
+            ]),
+          MultiSliver(pushPinnedChildren: true, children: [
+            StickySectionHeader(title: "本地".tl),
             buildUtils(context),
-            buildLocal().sliverPaddingHorizontal(12),
-          ],
-        ),
-      ),
-    );
+            buildLocal().sliverPaddingHorizontal(14),
+          ]),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      );
   }
 
   Widget buildTitle(String title) {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(title, style: const TextStyle(fontSize: 18)),
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 6),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+            color: Theme.of(App.globalContext!).colorScheme.primary,
+          ),
+        ),
       ),
     );
   }
@@ -325,35 +411,82 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
     var folders = appdata.appSettings.networkFavorites
         .map((e) => getFavoriteDataOrNull(e));
     folders = folders.whereType<FavoriteData>();
+    final isDark = Theme.of(App.globalContext!).brightness == Brightness.dark;
+    final primary = Theme.of(App.globalContext!).colorScheme.primary;
+
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedHeight(
         maxCrossAxisExtent: 240,
-        itemHeight: 48,
+        itemHeight: 56,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final data = folders.elementAt(index);
-        return InkWell(
-          onTap: () {
-            controller.current = data?.title;
-            controller.isNetwork = true;
-            controller.selectingFolder = false;
-            controller.networkData = data;
-            controller.update();
-            appdata.implicitData[0] = "0;1;${data?.title ?? ""}";
-            appdata.writeImplicitData();
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Row(
-            children: [
-              const SizedBox(width: 16),
-              Icon(
-                Icons.folder_special,
-                color: Theme.of(context).colorScheme.secondary,
+        return Padding(
+          padding: const EdgeInsets.all(3.5),
+          child: MiuixPressable(
+ onPressed: () {
+                controller.current = data?.title;
+                controller.isNetwork = true;
+                controller.selectingFolder = false;
+                controller.networkData = data;
+                controller.update();
+                appdata.implicitData[0] = "0;1;${data?.title ?? ""}";
+                appdata.writeImplicitData();
+              },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                decoration: ShapeDecoration(
+                  shape: MiuixSquircleBorder(
+                    cornerRadius: 14,
+                    side: BorderSide(
+                      color: isDark
+                          ? const Color(0x18FFFFFF)
+                          : const Color(0x0A000000),
+                      width: 0.6,
+                    ),
+                  ),
+                  color: isDark ? const Color(0xFF1E1E22) : Colors.white,
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        shape: const MiuixSquircleBorder(cornerRadius: 10),
+                        color: primary.withOpacity(isDark ? 0.20 : 0.10),
+                      ),
+                      child: MiuixIcon(
+                        vector: MiuixIcons.os4.folder,
+                        tint: primary,
+                        size: 17,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        data?.title != null ? data!.title.tl : "未知".tl,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-              Text(data?.title != null ? data!.title.tl : "未知".tl,),
-            ],
-          ),
+),
         );
       }, childCount: folders.length),
     );
@@ -361,58 +494,103 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
 
   Widget buildLocal() {
     final folders = LocalFavoritesManager().folderNames;
+    final isDark = Theme.of(App.globalContext!).brightness == Brightness.dark;
+    final primary = Theme.of(App.globalContext!).colorScheme.primary;
+
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedHeight(
         maxCrossAxisExtent: 260,
-        itemHeight: 48,
+        itemHeight: 56,
       ),
       delegate: SliverChildBuilderDelegate((context, index) {
         final data = folders.elementAt(index);
-        return GestureDetector(
-          onLongPressStart: (details) =>
-              _showMenu(data, details.globalPosition),
-          child: InkWell(
-            onTap: () {
-              controller.current = data;
-              controller.isNetwork = false;
-              controller.selectingFolder = false;
-              controller.update();
-              appdata.implicitData[0] = "0;0;$data";
-              appdata.writeImplicitData();
-            },
+        return Padding(
+          padding: const EdgeInsets.all(3.5),
+          child: GestureDetector(
+            onLongPressStart: (details) =>
+                _showMenu(data, details.globalPosition),
             onSecondaryTapUp: (details) =>
                 _showDesktopMenu(data, details.globalPosition),
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                const SizedBox(width: 16),
-                Icon(
-                  Icons.folder,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    data,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+            child: MiuixPressable(
+ onPressed: () {
+                  controller.current = data;
+                  controller.isNetwork = false;
+                  controller.selectingFolder = false;
+                  controller.update();
+                  appdata.implicitData[0] = "0;0;$data";
+                  appdata.writeImplicitData();
+                },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                  decoration: ShapeDecoration(
+                    shape: MiuixSquircleBorder(
+                      cornerRadius: 14,
+                      side: BorderSide(
+                        color: isDark
+                            ? const Color(0x18FFFFFF)
+                            : const Color(0x0A000000),
+                        width: 0.6,
+                      ),
+                    ),
+                    color: isDark ? const Color(0xFF1E1E22) : Colors.white,
+                    shadows: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: ShapeDecoration(
+                          shape: const MiuixSquircleBorder(cornerRadius: 10),
+                          color: primary.withOpacity(isDark ? 0.20 : 0.10),
+                        ),
+                        child: MiuixIcon(
+                          vector: MiuixIcons.os4.folder,
+                          tint: primary,
+                          size: 17,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          data,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: ShapeDecoration(
+                          shape: const StadiumBorder(),
+                          color: primary.withOpacity(isDark ? 0.22 : 0.12),
+                        ),
+                        child: Text(
+                          LocalFavoritesManager().count(data).toString(),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  height: 18,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Text(
-                    LocalFavoritesManager().count(data).toString(),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-            ),
+),
           ),
         );
       }, childCount: folders.length),
@@ -420,52 +598,79 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
   }
 
   Widget buildUtils(BuildContext context) {
-    Widget buildItem(String title, IconData icon, VoidCallback onTap) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-        child: SizedBox(
-          height: 72,
-          width: 64,
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 12,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    Widget buildItem(String title, dynamic icon, VoidCallback onTap) {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: MiuixPressable(
+ onPressed: onTap,
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                height: 44,
+                decoration: ShapeDecoration(
+                  shape: MiuixSquircleBorder(
+                    cornerRadius: 14,
+                    side: BorderSide(
+                      color: isDark
+                          ? const Color(0x18FFFFFF)
+                          : const Color(0x0A000000),
+                      width: 0.6,
+                    ),
+                  ),
+                  color: isDark ? const Color(0xFF1E1E22) : Colors.white,
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon is MiuixVectorIcon)
+                      MiuixIcon(vector: icon, size: 18, tint: primary)
+                    else
+                      Icon(icon as IconData, size: 18, color: primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              Icon(
-                icon,
-                size: 24,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(
-                height: 8,
-              ),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12),
-              )
-            ],
-          ),
+),
         ),
       );
     }
 
     return SliverToBoxAdapter(
-      child: Wrap(
-        children: [
-          buildItem("新建".tl, Icons.create_new_folder_outlined, () {
-            showDialog(
-                    context: context,
-                    builder: (context) => const CreateFolderDialog())
-                .then((value) => controller.update());
-          }),
-          buildItem("搜索".tl, Icons.search,
-              () => App.to(context, () => const LocalSearchPage())),
-          buildItem("排序".tl, Icons.reorder, () {
-            context.to(() => const _FoldersReorderPage());
-          })
-        ],
-      ).paddingHorizontal(12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
+        child: Row(
+          children: [
+            buildItem("新建".tl,
+                MiuixIcons.extended.byName('addFolder') ?? MiuixIcons.os4.folder,
+                () {
+              CreateFolderDialog.show(context)
+                  .then((value) => controller.update());
+            }),
+            buildItem("搜索".tl, MiuixIcons.os4.search,
+                () => App.to(context, () => const LocalSearchPage())),
+            buildItem("排序".tl, MiuixIcons.basic.arrowUpDown, () {
+              context.to(() => const _FoldersReorderPage());
+            }),
+          ],
+        ),
+      ),
     );
   }
 
@@ -473,9 +678,9 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
     if (controller.current == null) {
       return const SizedBox();
     } else if (controller.isNetwork!) {
-      return NetworkFavoritePage(
-        controller.networkData!,
+      return TopInsetPadding(
         key: Key(controller.current ?? ""),
+        child: NetworkFavoritePage(controller.networkData!),
       );
     } else {
       var count = LocalFavoritesManager().count(controller.current!);
@@ -507,66 +712,48 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
     }
   }
 
-  void _showMenu(String folder, Offset location) {
-    showMenu(
-        context: App.globalContext!,
-        position: RelativeRect.fromLTRB(
-            location.dx, location.dy, location.dx, location.dy),
-        items: [
-          PopupMenuItem(
-            child: Text("删除".tl),
-            onTap: () {
-              App.globalBack();
-              deleteFolder(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("排序".tl),
-            onTap: () {
-              App.globalBack();
-              App.globalTo(() => LocalFavoritesFolder(folder))
-                  .then((value) => controller.update());
-            },
-          ),
-          PopupMenuItem(
-            child: Text("重命名".tl),
-            onTap: () {
-              App.globalBack();
-              rename(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("检查漫画存活".tl),
-            onTap: () {
-              App.globalBack();
-              checkFolder(folder).then((value) {
-                controller.update();
-              });
-            },
-          ),
-          PopupMenuItem(
-            child: Text("导出".tl),
-            onTap: () {
-              App.globalBack();
-              export(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("下载全部".tl),
-            onTap: () {
-              App.globalBack();
-              addDownload(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("更新漫画信息".tl),
-            onTap: () {
-              App.globalBack();
-              var comics = LocalFavoritesManager().getAllComics(folder);
-              UpdateFavoritesInfoDialog.show(comics, folder);
-            },
-          ),
-        ]);
+  void _showMenu(String folder, Offset location) async {
+    // 与原 showMenu 一致：菜单先关闭，再执行对应操作（原 onTap 中的 App.globalBack 保留）
+    final actions = <String, VoidCallback>{
+      "删除".tl: () {
+        App.globalBack();
+        deleteFolder(folder);
+      },
+      "排序".tl: () {
+        App.globalBack();
+        App.globalTo(() => LocalFavoritesFolder(folder))
+            .then((value) => controller.update());
+      },
+      "重命名".tl: () {
+        App.globalBack();
+        rename(folder);
+      },
+      "检查漫画存活".tl: () {
+        App.globalBack();
+        checkFolder(folder).then((value) {
+          controller.update();
+        });
+      },
+      "导出".tl: () {
+        App.globalBack();
+        export(folder);
+      },
+      "下载全部".tl: () {
+        App.globalBack();
+        addDownload(folder);
+      },
+      "更新漫画信息".tl: () {
+        App.globalBack();
+        var comics = LocalFavoritesManager().getAllComics(folder);
+        UpdateFavoritesInfoDialog.show(comics, folder);
+      },
+    };
+    final i = await showMiuixMenu(
+      context: App.globalContext!,
+      anchorBounds: Rect.fromLTWH(location.dx, location.dy, 0, 0),
+      items: actions.keys.toList(),
+    );
+    if (i != null) actions.values.elementAt(i)();
   }
 
   void _showDesktopMenu(String folder, Offset location) {
@@ -629,9 +816,7 @@ mixin class _LocalFavoritesManager {
   }
 
   void rename(String folder) async {
-    await showDialog(
-        context: App.globalContext!,
-        builder: (context) => RenameFolderDialog(folder));
+    await RenameFolderDialog.show(App.globalContext!, folder);
     StateController.find<FavoritesPageController>().update();
   }
 
@@ -738,92 +923,38 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
     });
   }
 
+  bool _isPullRefreshing = false;
+
+  /// Miuix pull-to-refresh, enabled only when folder sync exists.
+  Widget _wrapPullToRefresh(Widget child) {
+    if (folderSync() == null) {
+      return child;
+    }
+    return MiuixPullToRefresh(
+      isRefreshing: _isPullRefreshing,
+      onRefresh: () {
+        setState(() => _isPullRefreshing = true);
+        onRefresh(context).whenComplete(() {
+          if (mounted) {
+            setState(() => _isPullRefreshing = false);
+          }
+        });
+      },
+      child: child,
+    );
+  }
+
   Future<void> onRefresh(context) async {
     return startFolderSync(context, folderSync()!);
   }
 
   Widget buildFolderComics(String folder) {
     if (comics.isEmpty) {
-      return buildEmptyView();
+      return TopInsetPadding(child: buildEmptyView());
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: MediaQuery.removePadding(
-        key: Key(folder),
-        removeTop: true,
-        context: context,
-        child: RefreshIndicator(
-          notificationPredicate: (notify) {
-            return folderSync() != null;
-          },
-          onRefresh: () => onRefresh(context),
-          child: Scrollbar(
-            controller: scrollController,
-            interactive: true,
-            thickness: App.isMobile ? 12 : null,
-            radius: const Radius.circular(8),
-            child: ScrollConfiguration(
-              behavior: const ScrollBehavior().copyWith(scrollbars: false),
-              child: SmoothScrollProvider(
-                controller: scrollController,
-                builder: (context, controller, physic) {
-                  return GridView.builder(
-                    key: Key(folder),
-                    primary: false,
-                    controller: controller,
-                    gridDelegate: SliverGridDelegateWithComics(),
-                    itemCount: comics.length,
-                    padding: EdgeInsets.zero,
-                    physics: physic,
-                    itemBuilder: (BuildContext context, int index) {
-                      var comic = comics[index];
-                      var tile = LocalFavoriteTile(
-                        key: ValueKey(comic.toString()),
-                        comic,
-                        folder,
-                        () {
-                          rebuild();
-                          if(widget.selectedComics.contains(comic)) {
-                            var c = StateController.find<FavoritesPageController>();
-                            c.selectedComics.remove(comic);
-                            c.update();
-                          }
-                        },
-                        true,
-                        onTap: () => widget.onClick(comic),
-                        onLongPressed: () => widget.onLongPressed(comic),
-                        showFolderInfo: true,
-                      );
-                      StateController.find<FavoritesPageController>()
-                          .openComicMenuFuncs[comic] = tile.showMenu;
-
-                      Color? color;
-
-                      if (widget.selectedComics.contains(comic)) {
-                        color = Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest;
-                      }
-                      return AnimatedContainer(
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 2, horizontal: 4),
-                        duration: const Duration(milliseconds: 160),
-                        child: tile,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButton: AnimatedSwitcher(
+    return MiuixScaffold(
+ floatingActionButton: AnimatedSwitcher(
         duration: const Duration(milliseconds: 150),
         reverseDuration: const Duration(milliseconds: 150),
         child: showFB && folderSync() != null ? buildFAB() : const SizedBox(),
@@ -836,15 +967,90 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
           );
         },
       ),
-    );
+ content: (_) => MediaQuery.removePadding(
+        key: Key(folder),
+        removeTop: true,
+        context: context,
+        child: _wrapPullToRefresh(Stack(
+            children: [
+              ScrollConfiguration(
+                behavior: const ScrollBehavior().copyWith(scrollbars: false),
+                child: SmoothScrollProvider(
+                  controller: scrollController,
+                  builder: (context, controller, physic) {
+                    return GridView.builder(
+                      key: Key(folder),
+                      primary: false,
+                      controller: controller,
+                      gridDelegate: SliverGridDelegateWithComics(),
+                      itemCount: comics.length,
+                      padding: EdgeInsets.fromLTRB(0, 16 + MainTopInset.of(context), 0, 100),
+                      physics: physic,
+                      itemBuilder: (BuildContext context, int index) {
+                        var comic = comics[index];
+                        var tile = LocalFavoriteTile(
+                          key: ValueKey(comic.toString()),
+                          comic,
+                          folder,
+                          () {
+                            rebuild();
+                            if(widget.selectedComics.contains(comic)) {
+                              var c = StateController.find<FavoritesPageController>();
+                              c.selectedComics.remove(comic);
+                              c.update();
+                            }
+                          },
+                          true,
+                          onTap: () => widget.onClick(comic),
+                          onLongPressed: () => widget.onLongPressed(comic),
+                          showFolderInfo: true,
+                        );
+                        StateController.find<FavoritesPageController>()
+                            .openComicMenuFuncs[comic] = tile.showMenu;
+
+                        Color? color;
+
+                        if (widget.selectedComics.contains(comic)) {
+                          color = Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest;
+                        }
+                        return AnimatedContainer(
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 2, horizontal: 4),
+                          duration: const Duration(milliseconds: 160),
+                          child: tile,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                bottom: 0,
+                child: MiuixVerticalScrollBar(
+                  adapter: MiuixScrollBarAdapter(scrollController),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+);
   }
 
-  Widget buildFAB() => Material(
-        color: Colors.transparent,
-        child: FloatingActionButton(
-          key: const Key("FAB"),
-          onPressed: () => onRefresh(context),
-          child: const Icon(Icons.refresh),
+  Widget buildFAB() => MiuixFloatingActionButton(
+        key: const Key("FAB"),
+        onPressed: () => onRefresh(context),
+        child: MiuixIcon(
+          vector: MiuixIcons.os4.refresh,
+          size: 22,
         ),
       );
 
@@ -951,9 +1157,14 @@ class _FoldersReorderPageState extends State<_FoldersReorderPage> {
               ),
             ));
 
-    return Scaffold(
-      appBar: AppBar(title: Text("排序".tl)),
-      body: Column(
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
+ title: "排序".tl,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => ScrollUnderBar(
+ padding: padding,
+ child: Column(
         children: [
           Expanded(
             child: ReorderableBuilder(
@@ -988,6 +1199,7 @@ class _FoldersReorderPageState extends State<_FoldersReorderPage> {
           )
         ],
       ),
-    );
+ ),
+);
   }
 }

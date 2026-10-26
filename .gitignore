@@ -45,3 +45,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .vscode/
+# baseline backup
+build/
+android/key.properties
+*.keystore
+*.jks

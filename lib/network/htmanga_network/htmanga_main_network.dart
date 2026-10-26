@@ -61,14 +61,22 @@ class HtmangaNetwork {
 
   ///基本的Post请求
   Future<Res<String>> post(String url, String data) async {
-    var dio = logDio(BaseOptions(headers: {
-      "User-Agent": webUA,
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-    }));
+    var dio = logDio(BaseOptions(
+      headers: {
+        "User-Agent": webUA,
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      // 显式指定 plain：无论服务端返回 text/html 还是 application/json，
+      // 都保持为 String，杜绝 Dio 自动将 JSON 解析为 Map 导致泛型类型转换抛异常。
+      responseType: ResponseType.plain,
+    ));
     dio.interceptors.add(CookieManagerSql(SingleInstanceCookieJar.instance!));
     try {
       var res = await dio.post(url, data: data);
-      return Res(res.data);
+      final String strData = res.data is String
+          ? res.data as String
+          : (res.data != null ? jsonEncode(res.data) : "");
+      return Res(strData);
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
@@ -82,19 +90,62 @@ class HtmangaNetwork {
     }
   }
 
-  ///登录
-  Future<Res<bool>> login(String account, String pwd, [bool saveData = true]) async {
-    var res = await post("$baseUrl/users-check_login.html",
-        "login_name=${Uri.encodeComponent(account)}&login_pass=${Uri.encodeComponent(pwd)}");
+  /// 把可能是字符串、也可能是已解析结构的结果统一转成 Map。
+  static Map? _asMap(dynamic data) {
+    if (data == null) return null;
+    if (data is Map) return data;
+    if (data is List<int>) {
+      final text = utf8.decode(data, allowMalformed: true);
+      final decoded = const JsonDecoder().convert(text);
+      return decoded is Map ? decoded : null;
+    }
+    final text = data.toString();
+    final decoded = const JsonDecoder().convert(text);
+    return decoded is Map ? decoded : null;
+  }
+
+  /// 判断服务端返回是否需要先通过滑块验证。
+  ///
+  /// 站点在 2026-10 起为登录/注册启用了自建滑块拼图验证（statics/js/slider-captcha.js）。
+  /// 未携带一次性通行证 `slider_pass` 时，`users-check_login.html` 会返回
+  /// `{"ret":false,"html":"請先完成滑塊驗證"}`。
+  static bool needSliderPass(String? message) {
+    if (message == null) return false;
+    return message.contains("滑塊") ||
+        message.contains("滑块") ||
+        message.contains("滑動") ||
+        message.contains("滑动");
+  }
+
+  /// 滑块验证接口地址（相对站点根路径）。
+  static String get sliderApi => "$baseUrl/index.php?ctl=slider&act=";
+
+  /// 登录
+  ///
+  /// [sliderPass] 为通过滑块验证后获得的一次性通行证；为空时不携带该字段，
+  /// 服务端会返回需要验证的提示，由调用方引导用户完成验证后重试。
+  Future<Res<bool>> login(String account, String pwd,
+      {String? sliderPass, bool saveData = true}) async {
+    var body = "login_name=${Uri.encodeComponent(account)}"
+        "&login_pass=${Uri.encodeComponent(pwd)}";
+    if (sliderPass != null && sliderPass.isNotEmpty) {
+      // 通行证只能用一次，且参与表单校验，必须原样透传。
+      body += "&slider_pass=${Uri.encodeComponent(sliderPass)}";
+    }
+    var res = await post("$baseUrl/users-check_login.html", body);
     if (res.error) {
       return Res(null, errorMessage: res.errorMessage);
     }
     try {
-      var json = const JsonDecoder().convert(res.data);
-      if (json["html"].contains("登錄成功")) {
+      final json = _asMap(res.data);
+      if (json == null) {
+        return Res(null, errorMessage: res.data.toString());
+      }
+      var html = (json["html"] ?? "").toString();
+      if (html.contains("登錄成功")) {
         return const Res(true);
       }
-      return Res(null, errorMessage: json["html"]);
+      return Res(null, errorMessage: html);
     } catch (e) {
       return Res(null, errorMessage: e.toString());
     }
@@ -103,6 +154,68 @@ class HtmangaNetwork {
   Future<Res<bool>> loginFromAppdata() async {
     var res = await htManga.reLogin();
     return res ? const Res(true) : const Res.error("error");
+  }
+
+  /// 获取一道滑块拼图验证题目（服务端 `ctl=slider&act=create`）。
+  ///
+  /// 返回题目 token、背景图与拼图块的 base64 data URL，以及缺口纵向位置。
+  Future<Res<HtSliderChallenge>> createSliderChallenge() async {
+    // 该接口必须绕过缓存：每次都要新题目与新 token。
+    final res = await get(
+        "${sliderApi}create&_t=${DateTime.now().millisecondsSinceEpoch}",
+        cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      final json = _asMap(res.data);
+      if (json == null) return const Res(null, errorMessage: "题目解析失败");
+      if (json["error"] != null) {
+        return Res(null, errorMessage: json["error"].toString());
+      }
+      return Res(HtSliderChallenge(
+        token: json["token"] as String,
+        background: json["bg"] as String,
+        piece: json["piece"] as String,
+        y: (json["y"] as num).toDouble(),
+        width: (json["w"] as num).toDouble(),
+        height: (json["h"] as num).toDouble(),
+        pieceSize: (json["s"] as num).toDouble(),
+      ));
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  /// 提交滑块位置与拖动轨迹进行校验。
+  ///
+  /// 校验通过时返回一次性通行证，需要在登录时作为 `slider_pass` 一并提交。
+  /// [track] 为 `[相对时间ms, 相对位移(按题目原始宽度), 触点Y]` 三元组列表，
+  /// 服务端会校验轨迹的合理性，故不能只提交最终位置。
+  Future<Res<String>> verifySliderChallenge({
+    required String token,
+    required double x,
+    required List<List<num>> track,
+  }) async {
+    var body = "token=${Uri.encodeComponent(token)}"
+        "&x=${x.toStringAsFixed(1)}"
+        "&track=${Uri.encodeComponent(jsonEncode(track))}";
+    var res = await post("${sliderApi}verify", body);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      final json = _asMap(res.data);
+      if (json == null) return const Res(null, errorMessage: "驗證失敗,請重試");
+      if (json["pass"] != null) {
+        return Res(json["pass"].toString());
+      }
+      return Res(null,
+          errorMessage: (json["error"] ?? "驗證失敗,請重試").toString());
+    } catch (e) {
+      return Res(null, errorMessage: e.toString());
+    }
   }
 
   Future<Res<HtHomePageData>> getHomePage() async {
@@ -317,18 +430,30 @@ class HtmangaNetwork {
     }
   }
 
+  /// 获取阅读页的图片链接
+  ///
+  /// 站点为每张大图附加了 `?verify=<epoch>-<签名>`，缺少该查询串时图片 CDN
+  /// 会直接返回 403（页面提示「鏈接已失效」）。签名与图片路径、epoch 三者
+  /// 绑定，随便改动任一部分都会失效，因此这里必须原样保留完整查询串。
+  /// 签名会在服务端轮换，页面本身不能走缓存，否则会一直拿到已失效的链接。
+  /// 详情页的缩略图走 `/data/t/` 小图，不带签名，所以预览一直是可以正常加载的。
   Future<Res<List<String>>> getImages(String id) async {
-    var res = await get("$baseUrl/photos-gallery-aid-$id.html");
+    var res = await get("$baseUrl/photos-gallery-aid-$id.html", cache: false);
     if (res.error) {
       return Res(null, errorMessage: res.errorMessage);
     }
     try {
-      var urls = RegExp(r"(?<=//)[\w./\[\]()-]+").allMatches(res.data);
-      var images = <String>[];
+      var urls = RegExp(
+              r"(?<=//)[\w./\[\]()-]+\.(?:webp|jpe?g|png|gif|avif)(?:\?verify=[\w-]+)?")
+          .allMatches(res.data);
+      var images = <String>{};
       for (var url in urls) {
         images.add("https://${url[0]!}");
       }
-      return Res(images);
+      if (images.isEmpty) {
+        return const Res(null, errorMessage: "解析失败: 未找到图片链接");
+      }
+      return Res(images.toList());
     } catch (e, s) {
       LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
       return Res(null, errorMessage: e.toString());

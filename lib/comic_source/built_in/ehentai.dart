@@ -441,9 +441,7 @@ class _SearchOptionsState extends State<_SearchOptions> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text("高级选项".tl),
-        ),
+        MiuixBasicComponent(title: "高级选项".tl),
         if(!isInDialog)
           LayoutBuilder(
             builder: (context, constrains) => Wrap(
@@ -485,11 +483,7 @@ class _SearchOptionsState extends State<_SearchOptions> {
             const SizedBox(
               width: 8,
             ),
-            Checkbox(
-              value: ehExpunged == 1,
-              onChanged: (i) {
-                setState(() {
-                  ehExpunged = i! ? 1 : 0;
+            MiuixCheckbox(value: ehExpunged == 1, onChanged: (i) { setState(() { ehExpunged = i == true ? 1 : 0;
                 });
                 update();
               },
@@ -503,32 +497,14 @@ class _SearchOptionsState extends State<_SearchOptions> {
             const SizedBox(width: 8),
             SizedBox(
               width: 68,
-              child: TextField(
-                onChanged: (s) {
-                  ehStartPage = int.tryParse(s);
-                  update();
-                },
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                ],
-              ),
+              child: MiuixTextField(onChanged: (s) { ehStartPage = int.tryParse(s.replaceAll(RegExp("[^0-9]"), "")); update(); }, keyboardType: TextInputType.number, singleLine: true),
             ),
             const SizedBox(width: 8),
             const Text("To"),
             const SizedBox(width: 8),
             SizedBox(
               width: 68,
-              child: TextField(
-                onChanged: (s) {
-                  ehEndPage = int.tryParse(s);
-                  update();
-                },
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                ],
-              ),
+              child: MiuixTextField(onChanged: (s) { ehEndPage = int.tryParse(s.replaceAll(RegExp("[^0-9]"), "")); update(); }, keyboardType: TextInputType.number, singleLine: true),
             ),
           ],
         ).paddingHorizontal(12),
@@ -586,9 +562,7 @@ class _SearchOptionsState extends State<_SearchOptions> {
             : App.colors(context).tertiaryContainer.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () {
+      child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(8), onPressed: () {
           setState(() {
             disabled ? ehFCats -= (1 << value) : ehFCats += (1 << value);
           });

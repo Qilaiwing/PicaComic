@@ -73,7 +73,7 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
       title: widget.title,
       tailing: [
         if (keys.length < widget.pages.length)
-          IconButton(onPressed: showAddDialog, icon: const Icon(Icons.add))
+          MiuixIconButton(onPressed: showAddDialog, child: const Icon(Icons.add))
       ],
       body: view,
     );
@@ -82,25 +82,37 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
   Widget buildItem(String key) {
     Widget removeButton = Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: IconButton(
-          onPressed: () {
+      child: MiuixIconButton(onPressed: () {
             setState(() {
               keys.remove(key);
             });
             updateSetting();
-          },
-          icon: const Icon(Icons.delete)),
+          }, child: const Icon(Icons.delete)),
     );
 
-    return ListTile(
-      title: Text(widget.pages[key] ?? "(Invalid) $key"),
-      key: Key(key),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          removeButton,
-          const Icon(Icons.drag_handle),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Container(
+        key: Key(key),
+        decoration: ShapeDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1C1C1E)
+              : Colors.white,
+          shape: const MiuixSquircleBorder(cornerRadius: 14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.pages[key] ?? "(Invalid) $key",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ),
+            removeButton,
+            const Icon(Icons.drag_handle),
+          ],
+        ),
       ),
     );
   }
@@ -112,15 +124,17 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
         canAdd[key] = value;
       }
     });
-    showDialog(
+    showMiuixDialog(
         context: context,
-        builder: (context) {
-          return SimpleDialog(
-            title: const Text("Add"),
+        title: "添加".tl,
+        contentBuilder: (context, close) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: canAdd.entries
-                .map((e) => InkWell(
-                      child: ListTile(title: Text(e.value), key: Key(e.key)),
-                      onTap: () {
+                .map((e) => MiuixBasicComponent(
+                      key: Key(e.key),
+                      title: e.value,
+                      onClick: () {
                         App.back(context);
                         setState(() {
                           keys.add(e.key);

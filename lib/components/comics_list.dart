@@ -104,6 +104,9 @@ class ComicsPageLogic<T> extends StateController {
 /// 漫画列表页面
 ///
 /// T为漫画信息模型
+/// 顶栏内筛选 Chip 行的统一高度。
+const double kOptionRowHeight = 48;
+
 abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
   const ComicsPage({super.key});
 
@@ -129,6 +132,12 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
   Widget? get tailing => null;
 
   Widget? get header => null;
+
+  /// 固定在标题栏底部的筛选/Tab 行（随顶栏固定，不会被顶栏盖住）。
+  Widget? get pinnedHeader => null;
+
+  /// [pinnedHeader] 的高度。
+  double get pinnedHeaderHeight => 0;
 
   bool get showPageIndicator => true;
 
@@ -175,11 +184,14 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
             logic.get(getComics);
             return Column(
               children: [
+                SizedBox(height: MainTopInset.of(context)),
                 if (title != null) const Appbar(title: Text("")),
+                if (pinnedHeader != null)
+                  SizedBox(height: pinnedHeaderHeight, child: pinnedHeader),
                 removeSliver(header) ?? const SizedBox(),
                 const Expanded(
                   child: Center(
-                    child: CircularProgressIndicator(),
+                    child: MiuixCircularProgressIndicator(),
                   ),
                 )
               ],
@@ -187,6 +199,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
           } else if (logic.message != null) {
             return Column(
               children: [
+                SizedBox(height: MainTopInset.of(context)),
                 removeSliver(header) ?? const SizedBox(),
                 Expanded(
                     child: NetworkError(
@@ -211,10 +224,13 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               if (comics.isEmpty) {
                 return SmoothCustomScrollView(
                   slivers: [
+                    const TopInsetSliver(),
                     if (title != null)
                       SliverAppbar(
                         title: Text(title!),
                         actions: tailing != null ? [tailing!] : null,
+                        bottom: pinnedHeader,
+                        bottomHeight: pinnedHeaderHeight,
                       ),
                     if (header != null) header!,
                     SliverFillRemaining(
@@ -226,10 +242,13 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               }
               return SmoothCustomScrollView(
                 slivers: [
+                  const TopInsetSliver(),
                   if (title != null)
                     SliverAppbar(
                       title: Text(title!),
                       actions: tailing != null ? [tailing!] : null,
+                      bottom: pinnedHeader,
+                      bottomHeight: pinnedHeaderHeight,
                     ),
                   if (header != null) header!,
                   SliverGrid(
@@ -269,10 +288,13 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               if (comics.isEmpty) {
                 return SmoothCustomScrollView(
                   slivers: [
+                    const TopInsetSliver(),
                     if (title != null)
                       SliverAppbar(
                         title: Text(title!),
                         actions: tailing != null ? [tailing!] : null,
+                        bottom: pinnedHeader,
+                        bottomHeight: pinnedHeaderHeight,
                       ),
                     if (header != null) header!,
                     SliverFillRemaining(
@@ -284,10 +306,13 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               }
               Widget body = SmoothCustomScrollView(
                 slivers: [
+                  const TopInsetSliver(),
                   if (title != null)
                     SliverAppbar(
                       title: Text(title!),
                       actions: tailing != null ? [tailing!] : null,
+                      bottom: pinnedHeader,
+                      bottomHeight: pinnedHeaderHeight,
                     ),
                   if (header != null) header!,
                   if (showPageIndicator &&
@@ -363,19 +388,19 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
     }
 
     if (withRefreshFloatingButton) {
-      return Scaffold(
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.refresh),
+      return MiuixScaffold(
+        floatingActionButton: MiuixFloatingActionButton(
+          child: const Icon(Icons.refresh, color: Colors.white),
           onPressed: () {
             refresh();
           },
         ),
-        body: body,
+        content: (_) => body,
       );
     } else {
+      // 保留 Material：列表里的 InkWell 等需要 Material 祖先；颜色改用 Miuix 背景色。
       return Material(
-        child: body,
-      );
+          color: MiuixTheme.of(context).colors.background, child: body);
     }
   }
 
@@ -393,20 +418,19 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                 const SizedBox(
                   width: 16,
                 ),
-                FilledButton.tonal(
+                MiuixButton(
                     onPressed: () => prevPage(logic), child: Text("上一页".tl)),
                 const Spacer(),
-                ActionChip(
-                  label: Text(
+                MiuixButton(
+                  minHeight: 36,
+                  insideMargin:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  onPressed: () => selectPage(logic),
+                  child: Text(
                       "${"页面".tl}: ${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
-                  onPressed: () async {
-                    selectPage(logic);
-                  },
-                  elevation: 1,
-                  side: BorderSide.none,
                 ),
                 const Spacer(),
-                FilledButton.tonal(
+                MiuixButton(
                     onPressed: () => nextPage(logic), child: Text("下一页".tl)),
                 const SizedBox(
                   width: 16,
@@ -427,67 +451,59 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               ? const Offset(0, 0)
               : const Offset(1.5, 0),
           duration: const Duration(milliseconds: 200),
-          child: Material(
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(16),
-            elevation: 3,
-            child: SizedBox(
-              height: 156,
-              width: 58,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16)),
-                      onTap: () {
-                        prevPage(logic);
-                      },
-                      child: const SizedBox.expand(
-                        child: Center(
-                          child: Icon(Icons.keyboard_arrow_left),
-                        ),
-                      ),
+          child: MiuixSurface(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              cornerRadius: 16,
+              shadowElevation: 3,
+              child: SizedBox(
+                height: 156,
+                width: 58,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: MiuixPressable(
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16)),
+                          onPressed: () {
+                            prevPage(logic);
+                          },
+                          child: const SizedBox.expand(
+                            child: Center(
+                              child: Icon(Icons.keyboard_arrow_left),
+                            ),
+                          )),
                     ),
-                  ),
-                  const Divider(
-                    height: 1,
-                  ),
-                  Expanded(
-                      child: InkWell(
-                    onTap: () {
-                      selectPage(logic);
-                    },
-                    child: SizedBox.expand(
-                      child: Center(
-                        child: Text(
-                            "${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
-                      ),
+                    const MiuixHorizontalDivider(),
+                    Expanded(
+                        child: MiuixPressable(
+                            onPressed: () {
+                              selectPage(logic);
+                            },
+                            child: SizedBox.expand(
+                              child: Center(
+                                child: Text(
+                                    "${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
+                              ),
+                            ))),
+                    const MiuixHorizontalDivider(),
+                    Expanded(
+                      child: MiuixPressable(
+                          borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16)),
+                          onPressed: () {
+                            nextPage(logic);
+                          },
+                          child: const SizedBox.expand(
+                            child: Center(
+                              child: Icon(Icons.keyboard_arrow_right),
+                            ),
+                          )),
                     ),
-                  )),
-                  const Divider(
-                    height: 1,
-                  ),
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16)),
-                      onTap: () {
-                        nextPage(logic);
-                      },
-                      child: const SizedBox.expand(
-                        child: Center(
-                          child: Icon(Icons.keyboard_arrow_right),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+                  ],
+                ),
+              )),
         ));
   }
 
@@ -511,44 +527,30 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
 
   void selectPage(ComicsPageLogic logic) async {
     String res = "";
-    await showDialog(
+    var controller = TextEditingController();
+    await showMiuixDialog<void>(
         context: App.globalContext!,
-        builder: (dialogContext) {
-          var controller = TextEditingController();
-          return SimpleDialog(
-            title: const Text("切换页面"),
-            children: [
-              const SizedBox(
-                width: 300,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
-                child: TextField(
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: "页码".tl,
-                    suffixText:
-                        "${"输入范围: ".tl}1-${logic.maxPage?.toString() ?? "?"}",
-                  ),
-                  controller: controller,
-                  onSubmitted: (s) {
-                    res = s;
-                    App.globalBack();
-                  },
-                ),
-              ),
-              Center(
-                child: FilledButton(
-                  child: Text("提交".tl),
-                  onPressed: () {
-                    res = controller.text;
-                    App.globalBack();
-                  },
-                ),
+        title: "切换页面",
+        summary: "${"输入范围: ".tl}1-${logic.maxPage?.toString() ?? "?"}",
+        contentBuilder: (dialogContext, close) => MiuixTextField(
+              label: "页码".tl,
+              controller: controller,
+              singleLine: true,
+              onSubmitted: (s) {
+                res = s;
+                close();
+              },
+            ),
+        actionsBuilder: (dialogContext, close) => [
+              MiuixButton(
+                colors: MiuixButtonDefaults.buttonColorsPrimary(dialogContext),
+                child: Text("提交".tl),
+                onPressed: () {
+                  res = controller.text;
+                  close();
+                },
               )
-            ],
-          );
-        });
+            ]);
     if (res.isNum) {
       int i = int.parse(res);
       if (logic.maxPage == null || (i > 0 && i <= logic.maxPage!)) {
@@ -569,8 +571,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
         children: [
           const Icon(Icons.search_off, size: 56),
           const SizedBox(height: 12),
-          Text("无匹配结果".tl,
-              style: Theme.of(context).textTheme.titleMedium),
+          Text("无匹配结果".tl, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 6),
         ],
       ),
@@ -578,7 +579,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
   }
 
   Widget buildItem(BuildContext context, T item) {
-    return buildComicTile(context, item, sourceKey, addonMenuOptions: addonMenuOptions);
+    return buildComicTile(context, item, sourceKey,
+        addonMenuOptions: addonMenuOptions);
   }
 }
 
@@ -640,7 +642,7 @@ class _SliverGridComics extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverGrid(
       delegate: SliverChildBuilderDelegate(
-            (context, index) {
+        (context, index) {
           if (index == comics.length - 1) {
             onLastItemBuild?.call();
           }

@@ -2,6 +2,8 @@ library pica_reader;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +14,6 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
-import 'package:pica_comic/components/custom_slider.dart';
 import 'package:pica_comic/components/scrollable_list/src/item_positions_listener.dart';
 import 'package:pica_comic/components/scrollable_list/src/scrollable_positioned_list.dart';
 import 'package:pica_comic/components/window_frame.dart';
@@ -64,7 +65,6 @@ part 'reading_data.dart';
 
 ///阅读器
 class ComicReadingPage extends StatelessWidget {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final ReadingData readingData;
 
@@ -271,20 +271,12 @@ class ComicReadingPage extends StatelessWidget {
           color: useDarkBackground ? Colors.white : null,
           fontSize: 16,
         ),
-        child: Scaffold(
-          backgroundColor: useDarkBackground ? Colors.black : null,
-          endDrawerEnableOpenDragGesture: false,
-          key: _scaffoldKey,
-          endDrawer: Drawer(
-            child: buildEpsView(),
-          ),
-          floatingActionButton: buildEpChangeButton(logic),
-          body: StateBuilder<ComicReadingPageLogic>(builder: (logic) {
+        child: MiuixScaffold(containerColor: useDarkBackground ? Colors.black : MiuixTheme.of(context).colors.background, floatingActionButton: buildEpChangeButton(logic), content: (_) => StateBuilder<ComicReadingPageLogic>(builder: (logic) {
             if (logic.isLoading) {
               history?.readEpisode.add(logic.order);
               loadInfo(logic);
               return const Center(
-                child: CircularProgressIndicator(),
+                child: MiuixInfiniteProgressIndicator(),
               );
             } else if (logic.urls.isNotEmpty) {
               if (logic.readingMethod ==
@@ -377,11 +369,9 @@ class ComicReadingPage extends StatelessWidget {
         Positioned(
           left: 8,
           top: 12,
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-            ),
+          child: MiuixIconButton(
             onPressed: () => App.globalBack(),
+            child: const Icon(Icons.arrow_back),
           ),
         ),
         Positioned(
@@ -419,7 +409,7 @@ class ComicReadingPage extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: FilledButton(
+                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                       onPressed: () {
                         logic.change();
                       },
@@ -430,7 +420,7 @@ class ComicReadingPage extends StatelessWidget {
                     width: 8,
                   ),
                   Expanded(
-                      child: FilledButton(
+                      child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                     onPressed: () {
                       if (!readingData.hasEp) {
                         showToast(message: "没有其它章节".tl);
@@ -446,12 +436,9 @@ class ComicReadingPage extends StatelessWidget {
                           width: 400,
                         );
                       } else {
-                        showModalBottomSheet(
+                        showMiuixBottomSheet<void>(
                           context: context,
-                          useSafeArea: false,
-                          builder: (context) {
-                            return buildEpsView();
-                          },
+                          builder: (context, close) => SizedBox(height: MediaQuery.of(context).size.height * 9 / 16, child: Material(type: MaterialType.transparency, child:  buildEpsView())),
                         );
                       }
                     },
@@ -494,12 +481,9 @@ class ComicReadingPage extends StatelessWidget {
         addTopPadding: true,
       );
     } else {
-      showModalBottomSheet(
+      showMiuixBottomSheet<void>(
         context: context,
-        useSafeArea: false,
-        builder: (context) {
-          return buildEpsView();
-        },
+        builder: (context, close) => SizedBox(height: MediaQuery.of(context).size.height * 9 / 16, child: Material(type: MaterialType.transparency, child:  buildEpsView())),
       );
     }
   }
@@ -514,31 +498,25 @@ class ComicReadingPage extends StatelessWidget {
       return items[0].index;
     }
     int? res;
-    await showDialog(
+    await showMiuixDialog<void>(
         context: App.globalContext!,
-        builder: (context) {
-          return SimpleDialog(
-            title: Text("选择屏幕上的图片".tl),
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 400,
-                ),
-                child: Column(
-                  children: [
-                    for (var item in items)
-                      ListTile(
-                        title: Text((item.index + 1).toString()),
-                        onTap: () {
-                          res = item.index;
-                          App.globalBack();
-                        },
-                        trailing: const Icon(Icons.arrow_right),
-                      )
-                  ],
-                ),
-              )
-            ],
+        title: "选择屏幕上的图片".tl,
+        contentBuilder: (context, close) {
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var item in items)
+                  MiuixArrowPreference(
+                    title: (item.index + 1).toString(),
+                    onClick: () {
+                      res = item.index;
+                      close();
+                    },
+                  )
+              ],
+            ),
           );
         });
     return res;
@@ -615,7 +593,7 @@ class ComicReadingPage extends StatelessWidget {
     if (!readingData.hasEp) return null;
     switch (logic.showFloatingButtonValue) {
       case -1:
-        return FloatingActionButton(
+        return MiuixFloatingActionButton(
           onPressed: () => logic.jumpToLastChapter(),
           child: const Icon(Icons.arrow_back_ios_outlined),
         );
@@ -638,22 +616,14 @@ class ComicReadingPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16)),
                   child: Stack(
                     children: [
-                      Positioned.fill(
-                          child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => logic.jumpToNextChapter(),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Center(
+                      Positioned.fill(child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(16), onPressed: () => logic.jumpToNextChapter(), child: Center(
                               child: Icon(
                             Icons.arrow_forward_ios,
                             size: 24,
                             color: Theme.of(App.globalContext!)
                                 .colorScheme
                                 .onPrimaryContainer,
-                          )),
-                        ),
-                      )),
+                          )))),
                       Positioned(
                         bottom: 0,
                         left: 0,

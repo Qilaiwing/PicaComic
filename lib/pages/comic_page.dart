@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +30,9 @@ import 'show_image_page.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import 'dart:math' as math;
+
+const double _kActionHeight = 48;
+const double _kActionRadius = 16;
 
 class ComicPage extends StatelessWidget {
   const ComicPage({
@@ -100,14 +104,18 @@ class _ComicPageImpl extends BaseComicPage<ComicInfoData> {
       }
     }
     if (UiMode.m1(App.globalContext!)) {
-      showModalBottomSheet(
+      showMiuixBottomSheet<void>(
           context: App.globalContext!,
-          builder: (context) {
-            return SelectDownloadChapter(eps, (selectedEps) {
-              DownloadManager().addCustomDownload(data!, selectedEps);
-              App.globalBack();
-              showToast(message: "已加入下载队列".tl);
-            }, downloaded);
+          builder: (context, close) {
+            return SizedBox(
+                height: MediaQuery.of(context).size.height * 9 / 16,
+                child: Material(
+                    type: MaterialType.transparency,
+                    child: SelectDownloadChapter(eps, (selectedEps) {
+                      DownloadManager().addCustomDownload(data!, selectedEps);
+                      App.globalBack();
+                      showToast(message: "已加入下载队列".tl);
+                    }, downloaded)));
           });
     } else {
       showSideBar(
@@ -228,7 +236,8 @@ class _ComicPageImpl extends BaseComicPage<ComicInfoData> {
       image: StreamImageProvider(
           () => ImageManager().getCustomThumbnail(imageUrl, sourceKey),
           imageUrl),
-      fit: BoxFit.contain,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.medium,
       errorBuilder: (context, s, d) => const Icon(Icons.error),
     );
   }
@@ -245,7 +254,7 @@ class _ComicPageImpl extends BaseComicPage<ComicInfoData> {
   }
 
   @override
-  Card? get uploaderInfo => null;
+  Widget? get uploaderInfo => null;
 
   @override
   bool? get favoriteOnPlatformInitial => data?.isFavorite;
@@ -377,7 +386,7 @@ class _CommentsPageState extends State<_CommentsPage> {
     if (_loading) {
       firstLoad();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (_error != null) {
       return NetworkError(
@@ -416,11 +425,10 @@ class _CommentsPageState extends State<_CommentsPage> {
                           width: 40,
                           height: 40,
                           clipBehavior: Clip.antiAlias,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .secondaryContainer),
+                          decoration: const ShapeDecoration(
+                            shape: MiuixSquircleBorder(cornerRadius: 12),
+                            color: Color(0x18000000),
+                          ),
                           child: AnimatedImage(
                             image: StreamImageProvider(
                               () => ImageManager().getCustomThumbnail(
@@ -465,81 +473,74 @@ class _CommentsPageState extends State<_CommentsPage> {
         height: 0,
       );
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
+      padding: EdgeInsets.fromLTRB(
+          12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-        child: Material(
-          child: Container(
-            decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withAlpha(160),
-                borderRadius: const BorderRadius.all(Radius.circular(30))),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                  child: TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                        border: InputBorder.none,
-                        isCollapsed: true,
-                        hintText: "评论".tl),
-                    minLines: 1,
-                    maxLines: 5,
-                  ),
-                )),
-                sending
-                    ? const Padding(
-                        padding: EdgeInsets.all(8.5),
-                        child: SizedBox(
-                          width: 23,
-                          height: 23,
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : IconButton(
-                        onPressed: () async {
-                          if (controller.text.isEmpty) {
-                            return;
-                          }
-                          setState(() {
-                            sending = true;
-                          });
-                          var b = await widget.source.sendCommentFunc!(
-                              widget.data.comicId,
-                              widget.data.subId,
-                              controller.text,
-                              widget.replyId);
-                          if (!b.error) {
-                            controller.text = "";
-                            setState(() {
-                              sending = false;
-                              _loading = true;
-                              _comments?.clear();
-                              _page = 1;
-                              maxPage = null;
-                            });
-                          } else {
-                            showToast(message: b.errorMessage ?? "Error");
-                            setState(() {
-                              sending = false;
-                            });
-                          }
-                        },
-                        icon: Icon(
-                          Icons.send,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      )
-              ],
-            ),
+        color: isDark ? const Color(0xFF1E1E22) : const Color(0xFFF9F9FA),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0x18FFFFFF) : const Color(0x0E000000),
+            width: 0.8,
           ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: MiuixTextField(controller: controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 4),
+            ),
+            sending
+                ? const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: MiuixInfiniteProgressIndicator(size: 20),
+                    ),
+                  )
+                : MiuixIconButton(
+                    minWidth: 36,
+                    minHeight: 36,
+                    child: MiuixIcon(
+                      vector: MiuixIcons.extended.byName('send') ??
+                          MiuixIcons.os4.share,
+                      size: 19,
+                      tint: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () async {
+                      if (controller.text.isEmpty) {
+                        return;
+                      }
+                      setState(() {
+                        sending = true;
+                      });
+                      var b = await widget.source.sendCommentFunc!(
+                          widget.data.comicId,
+                          widget.data.subId,
+                          controller.text,
+                          widget.replyId);
+                      if (!b.error) {
+                        controller.text = "";
+                        setState(() {
+                          sending = false;
+                          _loading = true;
+                          _comments?.clear();
+                          _page = 1;
+                          maxPage = null;
+                        });
+                      } else {
+                        showToast(message: b.errorMessage ?? "Error");
+                        setState(() {
+                          sending = false;
+                        });
+                      }
+                    },
+                  ),
+          ],
         ),
       ),
     );
@@ -688,7 +689,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
   String? get likeCount => null;
 
   /// display uploader info
-  Card? get uploaderInfo;
+  Widget? get uploaderInfo;
 
   /// episodes information
   EpsData? get eps;
@@ -776,8 +777,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      return Scaffold(
-        body: StateBuilder<ComicPageLogic<T>>(
+      return MiuixScaffold(content: (_) => StateBuilder<ComicPageLogic<T>>(
           tag: tag,
           init: ComicPageLogic<T>(),
           initState: (logic) {
@@ -802,20 +802,32 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
               _logic.thumbnailsData ??= thumbnailsCreator;
               logic.controller.removeListener(scrollListener);
               logic.controller.addListener(scrollListener);
-              return SmoothCustomScrollView(
-                controller: logic.controller,
-                slivers: [
-                  buildTitle(logic),
-                  buildComicInfo(logic, context),
-                  buildTags(logic, context),
-                  ...buildEpisodeInfo(context),
-                  ...buildIntroduction(context),
-                  ...buildThumbnails(context),
-                  ...buildRecommendation(context),
-                  SliverPadding(
-                    padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).padding.bottom),
-                  )
+              return Stack(
+                children: [
+                  SmoothCustomScrollView(
+                    controller: logic.controller,
+                    slivers: [
+                      buildTitle(logic),
+                      buildComicInfo(logic, context),
+                      buildTags(logic, context),
+                      ...buildEpisodeInfo(context),
+                      ...buildIntroduction(context),
+                      ...buildThumbnails(context),
+                      ...buildRecommendation(context),
+                      SliverPadding(
+                        padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(context).padding.bottom),
+                      )
+                    ],
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: MiuixVerticalScrollBar(
+                      adapter: MiuixScrollBarAdapter(logic.controller),
+                    ),
+                  ),
                 ],
               );
             }
@@ -841,7 +853,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                 width: double.infinity,
                 child: buildComicInfo(_logic, context, false),
               ),
-              const Divider(),
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: MiuixHorizontalDivider()),
               SizedBox(
                 width: 100,
                 child: Row(
@@ -886,52 +900,51 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
   Widget buildTitle(ComicPageLogic<T> logic) {
     return SliverAppbar(
-      title: AnimatedOpacity(
-        opacity: logic.showAppbarTitle ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 200),
-        child: Text(title!),
-      ),
+      largeTitle: Text("漫画详情".tl),
+      title: Text(title!),
+      leftSmallTitle: true,
       actions: [
-        IconButton(
-            onPressed: showMoreActions, icon: const Icon(Icons.more_horiz))
-      ],
-    );
-  }
-
-  void showMoreActions() {
-    final width = MediaQuery.of(context).size.width;
-    showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(width, 0, 0, 0),
-      items: [
-        PopupMenuItem(
-          child: Text("复制标题".tl),
-          onTap: () {
-            var text = title!;
-            if (url != null) {
-              text += ":$url";
-            }
-            Clipboard.setData(ClipboardData(text: text));
-            showToast(message: "已复制".tl, icon: const Icon(Icons.check));
-          },
-        ),
-        if (url != null)
-          PopupMenuItem(
-            child: Text("复制链接".tl),
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: url!));
-              showToast(message: "已复制".tl, icon: const Icon(Icons.check));
-            },
+        MiuixWindowIconDropdownMenu(
+          entry: MiuixDropdownEntry(
+            items: [
+              MiuixDropdownItem(
+                text: "复制标题".tl,
+                icon: const Icon(Icons.copy, size: 18),
+                onClick: () {
+                  var text = title!;
+                  if (url != null) {
+                    text += ":$url";
+                  }
+                  Clipboard.setData(ClipboardData(text: text));
+                  showToast(message: "已复制".tl, icon: const Icon(Icons.check));
+                },
+              ),
+              if (url != null)
+                MiuixDropdownItem(
+                  text: "复制链接".tl,
+                  icon: const Icon(Icons.link, size: 18),
+                  onClick: () {
+                    Clipboard.setData(ClipboardData(text: url!));
+                    showToast(message: "已复制".tl, icon: const Icon(Icons.check));
+                  },
+                ),
+              MiuixDropdownItem(
+                text: "分享".tl,
+                icon: MiuixIcon(vector: MiuixIcons.os4.share, size: 18),
+                onClick: () {
+                  var text = title!;
+                  if (url != null) {
+                    text += ":$url";
+                  }
+                  Share.share(text);
+                },
+              ),
+            ],
           ),
-        PopupMenuItem(
-          child: Text("分享".tl),
-          onTap: () {
-            var text = title!;
-            if (url != null) {
-              text += ":$url";
-            }
-            Share.share(text);
-          },
+          child: MiuixIcon(
+            vector: MiuixIcons.os4.more,
+            size: 20,
+          ),
         ),
       ],
     );
@@ -941,68 +954,114 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       [bool sliver = true]) {
     var body = LayoutBuilder(builder: (context, constrains) {
       var width = constrains.maxWidth;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(
-                  width: 8,
-                ),
-                buildCover(context, logic, 136, 102),
-                const SizedBox(
-                  width: 12,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: SelectableText(title?.trim() ?? "",
-                            style: const TextStyle(fontSize: 18)),
-                      ),
-                      const SizedBox(
-                        height: 8,
-                      ),
-                      if (subTitle != null)
-                        SizedBox(
-                          width: double.infinity,
-                          child: SelectableText(subTitle!,
-                              style: const TextStyle(fontSize: 14)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildCover(context, logic, 140, 105),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Builder(builder: (context) {
+                          final rawTitle = title?.trim() ?? "";
+                          final len = rawTitle.length;
+                          final double fontSize =
+                              len > 36 ? 14.5 : (len > 20 ? 16.0 : 18.0);
+                          return SizedBox(
+                            width: double.infinity,
+                            child: SelectableText(
+                              rawTitle,
+                              maxLines: null,
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.3,
+                                height: 1.25,
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 8),
+                        if (subTitle != null)
+                          SizedBox(
+                            width: double.infinity,
+                            child: SelectableText(
+                              subTitle!,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        if (subTitle != null) const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: ShapeDecoration(
+                                shape: const StadiumBorder(),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(isDark ? 0.22 : 0.12),
+                              ),
+                              child: Text(
+                                source,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                            if (pages != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 3),
+                                decoration: ShapeDecoration(
+                                  shape: const StadiumBorder(),
+                                  color: isDark
+                                      ? const Color(0x22FFFFFF)
+                                      : const Color(0x14000000),
+                                ),
+                                child: Text(
+                                  "${pages}P",
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      if (subTitle != null)
-                        const SizedBox(
-                          height: 8,
-                        ),
-                      SizedBox(
-                        width: double.infinity,
-                        child:
-                            Text(source, style: const TextStyle(fontSize: 12)),
-                      ),
-                      if (pages != null)
-                        const SizedBox(
-                          height: 8,
-                        ),
-                      if (pages != null)
-                        SizedBox(
-                          width: double.infinity,
-                          child: Text("${pages}P",
-                              style: const TextStyle(fontSize: 12)),
-                        ),
-                      if (width >= 500)
-                        buildActions(logic, context, false).paddingTop(12),
-                    ],
-                  ),
-                )
-              ],
+                        if (width >= 500)
+                          buildActions(logic, context, false).paddingTop(12),
+                      ],
+                    ),
+                  )
+                ],
+              ),
             ),
-          ).paddingHorizontal(10).paddingBottom(12),
+          ),
           if (width < 500)
-            buildActions(logic, context, true).paddingHorizontal(12),
+            buildActions(logic, context, true).paddingHorizontal(16),
         ],
       );
     });
@@ -1034,13 +1093,27 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     }
     ImageProvider image = StreamImageProvider(
         () => ImageManager().getCustomThumbnail(cover!, sourceKey), cover!);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       child: Container(
         width: width,
         height: height,
-        decoration: BoxDecoration(
+        decoration: ShapeDecoration(
+          shape: MiuixSquircleBorder(
+            cornerRadius: 14,
+            side: BorderSide(
+              color: isDark ? const Color(0x22FFFFFF) : const Color(0x0E000000),
+              width: 0.8,
+            ),
+          ),
           color: Theme.of(context).colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(12),
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Hero(
@@ -1064,27 +1137,27 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       text = "未知".tl;
     }
 
-    List<PopupMenuEntry<dynamic>> buildPopMenus() {
+    List<(String, void Function())> buildPopMenus() {
       return [
-        PopupMenuItem(
-          child: Text("复制".tl),
-          onTap: () {
+        (
+          "复制".tl,
+          () {
             Clipboard.setData(ClipboardData(text: (text)));
             showToast(message: "已复制".tl);
-          },
+          }
         ),
         if (!title)
-          PopupMenuItem(
-            child: Text("屏蔽".tl),
-            onTap: () {
+          (
+            "屏蔽".tl,
+            () {
               appdata.blockingKeyword.add(text);
               appdata.writeData();
-            },
+            }
           ),
         if (!title)
-          PopupMenuItem(
-            child: Text("收藏".tl),
-            onTap: () {
+          (
+            "收藏".tl,
+            () {
               var res = source.tlEN;
               if (source == "EHentai") {
                 res += ":$key";
@@ -1099,9 +1172,20 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
               }
               appdata.favoriteTags.add(res);
               appdata.writeHistory();
-            },
-          )
+            }
+          ),
       ];
+    }
+
+    void showPopMenus(Offset position) {
+      final menus = buildPopMenus();
+      showMiuixMenu(
+        context: App.globalContext!,
+        anchorBounds: Rect.fromCenter(center: position, width: 1, height: 1),
+        items: [for (var m in menus) m.$1],
+      ).then((i) {
+        if (i != null) menus[i].$2();
+      });
     }
 
     Widget label(String text) =>
@@ -1113,43 +1197,33 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
     return GestureDetector(
       onLongPressStart: (details) {
-        showMenu(
-            context: App.globalContext!,
-            position: RelativeRect.fromLTRB(
-                details.globalPosition.dx,
-                details.globalPosition.dy,
-                details.globalPosition.dx,
-                details.globalPosition.dy),
-            items: buildPopMenus());
+        showPopMenus(details.globalPosition);
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-        child: InkWell(
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-          onTap: title ? null : () => tapOnTag(text, key),
-          onSecondaryTapDown: (details) {
-            showMenu(
-                context: App.globalContext!,
-                position: RelativeRect.fromLTRB(
-                    details.globalPosition.dx,
-                    details.globalPosition.dy,
-                    details.globalPosition.dx,
-                    details.globalPosition.dy),
-                items: buildPopMenus());
-          },
-          child: Card(
-            margin: EdgeInsets.zero,
-            color: title
-                ? colors[_logic.colorIndex % colors.length]
-                    .shade100
-                    .withOpacity(0.6)
-                : ElevationOverlay.applySurfaceTint(
-                    colorScheme.surface, colorScheme.surfaceTint, 3),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+        child: GestureDetector(onSecondaryTapDown: (details) { showPopMenus(details.globalPosition); }, child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 10), onPressed: title ? null : () => tapOnTag(text, key), child: Material(
+            color: Colors.transparent,
+            shape: const MiuixSquircleBorder(cornerRadius: 10),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: ShapeDecoration(
+                shape: MiuixSquircleBorder(
+                  cornerRadius: 10,
+                  side: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0x18FFFFFF)
+                        : const Color(0x0C000000),
+                    width: 0.6,
+                  ),
+                ),
+                color: title
+                    ? themePalette[_logic.colorIndex % themePalette.length]
+                        .withOpacity(0.22)
+                    : (Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0x18FFFFFF)
+                        : const Color(0x0A000000)),
+              ),
+              padding: const EdgeInsets.fromLTRB(11, 5, 11, 5),
               child: enableTranslationToCN
                   ? (title
                       ? label(text.translateTagsCategoryToCN)
@@ -1157,8 +1231,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                           text, key)))
                   : label(text),
             ),
-          ),
-        ),
+          ))),
       ),
     );
   }
@@ -1178,39 +1251,143 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       );
     }
 
-    Widget buildItem(String title, IconData icon, VoidCallback onTap,
+    Widget buildItem(String title, dynamic icon, VoidCallback onTap,
         [VoidCallback? onLongPress]) {
-      return InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-        child: SizedBox(
-          height: 72,
-          width: 64,
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 12,
-              ),
-              Icon(
-                icon,
-                size: 24,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(
-                height: 8,
-              ),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12),
-              )
-            ],
+      final primary = Theme.of(context).colorScheme.primary;
+      // Miuix 次级按钮：与下方「下载/开始阅读」同高同圆角。
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2),
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          child: MiuixButton(
+            cornerRadius: _kActionRadius,
+            minWidth: 0,
+            minHeight: _kActionHeight,
+            insideMargin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            onPressed: onTap,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon is MiuixVectorIcon)
+                  MiuixIcon(vector: icon, size: 18, tint: primary)
+                else
+                  Icon(icon as IconData, size: 18, color: primary),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     final width = MediaQuery.of(context).size.width;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final actionItems = <Widget>[
+      if (logic.history != null && width >= 500)
+        buildItem("继续阅读".tl, Icons.menu_book, () => read(logic.history)),
+      if (width >= 500 || (width < 500 && logic.history != null))
+        buildItem("从头开始".tl, Icons.not_started_outlined, () => read(null)),
+      buildItem("分享".tl, MiuixIcons.os4.share, () {
+        var text = title!;
+        if (url != null) {
+          text += ":$url";
+        }
+        Share.share(text);
+      }),
+      buildItem(
+          favorite ? "已收藏".tl : "收藏".tl,
+          favorite
+              ? (MiuixIcons.extended.byName('favoritesFill') ??
+                  MiuixIcons.os4.favorites)
+              : MiuixIcons.os4.favorites,
+          openFavoritePanel, () {
+        var folder = appdata.settings[51];
+        if (LocalFavoritesManager().folderNames.contains(folder)) {
+          LocalFavoritesManager().addComic(folder, toLocalFavoriteItem());
+          showToast(message: "已收藏".tl);
+        }
+      }),
+      if (width >= 500)
+        buildItem("下载".tl,
+            MiuixIcons.extended.byName('download') ?? Icons.download, download),
+      if (onLike != null)
+        buildItem(
+            likeCount ?? "喜欢".tl,
+            isLiked
+                ? (MiuixIcons.extended.byName('favoritesFill') ??
+                    MiuixIcons.os4.favorites)
+                : MiuixIcons.os4.favorites,
+            onLike!),
+      if (openComments != null)
+        buildItem(
+            commentsCount ?? "评论".tl,
+            MiuixIcons.extended.byName('messages') ?? Icons.comment_outlined,
+            openComments!),
+      if (searchSimilar != null)
+        buildItem("相似".tl, MiuixIcons.os4.search, searchSimilar!),
+      if (downloadManager.isExists(downloadedId))
+        buildItem("删除".tl, MiuixIcons.os4.delete, () {
+          showMiuixDialog<void>(
+            context: context,
+            title: "从本地下载中删除?".tl,
+            actionsBuilder: (context, close) => [
+              MiuixTextButton("取消".tl, onPressed: () => close()),
+              MiuixTextButton(
+                "删除".tl,
+                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                onPressed: () async {
+                  close();
+                  await downloadManager.delete([downloadedId]);
+                  showToast(message: "已删除".tl);
+                  logic.update();
+                },
+              ),
+            ],
+          );
+        }),
+    ];
+
+    Widget buildRowOrScroll() {
+      if (width >= 500) {
+        return Wrap(
+          alignment: center ? WrapAlignment.center : WrapAlignment.start,
+          children:
+              actionItems.map((w) => SizedBox(width: 58, child: w)).toList(),
+        );
+      }
+      if (actionItems.length <= 5) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: actionItems.map((w) => Expanded(child: w)).toList(),
+        );
+      }
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var w in actionItems)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: SizedBox(width: 52, child: w),
+              ),
+          ],
+        ),
+      );
+    }
 
     return SizedBox(
       width: double.infinity,
@@ -1219,120 +1396,77 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
             ? CrossAxisAlignment.center
             : CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: center ? WrapAlignment.center : WrapAlignment.start,
-            children: [
-              if (logic.history != null && width >= 500)
-                buildItem(
-                    "继续阅读".tl, Icons.menu_book, () => read(logic.history)),
-              if (width >= 500 || (width < 500 && logic.history != null))
-                buildItem(
-                    "从头开始".tl, Icons.not_started_outlined, () => read(null)),
-              buildItem("分享".tl, Icons.share, () {
-                var text = title!;
-                if (url != null) {
-                  text += ":$url";
-                }
-                Share.share(text);
-              }),
-              buildItem(
-                  favorite ? "已收藏".tl : "收藏".tl,
-                  favorite
-                      ? Icons.collections_bookmark
-                      : Icons.collections_bookmark_outlined,
-                  openFavoritePanel, () {
-                var folder = appdata.settings[51];
-                if (LocalFavoritesManager().folderNames.contains(folder)) {
-                  LocalFavoritesManager()
-                      .addComic(folder, toLocalFavoriteItem());
-                  showToast(message: "已收藏".tl);
-                }
-              }),
-              if (width >= 500) buildItem("下载".tl, Icons.download, download),
-              if (onLike != null)
-                buildItem(likeCount ?? "喜欢".tl,
-                    isLiked ? Icons.favorite : Icons.favorite_border, onLike!),
-              if (openComments != null)
-                buildItem(commentsCount ?? "评论".tl, Icons.comment_outlined,
-                    openComments!),
-              if (searchSimilar != null)
-                buildItem("相似".tl, Icons.search, searchSimilar!),
-              if (downloadManager.isExists(downloadedId))
-                Flyout(
-                  enableTap: true,
-                  navigator: App.navigatorKey.currentState!,
-                  withInkWell: true,
-                  borderRadius: 8,
-                  flyoutBuilder: (context) => FlyoutContent(
-                    title: "从本地下载中删除?".tl,
-                    actions: [
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await downloadManager.delete([downloadedId]);
-                          showToast(message: "已删除".tl);
-                          logic.update();
-                        },
-                        child: Text("删除".tl),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text("取消".tl),
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    height: 72,
-                    width: 64,
-                    child: Column(
-                      children: [
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Icon(
-                          Icons.delete_outline,
-                          size: 24,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(
-                          height: 8,
-                        ),
-                        Text(
-                          "删除下载".tl,
-                          style: const TextStyle(fontSize: 12),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          buildRowOrScroll(),
           if (width < 500)
-            SizedBox(
-              height: 48,
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
                   Expanded(
-                    child: FilledButton.tonal(
+                    flex: 4,
+                    child: MiuixButton(
+                      cornerRadius: _kActionRadius,
+                      minHeight: _kActionHeight,
                       onPressed: download,
-                      child: Text("下载".tl),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          MiuixIcon(
+                            vector: MiuixIcons.extended.byName('download') ??
+                                MiuixIcons.os4.download,
+                            size: 18,
+                            tint: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text("下载".tl),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(
-                    width: 16,
-                  ),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: FilledButton.tonal(
-                      onPressed: () => read(_logic.history),
-                      child: Text("阅读".tl),
+                    flex: 6,
+                    child: MiuixButton(
+                      cornerRadius: _kActionRadius,
+                      minHeight: _kActionHeight,
+                      colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                      onPressed: () =>
+                          openReadingWithChapterSelect(context, _logic.history),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.menu_book_rounded,
+                              size: 18, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text("开始阅读".tl,
+                              style: const TextStyle(color: Colors.white)),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-            ).paddingHorizontal(8)
+            ),
         ],
+      ),
+    );
+  }
+
+  void openReadingWithChapterSelect(BuildContext context, History? history) {
+    if (eps == null || eps!.eps.length <= 1) {
+      read(history);
+      return;
+    }
+    showMiuixBottomSheet<void>(
+      context: context,
+      title: "选择章节".tl,
+      builder: (modalContext, close) => _ChapterSelectModal(
+        eps: eps!,
+        history: _logic.history,
+        onSelect: (index) {
+          close();
+          eps!.onTap(index);
+        },
       ),
     );
   }
@@ -1343,7 +1477,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(),
+          const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: MiuixHorizontalDivider()),
           SizedBox(
               width: 100,
               child: Row(
@@ -1411,7 +1547,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (eps == null) return;
 
     yield const SliverToBoxAdapter(
-      child: Divider(),
+      child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: MiuixHorizontalDivider()),
     );
 
     yield SliverToBoxAdapter(
@@ -1423,10 +1561,11 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
           ),
           const Spacer(),
-          Tooltip(
-            message: "排序".tl,
-            child: IconButton(
-              icon: const Icon(Icons.swap_vert),
+          MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("排序".tl)), child: MiuixIconButton(
+              child: MiuixIcon(
+                vector: MiuixIcons.os4.sort,
+                size: 20,
+              ),
               onPressed: () {
                 _logic.reverseEpsOrder = !_logic.reverseEpsOrder;
                 _logic.update();
@@ -1456,14 +1595,17 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
               (_logic.history?.readEpisode ?? const {}).contains(i + 1);
           return Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-            child: InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(16)),
-              child: Material(
-                elevation: 5,
+            child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 12), onPressed: () => eps!.onTap(i), child: Material(
                 color: colorScheme.surface,
-                surfaceTintColor: colorScheme.surfaceTint,
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
-                shadowColor: Colors.transparent,
+                shape: MiuixSquircleBorder(
+                  cornerRadius: 12,
+                  side: BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0x18FFFFFF)
+                        : const Color(0x0C000000),
+                    width: 0.6,
+                  ),
+                ),
                 child: Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1478,8 +1620,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
-              onTap: () => eps!.onTap(i),
+              )
             ),
           );
         }),
@@ -1492,11 +1633,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       yield SliverToBoxAdapter(
         child: Align(
           alignment: Alignment.center,
-          child: FilledButton.tonal(
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all(const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)))),
-            ),
+          child: MiuixButton(
+            cornerRadius: 12,
             onPressed: () {
               _logic.showFullEps = true;
               _logic.update();
@@ -1514,7 +1652,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return [
       const SliverPadding(padding: EdgeInsets.all(5)),
       const SliverToBoxAdapter(
-        child: Divider(),
+        child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1547,7 +1687,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return Image(
       image:
           CachedImageProvider(thumbnails!.thumbnails[index], headers: headers),
-      fit: BoxFit.contain,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.medium,
       errorBuilder: (context, s, d) => const Icon(Icons.error),
     );
   }
@@ -1563,7 +1704,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return [
       const SliverPadding(padding: EdgeInsets.all(5)),
       const SliverToBoxAdapter(
-        child: Divider(),
+        child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1591,46 +1734,68 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
             if (index == thumbnails!.thumbnails.length - 1) {
               thumbnails!.get(update);
             }
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Padding(
-              padding: UiMode.m1(context)
-                  ? const EdgeInsets.all(4)
-                  : const EdgeInsets.all(8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Expanded(
-                      child: InkWell(
-                    onTap: () => onThumbnailTapped(index),
-                    borderRadius: const BorderRadius.all(Radius.circular(16)),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16)),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
+              padding: const EdgeInsets.all(4.5),
+              child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 12), onPressed: () => onThumbnailTapped(index),
+                  child: Container(
+                    decoration: ShapeDecoration(
+                      shape: MiuixSquircleBorder(
+                        cornerRadius: 12,
+                        side: BorderSide(
+                          color: isDark
+                              ? const Color(0x38FFFFFF)
+                              : const Color(0x24000000),
+                          width: 0.8,
                         ),
                       ),
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16)),
-                        child: thumbnailImageBuilder(
-                            index, thumbnails!.thumbnails[index]),
-                      ),
+                      color: isDark
+                          ? const Color(0xFF1E1E22)
+                          : const Color(0xFFEEEEF0),
+                      shadows: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  )),
-                  const SizedBox(
-                    height: 4,
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        thumbnailImageBuilder(
+                            index, thumbnails!.thumbnails[index]),
+                        Positioned(
+                          right: 6,
+                          bottom: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.62),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              "${index + 1}",
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  Text((index + 1).toString()),
-                ],
-              ),
+                ),
             );
           }),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 200,
-            childAspectRatio: 0.65,
+            maxCrossAxisExtent: 135,
+            childAspectRatio: 0.74,
           ),
         ),
       ),
@@ -1646,7 +1811,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (recommendation == null) return [];
     return [
       const SliverToBoxAdapter(
-        child: Divider(),
+        child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1671,7 +1838,11 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
   void favoriteComic(FavoriteComicWidget widget) {
     if (UiMode.m1(context)) {
-      showModalBottomSheet(context: context, builder: (context) => widget);
+      showMiuixBottomSheet<void>(
+          context: context,
+          builder: (context, close) => SizedBox(
+              height: MediaQuery.of(context).size.height * 9 / 16,
+              child: Material(type: MaterialType.transparency, child: widget)));
     } else {
       showSideBar(
         App.globalContext!,
@@ -1741,6 +1912,14 @@ class FavoriteComicWidget extends StatefulWidget {
 class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
   late List<String> selected;
   late int page = 0;
+  int _tabIndex = 0;
+  final _tabPageController = PageController();
+
+  @override
+  void dispose() {
+    _tabPageController.dispose();
+    super.dispose();
+  }
 
   /// network folders
   late Map<String, String> folders;
@@ -1772,8 +1951,7 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
 
     Widget buildFolder(String name, String id, int p) {
       bool isSelected = selected.contains(id);
-      return InkWell(
-        onTap: () => setState(() {
+      return MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, onPressed: () => setState(() {
           page = p;
           if (isSelected) {
             selected.remove(id);
@@ -1938,7 +2116,7 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
         }
       });
       platform = const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (page == 0 &&
         selected.length == 1 &&
@@ -1969,20 +2147,9 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
       height: 56,
       width: double.infinity,
       child: Center(
-        child: TextButton(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("新建".tl),
-              const SizedBox(
-                width: 4,
-              ),
-              const Icon(Icons.add),
-            ],
-          ),
-          onPressed: () => showDialog(
-                  context: App.globalContext!,
-                  builder: (_) => const CreateFolderDialog())
+        child: MiuixTextButton(
+          "新建".tl,
+          onPressed: () => CreateFolderDialog.show(App.globalContext!)
               .then((value) => setState(() {})),
         ),
       ),
@@ -1993,51 +2160,168 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
       ),
     );
 
-    return DefaultTabController(
-        length: widget.havePlatformFavorite ? 2 : 1,
+    final tabNames = [
+      if (widget.havePlatformFavorite) "网络".tl,
+      "本地".tl,
+    ];
+    return Column(
+      children: [
+        MiuixTabRow(
+          tabs: tabNames,
+          selectedTabIndex: _tabIndex,
+          onTabSelected: (i) {
+            _tabPageController.animateToPage(i,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOut);
+            setState(() {
+              _tabIndex = i;
+              selected.clear();
+              if (i == 0 && widget.initialFolder != null) {
+                selected.add(widget.initialFolder!);
+              }
+              page = i;
+              if (!widget.havePlatformFavorite) {
+                page = 1;
+              }
+            });
+          },
+        ).paddingHorizontal(12),
+        Expanded(
+          child: PageView(
+            controller: _tabPageController,
+            onPageChanged: (i) => setState(() => _tabIndex = i),
+            children: [
+              if (widget.havePlatformFavorite) platform,
+              local,
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 60,
+          child: Center(
+            child: button,
+          ),
+        ),
+        SizedBox(
+          height: MediaQuery.of(context).padding.bottom,
+        )
+      ],
+    );
+  }
+}
+
+class _ChapterSelectModal extends StatefulWidget {
+  const _ChapterSelectModal({
+    required this.eps,
+    required this.history,
+    required this.onSelect,
+  });
+
+  final EpsData eps;
+  final History? history;
+  final ValueChanged<int> onSelect;
+
+  @override
+  State<_ChapterSelectModal> createState() => _ChapterSelectModalState();
+}
+
+class _ChapterSelectModalState extends State<_ChapterSelectModal> {
+  bool reverseOrder = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final maxHeight = MediaQuery.of(context).size.height * 0.75;
+    final totalEps = widget.eps.eps.length;
+
+    return SizedBox(
+      height: maxHeight,
+      child: Material(
+        type: MaterialType.transparency,
         child: Column(
           children: [
-            TabBar(
-              onTap: (i) {
-                setState(() {
-                  selected.clear();
-                  if (i == 0 && widget.initialFolder != null) {
-                    selected.add(widget.initialFolder!);
-                  }
-                  page = i;
-                  if (!widget.havePlatformFavorite) {
-                    page = 1;
-                  }
-                });
-              },
-              tabs: [
-                if (widget.havePlatformFavorite)
-                  Tab(
-                    text: "网络".tl,
-                  ),
-                Tab(
-                  text: "本地".tl,
-                ),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 0, 10),
+              child: Row(
                 children: [
-                  if (widget.havePlatformFavorite) platform,
-                  local,
+                  Text(
+                    "共 @count 话".tlParams({"count": totalEps.toString()}),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: primary,
+                    ),
+                  ),
+                  const Spacer(),
+                  MiuixTooltipBox(
+                    tooltip: (context, scope) =>
+                        MiuixPlainTooltip(scope: scope, child: Text("排序".tl)),
+                    child: MiuixIconButton(
+                      onPressed: () => setState(() {
+                        reverseOrder = !reverseOrder;
+                      }),
+                      child: MiuixIcon(vector: MiuixIcons.os4.sort, size: 18),
+                    ),
+                  ),
                 ],
               ),
             ),
-            SizedBox(
-              height: 60,
-              child: Center(
-                child: button,
+            Expanded(
+              child: GridView.builder(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 16),
+                gridDelegate: const SliverGridDelegateWithFixedHeight(
+                  maxCrossAxisExtent: 180,
+                  itemHeight: 46,
+                ),
+                itemCount: totalEps,
+                itemBuilder: (context, i) {
+                  final epIndex = reverseOrder ? totalEps - 1 - i : i;
+                  final visited = (widget.history?.readEpisode ?? const {})
+                      .contains(epIndex + 1);
+                  final isCurrent = widget.history?.ep == epIndex + 1;
+                  return Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: MiuixCard(
+                      cornerRadius: 12,
+                      feedbackType: MiuixPressFeedbackType.sink,
+                      onPressed: () => widget.onSelect(epIndex),
+                      colors: isCurrent
+                          ? MiuixCardColors(
+                              color: primary.withOpacity(isDark ? 0.28 : 0.16),
+                              contentColor: primary)
+                          : null,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            widget.eps.eps[epIndex],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isCurrent
+                                  ? FontWeight.w600
+                                  : (visited ? FontWeight.w400 : FontWeight.w500),
+                              color: isCurrent
+                                  ? primary
+                                  : (visited
+                                      ? (isDark ? Colors.white38 : Colors.black38)
+                                      : null),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            SizedBox(
-              height: MediaQuery.of(context).padding.bottom,
-            )
           ],
-        ));
+        ),
+      ),
+    );
   }
 }

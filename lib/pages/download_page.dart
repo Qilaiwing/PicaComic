@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -165,6 +166,12 @@ class DownloadPageLogic extends StateController {
 
   bool searchInit = false;
 
+  /// 下载页搜索框焦点，仅 searchInit 时请求聚焦
+  final FocusNode searchFocusNode = FocusNode();
+
+  /// 下载页搜索框文本（唯一数据源）。
+  final TextEditingController searchController = TextEditingController();
+
   String keyword = "";
   String keyword_ = "";
 
@@ -228,17 +235,18 @@ class DownloadPage extends StatelessWidget {
               logic.resetSelected(logic.comics.length);
               logic.change();
             });
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
+            return MiuixScaffold(
+ content: (_) => Center(
+                child: MiuixCircularProgressIndicator(),
               ),
-            );
+);
           } else {
-            return Scaffold(
+            return MiuixScaffold(
+              topBar: buildAppbar(context, logic),
               floatingActionButton: buildFAB(context, logic),
-              body: SmoothCustomScrollView(
+              content: (padding) => SmoothCustomScrollView(
                 slivers: [
-                  buildAppbar(context, logic),
+                  SliverToBoxAdapter(child: SizedBox(height: padding.top)),
                   buildComics(context, logic)
                 ],
               ),
@@ -445,35 +453,30 @@ class DownloadPage extends StatelessWidget {
                     Future.delayed(const Duration(milliseconds: 200), () {
                   Future<void>.delayed(
                     const Duration(milliseconds: 200),
-                    () => showDialog(
+                    () => showMiuixDialog(
                       context: App.globalContext!,
-                      barrierDismissible: false,
-                      barrierColor: Colors.black26,
-                      builder: (context) => SimpleDialog(
-                        children: [
-                          SizedBox(
-                            width: 200,
-                            height: 200,
-                            child: Center(
-                              child: SizedBox(
-                                width: 50,
-                                height: 80,
-                                child: Column(
-                                  children: [
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    const CircularProgressIndicator(),
-                                    const SizedBox(
-                                      height: 9,
-                                    ),
-                                    Text("打包中".tl)
-                                  ],
+                      dismissible: false,
+                      contentBuilder: (context, close) => SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: Center(
+                          child: SizedBox(
+                            width: 50,
+                            height: 80,
+                            child: Column(
+                              children: [
+                                const SizedBox(
+                                  height: 10,
                                 ),
-                              ),
+                                const MiuixCircularProgressIndicator(),
+                                const SizedBox(
+                                  height: 9,
+                                ),
+                                Text("打包中".tl)
+                              ],
                             ),
-                          )
-                        ],
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -525,74 +528,141 @@ class DownloadPage extends StatelessWidget {
 
   void showInfo(int index, DownloadPageLogic logic, BuildContext context) {
     if (UiMode.m1(context)) {
-      showModalBottomSheet(
-          context: context,
-          builder: (context) {
-            return DownloadedComicInfoView(logic.comics[index], logic);
-          });
+      showMiuixBottomSheet(
+        context: context,
+        builder: (context, close) {
+          return DownloadedComicInfoView(logic.comics[index], logic,
+              inMiuixSheet: true);
+        },
+      );
     } else {
-      showSideBar(App.globalContext!,
-          DownloadedComicInfoView(logic.comics[index], logic),
-          useSurfaceTintColor: true);
+      showSideBar(
+        context,
+        DownloadedComicInfoView(logic.comics[index], logic),
+        useSurfaceTintColor: true,
+      );
     }
   }
 
-  Widget buildFAB(BuildContext context, DownloadPageLogic logic) =>
-      FloatingActionButton(
-        enableFeedback: true,
-        onPressed: () {
+  Widget buildFAB(BuildContext context, DownloadPageLogic logic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final isSelecting = logic.selecting;
+    final hasSelection = logic.selectedNum > 0;
+
+    return MiuixPressable(
+ onPressed: () {
           if (!logic.selecting) {
             logic.selecting = true;
             logic.update();
           } else {
             if (logic.selectedNum == 0) return;
-            showDialog(
-                context: context,
-                builder: (dialogContext) {
-                  return AlertDialog(
-                    title: Text("删除".tl),
-                    content: Text("要删除已选择的项目吗? 此操作无法撤销".tl),
-                    actions: [
-                      TextButton(
-                          onPressed: () => App.globalBack(),
-                          child: Text("取消".tl)),
-                      TextButton(
-                          onPressed: () async {
-                            App.globalBack();
-                            var comics = <String>[];
-                            for (int i = 0; i < logic.selected.length; i++) {
-                              if (logic.selected[i]) {
-                                comics.add(logic.comics[i].id);
-                              }
-                            }
-                            await downloadManager.delete(comics);
-                            logic.refresh();
-                          },
-                          child: Text("确认".tl)),
-                    ],
-                  );
-                });
+            showConfirmDialog(
+              context,
+              "删除".tl,
+              "要删除已选择的 @num 个项目吗? 此操作无法撤销".tlParams({"num": logic.selectedNum.toString()}),
+              () async {
+                var comics = <String>[];
+                for (int i = 0; i < logic.selected.length; i++) {
+                  if (logic.selected[i]) {
+                    comics.add(logic.comics[i].id);
+                  }
+                }
+                await downloadManager.delete(comics);
+                logic.refresh();
+              },
+            );
           }
         },
-        child: logic.selecting
-            ? const Icon(Icons.delete_forever_outlined)
-            : const Icon(Icons.checklist_outlined),
-      );
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          height: 50,
+          padding: EdgeInsets.symmetric(horizontal: isSelecting ? 18 : 16),
+          decoration: ShapeDecoration(
+            shape: const MiuixSquircleBorder(cornerRadius: 18),
+            color: isSelecting
+                ? (hasSelection
+                    ? const Color(0xFFE53935)
+                    : (isDark ? const Color(0xFF3A2020) : const Color(0xFFFFEBEE)))
+                : primary,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isSelecting) ...[
+                MiuixIcon(
+                  vector: MiuixIcons.extended.byName('delete') ?? MiuixIcons.os4.close,
+                  size: 19,
+                  tint: hasSelection
+                      ? Colors.white
+                      : (isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F)),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  hasSelection
+                      ? "删除 (@num)".tlParams({"num": logic.selectedNum.toString()})
+                      : "删除".tl,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: hasSelection
+                        ? Colors.white
+                        : (isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F)),
+                  ),
+                ),
+              ] else ...[
+                const Icon(
+                  Icons.checklist_rounded,
+                  size: 21,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  "多选".tl,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+);
+  }
 
   Widget buildTitle(BuildContext context, DownloadPageLogic logic) {
     if (logic.searchMode && !logic.selecting) {
-      final FocusNode focusNode = FocusNode();
-      focusNode.requestFocus();
-      bool focus = logic.searchInit;
-      logic.searchInit = false;
-      return TextField(
-        focusNode: focus ? focusNode : null,
-        decoration:
-        InputDecoration(border: InputBorder.none, hintText: "搜索".tl),
-        onChanged: (s) {
-          logic.keyword = s.toLowerCase();
-          logic.update();
-        },
+      if (logic.searchInit) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (logic.searchFocusNode.context != null) {
+            logic.searchFocusNode.requestFocus();
+          }
+        });
+      }
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 0, 8),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 20),
+          // 直接用 logic.searchController 作为唯一数据源；清空等改动只发生在事件回调中，
+          // 不会在构建期间改写输入框文本。
+          child: AppSearchField(
+            controller: logic.searchController,
+            focusNode: logic.searchFocusNode,
+            hint: "搜索已下载漫画".tl,
+            autofocus: false,
+            onSubmitted: (_) {},
+            onChanged: (s) {
+              logic.keyword = s.toLowerCase();
+              logic.searchInit = false;
+              logic.update();
+            },
+          ),
+        ),
       );
     } else {
       return logic.selecting
@@ -602,26 +672,42 @@ class DownloadPage extends StatelessWidget {
   }
 
   Widget buildAppbar(BuildContext context, DownloadPageLogic logic) {
-    return SliverAppbar(
-      radius: UiMode.m1(context) ? 0 : 16,
+    return MiuixTopAppBar(
+      blurred: true,
+      blurRadius: 0,
+      blurTintAlpha: 0,
       color: logic.selecting
         ? Theme.of(context).colorScheme.primaryContainer
         : null,
-      leading: logic.selecting
-          ? IconButton(
-          onPressed: () {
-            logic.selecting = false;
-            logic.selectedNum = 0;
-            for (int i = 0; i < logic.selected.length; i++) {
-              logic.selected[i] = false;
-            }
-            logic.update();
-          },
-          icon: const Icon(Icons.close))
-          : IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back)),
-      title: buildTitle(context, logic),
+      navigationIcon: logic.selecting
+          ? MiuixIconButton(
+              onPressed: () {
+                logic.selecting = false;
+                logic.selectedNum = 0;
+                for (int i = 0; i < logic.selected.length; i++) {
+                  logic.selected[i] = false;
+                }
+                logic.update();
+              },
+              child: MiuixIcon(
+                vector: MiuixIcons.os4.close,
+                size: 20,
+              ),
+            )
+          : (Navigator.of(context).canPop()
+              ? MiuixIconButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: MiuixIcon(vector: MiuixIcons.os4.back, size: 20),
+                )
+              : null),
+      title: logic.selecting
+          ? "已选择 @num 个项目".tlParams({"num": logic.selectedNum.toString()})
+          : "已下载".tl,
+      largeTitle: (logic.selecting || logic.searchMode) ? null : "已下载".tl,
+      // 搜索模式下搜索框放在 bottomContent
+      bottomContent: (logic.searchMode && !logic.selecting)
+          ? buildTitle(context, logic)
+          : null,
       actions: buildActions(context, logic),
     );
   }
@@ -629,154 +715,164 @@ class DownloadPage extends StatelessWidget {
   List<Widget> buildActions(BuildContext context, DownloadPageLogic logic) {
     return [
       if (!logic.selecting && !logic.searchMode)
-        Tooltip(
-          message: "排序".tl,
-          child: IconButton(
-            icon: const Icon(Icons.sort),
+        MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("排序".tl)),
+ child: MiuixIconButton(
+            child: MiuixIcon(
+              vector: MiuixIcons.extended.byName('sort') ?? MiuixIcons.os4.more,
+              size: 20,
+            ),
             onPressed: () async {
               bool changed = false;
-              await showDialog(
+              await showMiuixDialog(
                   context: context,
-                  builder: (context) => SimpleDialog(
-                    title: Text("漫画排序模式".tl),
-                    children: [
-                      SizedBox(
+                  title: "漫画排序模式".tl,
+                  contentBuilder: (context, close) => SizedBox(
                         width: 400,
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            ListTile(
-                              title: Text("漫画排序模式".tl),
-                              trailing: Select(
-                                initialValue:
-                                int.parse(appdata.settings[26][0]),
-                                onChange: (i) {
-                                  appdata.settings[26] = appdata
-                                      .settings[26]
-                                      .setValueAt(i.toString(), 0);
-                                  appdata.updateSettings();
-                                  changed = true;
-                                },
-                                values: ["时间", "漫画名", "作者名", "大小"].tl,
-                              ),
+                            MiuixBasicComponent(
+                              title: "漫画排序模式".tl,
+                              endActions: [
+                                Select(
+                                  initialValue:
+                                  int.parse(appdata.settings[26][0]),
+                                  onChange: (i) {
+                                    appdata.settings[26] = appdata
+                                        .settings[26]
+                                        .setValueAt(i.toString(), 0);
+                                    appdata.updateSettings();
+                                    changed = true;
+                                  },
+                                  values: ["时间", "漫画名", "作者名", "大小"].tl,
+                                ),
+                              ],
                             ),
-                            ListTile(
-                              title: Text("倒序".tl),
-                              trailing: StatefulSwitch(
-                                initialValue:
-                                appdata.settings[26][1] == "1",
-                                onChanged: (b) {
-                                  if (b) {
-                                    appdata.settings[26] = appdata
-                                        .settings[26]
-                                        .setValueAt("1", 1);
-                                  } else {
-                                    appdata.settings[26] = appdata
-                                        .settings[26]
-                                        .setValueAt("0", 1);
-                                  }
-                                  appdata.updateSettings();
-                                  changed = true;
-                                },
-                              ),
+                            MiuixBasicComponent(
+                              title: "倒序".tl,
+                              endActions: [
+                                StatefulSwitch(
+                                  initialValue:
+                                  appdata.settings[26][1] == "1",
+                                  onChanged: (b) {
+                                    if (b) {
+                                      appdata.settings[26] = appdata
+                                          .settings[26]
+                                          .setValueAt("1", 1);
+                                    } else {
+                                      appdata.settings[26] = appdata
+                                          .settings[26]
+                                          .setValueAt("0", 1);
+                                    }
+                                    appdata.updateSettings();
+                                    changed = true;
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      )
-                    ],
-                  ));
+                      ));
               if (changed) {
                 logic.refresh();
               }
             },
           ),
-        ),
+),
       if (!logic.selecting && !logic.searchMode)
-        Tooltip(
-          message: "下载管理器".tl,
-          child: IconButton(
-            icon: const Icon(Icons.download_for_offline),
+        MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("下载管理器".tl)),
+ child: MiuixIconButton(
+            child: MiuixIcon(
+              vector: MiuixIcons.extended.byName('download') ?? MiuixIcons.os4.download,
+              size: 20,
+            ),
             onPressed: () {
               showPopUpWidget(
-                App.globalContext!,
+                context,
                 const DownloadingPage(),
               );
             },
           ),
-        )
+)
       else if (logic.selecting)
-        Tooltip(
-          message: "更多".tl,
-          child: IconButton(
-            icon: const Icon(Icons.more_horiz),
-            onPressed: () {
-              showMenu(
-                  context: context,
-                  position: RelativeRect.fromLTRB(
-                      MediaQuery.of(context).size.width - 60,
-                      50,
-                      MediaQuery.of(context).size.width - 60,
-                      50),
-                  items: [
-                    PopupMenuItem(
-                      child: Text("全选".tl),
-                      onTap: () {
-                        for (int i = 0; i < logic.selected.length; i++) {
-                          logic.selected[i] = true;
+        MiuixWindowIconDropdownMenu(
+          entry: MiuixDropdownEntry(
+            items: [
+              MiuixDropdownItem(
+                text: "全选".tl,
+                icon: const Icon(Icons.select_all_rounded, size: 18),
+                onClick: () {
+                  for (int i = 0; i < logic.selected.length; i++) {
+                    logic.selected[i] = true;
+                  }
+                  logic.selectedNum = logic.comics.length;
+                  logic.update();
+                },
+              ),
+              MiuixDropdownItem(
+                text: "导出".tl,
+                icon: MiuixIcon(vector: MiuixIcons.os4.share, size: 18),
+                onClick: () => exportSelectedComic(context, logic),
+              ),
+              MiuixDropdownItem(
+                text: "导出为pdf".tl,
+                icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                onClick: () => exportAsPdf(null, logic),
+              ),
+              MiuixDropdownItem(
+                text: "查看漫画详情".tl,
+                icon: const Icon(Icons.info_outline_rounded, size: 18),
+                onClick: () => Future.delayed(
+                  const Duration(milliseconds: 200),
+                  () {
+                    if (logic.selectedNum != 1) {
+                      showToast(message: "请选择一个漫画".tl);
+                    } else {
+                      for (int i = 0; i < logic.selected.length; i++) {
+                        if (logic.selected[i]) {
+                          toComicInfoPage(logic.comics[i]);
                         }
-                        logic.selectedNum = logic.comics.length;
-                        logic.update();
-                      },
-                    ),
-                    PopupMenuItem(
-                      child: Text("导出".tl),
-                      onTap: () => exportSelectedComic(context, logic),
-                    ),
-                    PopupMenuItem(
-                      child: Text("导出为pdf".tl),
-                      onTap: () => exportAsPdf(null, logic),
-                    ),
-                    PopupMenuItem(
-                      child: Text("查看漫画详情".tl),
-                      onTap: () => Future.delayed(
-                          const Duration(milliseconds: 200), () {
-                        if (logic.selectedNum != 1) {
-                          showToast(message: "请选择一个漫画".tl);
-                        } else {
-                          for (int i = 0; i < logic.selected.length; i++) {
-                            if (logic.selected[i]) {
-                              toComicInfoPage(logic.comics[i]);
-                            }
-                          }
-                        }
-                      }),
-                    ),
-                    PopupMenuItem(
-                      child: Text("添加至本地收藏".tl),
-                      onTap: () => Future.delayed(
-                        const Duration(milliseconds: 200),
-                            () => addToLocalFavoriteFolder(
-                            App.globalContext!, logic),
-                      ),
-                    ),
-                  ]);
-            },
+                      }
+                    }
+                  },
+                ),
+              ),
+              MiuixDropdownItem(
+                text: "添加至本地收藏".tl,
+                icon: MiuixIcon(vector: MiuixIcons.os4.favorites, size: 18),
+                onClick: () => Future.delayed(
+                  const Duration(milliseconds: 200),
+                  () => addToLocalFavoriteFolder(context, logic),
+                ),
+              ),
+            ],
+          ),
+          child: MiuixIcon(
+            vector: MiuixIcons.os4.more,
+            size: 20,
           ),
         ),
       if (!logic.selecting)
-        Tooltip(
-          message: "搜索".tl,
-          child: IconButton(
-            icon: const Icon(Icons.search),
+        MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text(logic.searchMode ? "关闭搜索".tl : "搜索".tl)),
+ child: MiuixIconButton(
+            child: MiuixIcon(
+              vector: logic.searchMode ? MiuixIcons.os4.close : MiuixIcons.os4.search,
+              size: 20,
+            ),
             onPressed: () {
               logic.searchMode = !logic.searchMode;
               logic.searchInit = true;
               if (!logic.searchMode) {
                 logic.keyword = "";
+                logic.searchController.clear();
               }
               logic.update();
             },
           ),
-        )
+)
     ];
   }
 
@@ -786,35 +882,30 @@ class DownloadPage extends StatelessWidget {
     } else {
       Future<void>.delayed(
         const Duration(milliseconds: 200),
-        () => showDialog(
+        () => showMiuixDialog(
           context: App.globalContext!,
-          barrierColor: Colors.black26,
-          barrierDismissible: false,
-          builder: (context) => const SimpleDialog(
-            children: [
-              SizedBox(
-                width: 200,
-                height: 200,
-                child: Center(
-                  child: SizedBox(
-                    width: 50,
-                    height: 75,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 10,
-                        ),
-                        CircularProgressIndicator(),
-                        SizedBox(
-                          height: 9,
-                        ),
-                        Text("打包中")
-                      ],
+          dismissible: false,
+          contentBuilder: (context, close) => const SizedBox(
+            width: 200,
+            height: 200,
+            child: Center(
+              child: SizedBox(
+                width: 50,
+                height: 75,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 10,
                     ),
-                  ),
+                    MiuixCircularProgressIndicator(),
+                    SizedBox(
+                      height: 9,
+                    ),
+                    Text("打包中")
+                  ],
                 ),
-              )
-            ],
+              ),
+            ),
           ),
         ),
       );
@@ -825,29 +916,29 @@ class DownloadPage extends StatelessWidget {
 
   void addToLocalFavoriteFolder(BuildContext context, DownloadPageLogic logic) {
     String? folder;
-    showDialog(
-        context: App.globalContext!,
-        builder: (context) => SimpleDialog(
-              title: const Text("复制到..."),
-              children: [
-                SizedBox(
+    showMiuixDialog(
+        context: context,
+        title: "复制到...",
+        contentBuilder: (context, close) => SizedBox(
                   width: 400,
                   height: 132,
                   child: Column(
                     children: [
-                      ListTile(
-                        title: Text("收藏夹".tl),
-                        trailing: Select(
-                          width: 156,
-                          values: LocalFavoritesManager().folderNames,
-                          initialValue: null,
-                          onChange: (i) =>
-                              folder = LocalFavoritesManager().folderNames[i],
-                        ),
+                      MiuixBasicComponent(
+                        title: "收藏夹".tl,
+                        endActions: [
+                          Select(
+                            width: 156,
+                            values: LocalFavoritesManager().folderNames,
+                            initialValue: null,
+                            onChange: (i) =>
+                                folder = LocalFavoritesManager().folderNames[i],
+                          ),
+                        ],
                       ),
                       const Spacer(),
                       Center(
-                        child: FilledButton(
+                        child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                           child: Text("确认".tl),
                           onPressed: () {
                             if (folder == null) {
@@ -910,7 +1001,7 @@ class DownloadPage extends StatelessWidget {
                                     });
                               }
                             }
-                            App.globalBack();
+                            close();
                           },
                         ),
                       ),
@@ -919,17 +1010,19 @@ class DownloadPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                )
-              ],
-            ));
+                ));
   }
 }
 
 class DownloadedComicInfoView extends StatefulWidget {
-  const DownloadedComicInfoView(this.item, this.logic, {Key? key})
+  const DownloadedComicInfoView(this.item, this.logic,
+      {Key? key, this.inMiuixSheet = false})
       : super(key: key);
   final DownloadedItem item;
   final DownloadPageLogic logic;
+
+  /// 是否显示在 showMiuixBottomSheet 中（外框由 Miuix 底部弹窗提供）
+  final bool inMiuixSheet;
 
   @override
   State<DownloadedComicInfoView> createState() =>
@@ -956,100 +1049,220 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
   @override
   Widget build(BuildContext context) {
     getInfo();
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
-            child: Text(
-              name,
-              style: const TextStyle(fontSize: 22),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final isMobile = UiMode.m1(context);
+
+    Widget content = Column(
+      mainAxisSize: isMobile ? MainAxisSize.min : MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (isMobile && !widget.inMiuixSheet)
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              width: 36,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0x38FFFFFF) : const Color(0x28000000),
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 4,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 10, 12, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.2,
+                  ),
+                ),
               ),
-              itemBuilder: (BuildContext context, int i) {
-                return Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: InkWell(
-                    borderRadius: const BorderRadius.all(Radius.circular(16)),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16)),
-                        color: downloadedEps.contains(i)
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
+              const SizedBox(width: 8),
+              MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("关闭".tl)),
+ child: MiuixIconButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: MiuixIcon(
+                    vector: MiuixIcons.os4.close,
+                    size: 20,
+                  ),
+                ),
+),
+            ],
+          ),
+        ),
+        Flexible(
+          child: GridView.builder(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            gridDelegate: const SliverGridDelegateWithFixedHeight(
+              maxCrossAxisExtent: 220,
+              itemHeight: 48,
+            ),
+            itemBuilder: (BuildContext context, int i) {
+              final isDownloaded = downloadedEps.contains(i);
+              return GestureDetector(
+ onLongPress: () => deleteEpisode(i),
+ onSecondaryTapDown: (details) => deleteEpisode(i),
+child: MiuixPressable(
+ onPressed: () => readSpecifiedEps(i),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: ShapeDecoration(
+                      shape: MiuixSquircleBorder(
+                        cornerRadius: 12,
+                        side: BorderSide(
+                          color: isDownloaded
+                              ? primary.withOpacity(0.5)
+                              : (isDark ? const Color(0x18FFFFFF) : const Color(0x0C000000)),
+                          width: isDownloaded ? 1.0 : 0.6,
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          const SizedBox(
-                            width: 16,
-                          ),
-                          Expanded(
-                            child: Text(
-                              eps[i],
+                      color: isDownloaded
+                          ? primary.withOpacity(isDark ? 0.22 : 0.12)
+                          : (isDark ? const Color(0xFF26262A) : Colors.white),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            eps[i],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isDownloaded ? FontWeight.w600 : FontWeight.w500,
+                              color: isDownloaded ? primary : null,
                             ),
                           ),
-                          const SizedBox(
-                            width: 4,
+                        ),
+                        if (isDownloaded) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 16,
+                            color: primary,
                           ),
-                          if (downloadedEps.contains(i))
-                            const Icon(Icons.download_done),
-                          const SizedBox(
-                            width: 16,
+                        ],
+                      ],
+                    ),
+                  ),
+),
+);
+            },
+            itemCount: eps.length,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            (MediaQuery.of(context).padding.bottom + 12).clamp(16.0, 60.0),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: MiuixPressable(
+ onPressed: () {
+                      Navigator.of(context).pop();
+                      _toComicInfoPage(widget.item);
+                    },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        shape: const MiuixSquircleBorder(cornerRadius: 14),
+                        color: isDark ? const Color(0x22FFFFFF) : const Color(0x14000000),
+                      ),
+                      child: Text(
+                        "查看详情".tl,
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: MiuixPressable(
+ onPressed: () => read(),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        shape: const MiuixSquircleBorder(cornerRadius: 14),
+                        color: primary,
+                        shadows: [
+                          BoxShadow(
+                            color: primary.withOpacity(0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
+                      child: Text(
+                        "阅读".tl,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                    onTap: () => readSpecifiedEps(i),
-                    onLongPress: () {
-                      deleteEpisode(i);
-                    },
-                    onSecondaryTapDown: (details) {
-                      deleteEpisode(i);
-                    },
-                  ),
-                );
-              },
-              itemCount: eps.length,
+),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (isMobile && widget.inMiuixSheet) {
+      // 由 showMiuixBottomSheet 提供外框，这里只保留高度限制
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.60,
+        ),
+        child: content,
+      );
+    }
+
+    if (isMobile) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.60,
+        ),
+        child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xF01C1C1E) : const Color(0xF4F6F6F8),
+                ),
+                child: content,
+              ),
             ),
           ),
-          SizedBox(
-              height: 50,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                        onPressed: () {
-                          App.globalBack();
-                          _toComicInfoPage(widget.item);
-                        },
-                        child: Text("查看详情".tl)),
-                  ),
-                  const SizedBox(
-                    width: 16,
-                  ),
-                  Expanded(
-                    child: FilledButton(
-                        onPressed: () => read(), child: Text("阅读".tl)),
-                  ),
-                ],
-              )),
-          SizedBox(
-            height: MediaQuery.of(context).padding.bottom,
-          )
-        ],
-      ),
-    );
+      );
+    }
+
+    return content;
   }
 
   void getInfo() {

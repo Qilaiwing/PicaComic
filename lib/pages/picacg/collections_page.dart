@@ -35,52 +35,51 @@ class CollectionsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("推荐".tl),
-      ),
-      body: StateBuilder<CollectionPageLogic>(
-        init: CollectionPageLogic(),
-        builder: (logic) {
-          if (logic.isLoading) {
-            network.getCollection().then((collections) {
-              if (collections.success) {
-                logic.c1 = collections.data[0];
-                logic.c2 = collections.data[1];
-                logic.change();
-              } else {
-                logic.status = false;
-                logic.change();
-              }
-            });
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (logic.status) {
-            return CustomScrollView(
+    return StateBuilder<CollectionPageLogic>(
+      init: CollectionPageLogic(),
+      builder: (logic) {
+        if (logic.isLoading) {
+          network.getCollection().then((collections) {
+            if (collections.success) {
+              logic.c1 = collections.data[0];
+              logic.c2 = collections.data[1];
+              logic.change();
+            } else {
+              logic.status = false;
+              logic.change();
+            }
+          });
+          return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: const Center(
+              child: MiuixInfiniteProgressIndicator(),
+            )),
+          );
+        } else if (logic.status) {
+          return MiuixScaffold(content: (_) => SmoothCustomScrollView(
               slivers: [
+                SliverAppbar(title: Text("推荐".tl)),
                 SliverGridComics(
                   comics: logic.c1 + logic.c2,
                   sourceKey: 'picacg',
                 ),
                 SliverPadding(
                   padding: EdgeInsets.only(
-                    top: MediaQuery.of(App.globalContext!).padding.bottom,
+                    bottom: MediaQuery.of(App.globalContext!).padding.bottom + 20,
                   ),
                 )
               ],
-            );
-          } else {
-            return NetworkError(
+            ),
+          );
+        } else {
+          return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: NetworkError(
               message: logic.message ?? "网络错误".tl,
               retry: () {
                 logic.status = true;
                 logic.change();
               },
-            );
-          }
-        },
-      ),
+            )),
+          );
+        }
+      },
     );
   }
 }

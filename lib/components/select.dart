@@ -49,46 +49,42 @@ class _SelectState extends State<Select> {
           if (widget.values.isEmpty) {
             return;
           }
-          final renderBox = context.findRenderObject() as RenderBox;
-          var offset = renderBox.localToGlobal(Offset.zero);
-          var size = MediaQuery.of(context).size;
-          showMenu<int>(
-              context: App.globalContext!,
-              initialValue: value,
-              position: RelativeRect.fromLTRB(offset.dx, offset.dy,
-                  offset.dx + widget.width, size.height - offset.dy),
-              constraints: BoxConstraints(
-                maxWidth: widget.width,
-                minWidth: widget.width,
-              ),
-              color: context.colorScheme.surfaceContainerLowest,
-              items: [
-                for (int i = 0; i < widget.values.length; i++)
-                  if (!widget.disabledValues.contains(i))
-                    PopupMenuItem(
-                      value: i,
-                      height: App.isDesktop ? 38 : 42,
-                      onTap: () {
-                        setState(() {
-                          value = i;
-                          widget.onChange(i);
-                        });
-                      },
-                      child: Text(widget.values[i]),
-                    )
-              ]);
+          final items = <String>[];
+          final indexMap = <int>[];
+          for (int i = 0; i < widget.values.length; i++) {
+            if (!widget.disabledValues.contains(i)) {
+              items.add(widget.values[i]);
+              indexMap.add(i);
+            }
+          }
+          showMiuixMenu(
+            context: App.globalContext!,
+            anchorBounds: miuixAnchorRectOf(context),
+            items: items,
+            selectedIndex: value == null ? null : indexMap.indexOf(value!),
+            minWidth: widget.width,
+          ).then((index) {
+            if (index == null || !mounted) return;
+            final i = indexMap[index];
+            setState(() {
+              value = i;
+              widget.onChange(i);
+            });
+          });
         },
         child: AnimatedContainer(
           duration: _fastAnimationDuration,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(widget.outline ? 4 : 8),
-            border: widget.outline
-                ? Border.all(
-                    color: context.colorScheme.outline,
-                    width: 1,
+            shape: widget.outline
+                ? MiuixSquircleBorder(
+                    cornerRadius: 12,
+                    side: BorderSide(
+                      color: context.colorScheme.outlineVariant,
+                      width: 1,
+                    ),
                   )
-                : null,
+                : const MiuixSquircleBorder(cornerRadius: 12),
           ),
           width: widget.width,
           height: 38,
@@ -174,22 +170,21 @@ class _FilterChipFixedWidthState extends State<FilterChipFixedWidth> {
   Widget build(BuildContext context) {
     return Material(
       textStyle: Theme.of(context).textTheme.labelLarge,
-      child: InkWell(
-        onTap: () => widget.onSelected(true),
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-        child: AnimatedContainer(
-          duration: _fastAnimationDuration,
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
-            borderRadius: const BorderRadius.all(Radius.circular(8)),
-            color: selected
-                ? Theme.of(context).colorScheme.primaryContainer
-                : null,
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: labelWidth == null ? firstBuild() : buildContent(),
-        ),
-      ),
+      child: MiuixPressable(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          onPressed: () => widget.onSelected(true),
+          child: AnimatedContainer(
+            duration: _fastAnimationDuration,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+              color: selected
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : null,
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: labelWidth == null ? firstBuild() : buildContent(),
+          )),
     );
   }
 
@@ -320,27 +315,34 @@ class OptionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected
-            ? context.colorScheme.primaryContainer
-            : context.colorScheme.surface,
-        border: isSelected
-            ? Border.all(color: context.colorScheme.primaryContainer)
-            : Border.all(color: context.colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Text(text),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return MiuixPressable(
+        shape: const StadiumBorder(),
+        onPressed: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+          decoration: ShapeDecoration(
+            shape: const StadiumBorder(),
+            color: isSelected
+                ? primaryColor
+                : (isDark ? const Color(0xFF262628) : const Color(0xFFF0F1F5)),
           ),
-        ),
-      ),
-    );
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark
+                      ? const Color(0xDDFFFFFF)
+                      : const Color(0xDD000000)),
+            ),
+          ),
+        ));
   }
 }

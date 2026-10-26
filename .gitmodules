@@ -1,0 +1,3 @@
+[submodule "packages/flutter_miuix"]
+	path = packages/flutter_miuix
+	url = https://github.com/ChuxinNeko/flutter_miuix.git

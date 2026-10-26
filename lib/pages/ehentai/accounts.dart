@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pica_comic/components/components.dart';
-import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/network/eh_network/eh_main_network.dart';
 import 'package:pica_comic/tools/translations.dart';
 
@@ -17,61 +16,60 @@ class CookieManagementView extends StatefulWidget {
 class _CookieManagementViewState extends State<CookieManagementView> {
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      title: const Text("cookies"),
-      shape: const RoundedRectangleBorder(),
+    return MiuixExpandable(
+      title: "cookies",
       children: [
-        ListTile(
-          title: const Text("ipb_member_id"),
-          subtitle: Text(EhNetwork().id),
-          onTap: () => setClipboard(EhNetwork().id),
+        MiuixBasicComponent(
+          title: "ipb_member_id",
+          summary: EhNetwork().id,
+          onClick: () => setClipboard(EhNetwork().id),
         ),
-        ListTile(
-          title: const Text("ipb_pass_hash"),
-          subtitle: Text(EhNetwork().hash),
-          onTap: () => setClipboard(EhNetwork().hash),
+        MiuixBasicComponent(
+          title: "ipb_pass_hash",
+          summary: EhNetwork().hash,
+          onClick: () => setClipboard(EhNetwork().hash),
         ),
-        ListTile(
-          title: const Text("igneous"),
-          subtitle: Text(EhNetwork().igneous),
-          onTap: () => setClipboard(EhNetwork().igneous),
-          trailing: IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  String text = EhNetwork().igneous;
-                  return AlertDialog(
-                    title: const Text("igneous"),
-                    content: TextField(
-                      controller: TextEditingController(text: text),
-                      onChanged: (s) => text = s,
+        MiuixBasicComponent(
+          title: "igneous",
+          summary: EhNetwork().igneous,
+          onClick: () => setClipboard(EhNetwork().igneous),
+          endActions: [
+            MiuixIconButton(
+              child: const Icon(Icons.edit_outlined),
+              onPressed: () {
+                String text = EhNetwork().igneous;
+                showMiuixDialog<void>(
+                  context: context,
+                  title: "igneous",
+                  contentBuilder: (context, close) => MiuixTextField(
+                    controller: TextEditingController(text: text),
+                    onChanged: (s) => text = s,
+                    singleLine: true,
+                  ),
+                  actionsBuilder: (context, close) => [
+                    MiuixTextButton("取消".tl, onPressed: () => close()),
+                    MiuixTextButton(
+                      "确定".tl,
+                      colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                      onPressed: () {
+                        EhNetwork().igneous = text;
+                        EhNetwork().cookieJar.saveFromResponse(
+                          Uri.parse("https://exhentai.org"),
+                          [Cookie("igneous", text)],
+                        );
+                        EhNetwork().cookieJar.saveFromResponse(
+                          Uri.parse("https://e-hentai.org"),
+                          [Cookie("igneous", text)],
+                        );
+                        close();
+                        setState(() {});
+                      },
                     ),
-                    actions: [
-                      TextButton(onPressed: context.pop, child: Text("取消".tl)),
-                      TextButton(
-                        onPressed: () {
-                          EhNetwork().igneous = text;
-                          EhNetwork().cookieJar.saveFromResponse(
-                            Uri.parse("https://exhentai.org"),
-                            [Cookie("igneous", text)],
-                          );
-                          EhNetwork().cookieJar.saveFromResponse(
-                            Uri.parse("https://e-hentai.org"),
-                            [Cookie("igneous", text)],
-                          );
-                          context.pop();
-                          setState(() {});
-                        },
-                        child: Text("确定".tl),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+                  ],
+                );
+              },
+            )
+          ],
         ),
       ],
     );

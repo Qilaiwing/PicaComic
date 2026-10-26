@@ -14,6 +14,7 @@ class AnimatedImage extends StatefulWidget {
     this.opacity,
     this.colorBlendMode,
     this.fit,
+    this.forceFit,
     this.alignment = Alignment.center,
     this.repeat = ImageRepeat.noRepeat,
     this.centerSlice,
@@ -50,6 +51,9 @@ class AnimatedImage extends StatefulWidget {
   final AlignmentGeometry alignment;
 
   final BoxFit? fit;
+
+  /// 强制指定 fit, 忽略全局的缩略图布局设置
+  final BoxFit? forceFit;
 
   final BlendMode? colorBlendMode;
 
@@ -274,7 +278,7 @@ class _AnimatedImageState extends State<AnimatedImage> with WidgetsBindingObserv
         color: widget.color,
         opacity: widget.opacity,
         colorBlendMode: widget.colorBlendMode,
-        fit: appdata.settings[66] == "0" ? BoxFit.cover : BoxFit.contain,
+        fit: widget.forceFit ?? (appdata.settings[66] == "0" ? BoxFit.cover : BoxFit.contain),
         alignment: widget.alignment,
         repeat: widget.repeat,
         centerSlice: widget.centerSlice,

@@ -31,39 +31,25 @@ class _ImageFavoritesPageState extends State<ImageFavoritesPage> {
       tag: "image_favorites_page",
       init: SimpleController(),
       builder: (controller) {
-        if (UiMode.m1(context)) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text("图片收藏".tl),
-            ),
-            body: buildPage(),
-          );
-        } else {
-          return Material(
-            child: Column(
-              children: [
-                Appbar(
-                  title: Text("图片收藏".tl),
+        final images = ImageFavoriteManager.getAll();
+        return MiuixScaffold(
+          content: (_) => SmoothCustomScrollView(
+            slivers: [
+              SliverAppbar(
+                title: Text("图片收藏".tl),
+                largeTitle: Text("图片收藏".tl),
+              ),
+              SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => FavoriteImageTile(images[index]),
+                  childCount: images.length,
                 ),
-                Expanded(
-                  child: buildPage(),
-                )
-              ],
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  Widget buildPage() {
-    var images = ImageFavoriteManager.getAll();
-
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithComics(true, appdata.settings[74]),
-      itemCount: images.length,
-      itemBuilder: (context, index) {
-        return FavoriteImageTile(images[index]);
+                gridDelegate:
+                    SliverGridDelegateWithComics(true, appdata.settings[74]),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
@@ -76,68 +62,84 @@ class FavoriteImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        elevation: 1,
-        child: Stack(
-          children: [
-            Positioned.fill(
-                child: Container(
-                    decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(8)),
-                    clipBehavior: Clip.antiAlias,
-                    child: Image(
-                      image: _ImageProvider(image),
-                    ))),
-            Positioned(
+        shape: const MiuixSquircleBorder(cornerRadius: 14),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: Container(
+          decoration: ShapeDecoration(
+            shape: MiuixSquircleBorder(
+              cornerRadius: 14,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                width: 0.6,
+              ),
+            ),
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            shadows: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: Image(
+                  image: _ImageProvider(image),
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.medium,
+                ),
+              ),
+              Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.5),
-                          ]),
-                      borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                          bottomRight: Radius.circular(8))),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                    child: Text(
-                      image.title.replaceAll("\n", ""),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14.0,
-                        color: Colors.white,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.4),
+                        Colors.black.withOpacity(0.72),
+                      ],
                     ),
                   ),
-                )),
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onTap,
-                  onLongPress: onLongTap,
-                  onSecondaryTapDown: onSecondaryTap,
-                  borderRadius: BorderRadius.circular(8),
-                  child: const SizedBox.expand(),
+                  padding: const EdgeInsets.fromLTRB(10, 14, 10, 8),
+                  child: Text(
+                    image.title.replaceAll("\n", ""),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13.0,
+                      color: Colors.white,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-            )
-          ],
+              Positioned.fill(
+                child: GestureDetector(
+                    onSecondaryTapDown: onSecondaryTap,
+                    child: MiuixPressable(
+                        onPressed: onTap,
+                        onLongPress: onLongTap,
+                        child: const SizedBox.expand())),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -145,8 +147,8 @@ class FavoriteImageTile extends StatelessWidget {
 
   void onTap() {
     var type = image.id.split("-")[0];
-    _readWithKey(type, image.id.replaceFirst("$type-", ""), image.ep, image.page,
-        image.title, image.otherInfo);
+    _readWithKey(type, image.id.replaceFirst("$type-", ""), image.ep,
+        image.page, image.title, image.otherInfo);
   }
 
   void _readWithKey(String key, String target, int ep, int page, String title,
@@ -248,9 +250,11 @@ class _ImageProvider extends BaseImageProvider<_ImageProvider> {
 
   @override
   Future<Uint8List> load(StreamController<ImageChunkEvent> chunkEvents) async {
-    if (File(image.imagePath).existsSync()) {
-      return await File("${App.dataPath}/images/${image.imagePath}")
-          .readAsBytes();
+    // 收藏时存的是文件名，实际文件在 data/images/ 下；
+    // 之前直接拿文件名去 existsSync()，永远判为不存在，每次都要重新联网下载。
+    final localFile = File("${App.dataPath}/images/${image.imagePath}");
+    if (localFile.existsSync()) {
+      return await localFile.readAsBytes();
     } else {
       var type = image.id.split("-")[0];
       Stream<DownloadProgress> stream;

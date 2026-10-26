@@ -15,6 +15,7 @@ import 'package:pica_comic/tools/translations.dart';
 import 'package:pica_comic/pages/download_page.dart';
 import 'package:pica_comic/pages/downloading_page.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:flutter_miuix/miuix.dart';
 import 'components.dart';
 
 const _kTitleBarHeight = 36.0;
@@ -74,56 +75,56 @@ class WindowFrame extends StatelessWidget {
             left: 0,
             right: 0,
             child: Material(
-              color: Colors.transparent,
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  brightness: controller.useDarkTheme ? Brightness.dark : null,
-                ),
-                child: Builder(builder: (context) {
-                  return SizedBox(
-                    height: _kTitleBarHeight,
-                    child: Row(
-                      children: [
-                        if (!App.isMacOS)
-                          buildMenuButton(controller, context)
-                              .toAlign(Alignment.centerLeft)
-                        else
-                          const DragToMoveArea(
-                            child: SizedBox(
-                              height: double.infinity,
-                              width: 16,
-                            ),
-                          ).paddingRight(52),
-                        Expanded(
-                          child: DragToMoveArea(
-                            child: Text(
-                              'Pica Comic',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: (controller.useDarkTheme ||
-                                    context.brightness == Brightness.dark)
-                                    ? Colors.white
-                                    : Colors.black,
+                color: Colors.transparent,
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    brightness:
+                        controller.useDarkTheme ? Brightness.dark : null,
+                  ),
+                  child: Builder(builder: (context) {
+                    return SizedBox(
+                      height: _kTitleBarHeight,
+                      child: Row(
+                        children: [
+                          if (!App.isMacOS)
+                            buildMenuButton(controller, context)
+                                .toAlign(Alignment.centerLeft)
+                          else
+                            const DragToMoveArea(
+                              child: SizedBox(
+                                height: double.infinity,
+                                width: 16,
                               ),
-                            ).toAlign(Alignment.centerLeft).paddingLeft(4),
+                            ).paddingRight(52),
+                          Expanded(
+                            child: DragToMoveArea(
+                              child: Text(
+                                'Pica Comic',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: (controller.useDarkTheme ||
+                                          context.brightness == Brightness.dark)
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ).toAlign(Alignment.centerLeft).paddingLeft(4),
+                            ),
                           ),
-                        ),
-                        if (!App.isMacOS)
-                          const WindowButtons()
-                        else
-                          buildMenuButton(controller, context)
-                              .toAlign(Alignment.centerRight),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ),
+                          if (!App.isMacOS)
+                            const WindowButtons()
+                          else
+                            buildMenuButton(controller, context)
+                                .toAlign(Alignment.centerRight),
+                        ],
+                      ),
+                    );
+                  }),
+                )),
           )
         ],
       );
 
-      if(App.isLinux) {
+      if (App.isLinux) {
         return VirtualWindowFrame(child: body);
       } else {
         return body;
@@ -133,8 +134,8 @@ class WindowFrame extends StatelessWidget {
 
   Widget buildMenuButton(
       WindowFrameController controller, BuildContext context) {
-    return InkWell(
-        onTap: () {
+    return MiuixPressable(
+        onPressed: () {
           controller.openSideBar();
         },
         child: SizedBox(
@@ -236,21 +237,20 @@ class __SideBarState extends State<_SideBar>
                 top: 0,
                 bottom: 0,
                 child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
-                  elevation: 2,
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
-                  ),
-                  child: SizedBox(
-                    width: 300,
-                    height: double.infinity,
-                    child: const SingleChildScrollView(
-                      child: _SideBarBody(),
-                    ).paddingTop(_kTitleBarHeight),
-                  ),
-                ),
+                    color: Theme.of(context).colorScheme.surface,
+                    // MiuixSurface 只支持统一圆角，侧栏只需右侧圆角，故保留 Material。
+                    elevation: 2,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                    child: SizedBox(
+                      width: 300,
+                      height: double.infinity,
+                      child: const SingleChildScrollView(
+                        child: _SideBarBody(),
+                      ).paddingTop(_kTitleBarHeight),
+                    )),
               )
             ],
           );
@@ -306,7 +306,7 @@ class _SideBarBody extends StatelessWidget {
               StateController.find<WindowFrameController>().openSideBar();
               toPage(() => const ImageFavoritesPage());
             }),
-        const Divider().paddingHorizontal(8),
+        const MiuixHorizontalDivider().paddingHorizontal(8),
         buildItem(
             icon: Icons.search,
             title: '搜索'.tl,
@@ -329,20 +329,22 @@ class _SideBarBody extends StatelessWidget {
       {required IconData icon,
       required String title,
       required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(width: 16),
-            Text(title, style: const TextStyle(fontSize: 14)),
-          ],
-        ),
-      ),
-    ).paddingHorizontal(8);
+    return MiuixPressable(
+        shape: const MiuixSquircleBorder(cornerRadius: 12),
+        borderRadius: BorderRadius.circular(12),
+        onPressed: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: 16),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        )).paddingHorizontal(8);
   }
 }
 
@@ -444,47 +446,41 @@ class _WindowButtonsState extends State<WindowButtons> with WindowListener {
             hoverColor: Colors.red,
             onPressed: () {
               if (appdata.implicitData[2] == '0') {
-                showDialog(
-                    context: App.navigatorKey.currentContext!,
-                    builder: (context) {
-                      bool isCheck = false;
-                      return AlertDialog(
-                        title: Text('是否退出程序?'.tl),
-                        content: StatefulBuilder(builder: (context, setState) {
-                          return Row(
-                            children: [
-                              Checkbox(
-                                value: isCheck,
-                                onChanged: (value) {
-                                  setState(() {
-                                    isCheck = value!;
-                                  });
-                                },
-                              ),
-                              Text('不再提示'.tl),
-                            ],
-                          );
-                        }),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text('否'.tl),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              if (isCheck) {
-                                appdata.implicitData[2] = '1';
-                                appdata.writeImplicitData();
-                              }
-                              windowManager.close();
-                            },
-                            child: Text('是'.tl),
-                          ),
-                        ],
-                      );
-                    });
+                bool isCheck = false;
+                showMiuixDialog<bool>(
+                  context: App.navigatorKey.currentContext!,
+                  title: '是否退出程序?'.tl,
+                  contentBuilder: (context, close) =>
+                      StatefulBuilder(builder: (context, setState) {
+                    return Row(
+                      children: [
+                        MiuixCheckbox(
+                          value: isCheck,
+                          onChanged: (value) {
+                            setState(() {
+                              isCheck = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Text('不再提示'.tl),
+                      ],
+                    );
+                  }),
+                  actionsBuilder: (context, close) => [
+                    MiuixTextButton('否'.tl, onPressed: () => close(false)),
+                    MiuixTextButton('是'.tl,
+                        colors:
+                            MiuixButtonDefaults.buttonColorsPrimary(context),
+                        onPressed: () {
+                      if (isCheck) {
+                        appdata.implicitData[2] = '1';
+                        appdata.writeImplicitData();
+                      }
+                      windowManager.close();
+                    }),
+                  ],
+                );
               } else {
                 windowManager.close();
               }
@@ -784,7 +780,8 @@ class _VirtualWindowFrameState extends State<VirtualWindowFrame>
               color: Colors.black.withOpacity(0.1),
               offset: Offset(0.0, _isFocused ? 4 : 2),
               blurRadius: 6,
-            )],
+            )
+        ],
       ),
       child: widget.child,
     );
@@ -793,9 +790,9 @@ class _VirtualWindowFrameState extends State<VirtualWindowFrame>
   @override
   Widget build(BuildContext context) {
     return DragToResizeArea(
-        enableResizeEdges: (_isMaximized || _isFullScreen) ? [] : null,
-        child: _buildVirtualWindowFrame(context),
-      );
+      enableResizeEdges: (_isMaximized || _isFullScreen) ? [] : null,
+      child: _buildVirtualWindowFrame(context),
+    );
   }
 
   @override

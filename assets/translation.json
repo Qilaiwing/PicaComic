@@ -567,7 +567,16 @@
     "需要下载字体文件(10.1MB), 是否继续?": "需要下載字型文件(10.1MB), 是否繼續?",
     "更新漫画信息": "更新漫畫資訊",
     "此功能已不再受支持": "此功能已不再受支援",
-    "请勿反馈相关问题": "請勿回饋相關問題"
+    "请勿反馈相关问题": "請勿回饋相關問題",
+    "早上好": "早安",
+    "中午好": "午安",
+    "下午好": "午安",
+    "晚上好": "晚安",
+    "已登录": "已登入",
+    "累计": "累計",
+    "未登录": "未登入",
+    "请登录您的PicACG": "請登入您的PicACG",
+    "登录后即可展示你的个人信息": "登入後即可展示你的個人資訊"
   },
   "en_US": {
     "有可用更新": "Updates available",
@@ -1141,6 +1150,15 @@
     "需要下载字体文件(10.1MB), 是否继续?": "Download missing fonts file (10.1MB), continue?",
     "更新漫画信息": "Update comic information",
     "此功能已不再受支持": "This feature is no longer supported",
-    "请勿反馈相关问题": "Please DO NOT report related issues"
+    "请勿反馈相关问题": "Please DO NOT report related issues",
+    "早上好": "Good morning",
+    "中午好": "Good noon",
+    "下午好": "Good afternoon",
+    "晚上好": "Good evening",
+    "已登录": "Logged in",
+    "累计": "Total",
+    "未登录": "Not logged in",
+    "请登录您的PicACG": "Please log in to your PicACG",
+    "登录后即可展示你的个人信息": "Your profile will be shown after logging in"
   }
 }

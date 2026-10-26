@@ -68,25 +68,21 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
         await EhNetwork().getGalleryInfo(link, appdata.settings[47] == "1");
     if (res.error && res.errorMessage == "Content Warning") {
       bool shouldIgnore = false;
-      await showDialog(
+      await showMiuixDialog<void>(
           context: App.globalContext!,
-          builder: (context) => AlertDialog(
-                title: Text("警告".tl),
-                content: Text("此画廊存在令人不适的内容\n在设置中可以禁用此警告".tl),
-                actions: [
-                  TextButton(
-                      onPressed: () {
-                        App.globalBack();
-                      },
-                      child: Text("返回".tl)),
-                  TextButton(
-                      onPressed: () {
-                        shouldIgnore = true;
-                        App.globalBack();
-                      },
-                      child: Text("忽略".tl))
-                ],
-              ));
+          title: "警告".tl,
+          summary: "此画廊存在令人不适的内容\n在设置中可以禁用此警告".tl,
+          actionsBuilder: (context, close) => [
+                MiuixTextButton("返回".tl, onPressed: () => close()),
+                MiuixTextButton(
+                  "忽略".tl,
+                  colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                  onPressed: () {
+                    shouldIgnore = true;
+                    close();
+                  },
+                ),
+              ]);
       if (shouldIgnore) {
         return await EhNetwork().getGalleryInfo(link, true);
       } else if (context.mounted) {
@@ -103,7 +99,8 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
   @override
   Future<bool> loadFavorite(Gallery data) async {
     return data.favorite ||
-        (await LocalFavoritesManager().findWithModel(toLocalFavoriteItem())).isNotEmpty;
+        (await LocalFavoritesManager().findWithModel(toLocalFavoriteItem()))
+            .isNotEmpty;
   }
 
   @override
@@ -170,8 +167,7 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
           int.tryParse(data!.auth!["thumbnailKey"]!.nums) ?? 1);
     } else {
       return ThumbnailsData(
-          List.generate(
-              min(data!.pageSize, int.tryParse(data!.maxPage) ?? 1),
+          List.generate(min(data!.pageSize, int.tryParse(data!.maxPage) ?? 1),
               (_) => data!.auth!["thumbnailKey"]!.split(" ")[0]),
           (page) => EhNetwork().getThumbnails(data!, page),
           int.tryParse(data!.auth!["thumbnailKey"]!.split(" ")[1]) ?? 1);
@@ -185,7 +181,7 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
   String? get subTitle => data?.subTitle;
 
   @override
-  Card? get uploaderInfo => null;
+  Widget? get uploaderInfo => null;
 
   @override
   Widget thumbnailImageBuilder(int index, String imageUrl) {
@@ -196,8 +192,11 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
     }
     return ColoredBox(
       color: context.colorScheme.surfaceContainerHighest,
-      child:
-          EhThumbnailLoader(image: CachedImageProvider(imageUrl), pageSize:data!.pageSize, width: data!.width, index: index),
+      child: EhThumbnailLoader(
+          image: CachedImageProvider(imageUrl),
+          pageSize: data!.pageSize,
+          width: data!.width,
+          index: index),
     );
   }
 
@@ -206,59 +205,54 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
       showToast(message: "未登录".tl);
       return;
     }
-    showDialog(
+    showMiuixDialog<void>(
         context: context,
-        builder: (dialogContext) => StateBuilder<RatingLogic>(
+        title: "评分",
+        contentBuilder: (dialogContext, close) => StateBuilder<RatingLogic>(
             init: RatingLogic(),
-            builder: (logic) => SimpleDialog(
-                  title: const Text("评分"),
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      height: 100,
-                      child: Center(
-                        child: SizedBox(
-                          width: 210,
-                          child: Column(
-                            children: [
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              RatingWidget(
-                                padding: 2,
-                                onRatingUpdate: (value) => logic.rating = value,
-                                value: 0,
-                                selectAble: true,
-                                size: 40,
-                              ),
-                              const Spacer(),
-                              Button.filled(
-                                isLoading: logic.running,
-                                onPressed: () {
-                                  logic.running = true;
-                                  logic.update();
-                                  EhNetwork()
-                                      .rateGallery(auth, logic.rating.toInt())
-                                      .then((b) {
-                                    if (!dialogContext.mounted) return;
-                                    if (b) {
-                                      dialogContext.pop();
-                                      showToast(message: "评分成功".tl);
-                                    } else {
-                                      logic.running = false;
-                                      logic.update();
-                                      showToast(message: "网络错误".tl);
-                                    }
-                                  });
-                                },
-                                child: Text("提交".tl),
-                              )
-                            ],
+            builder: (logic) => SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: SizedBox(
+                      width: 210,
+                      child: Column(
+                        children: [
+                          const SizedBox(
+                            height: 10,
                           ),
-                        ),
+                          RatingWidget(
+                            padding: 2,
+                            onRatingUpdate: (value) => logic.rating = value,
+                            value: 0,
+                            selectAble: true,
+                            size: 40,
+                          ),
+                          const Spacer(),
+                          Button.filled(
+                            isLoading: logic.running,
+                            onPressed: () {
+                              logic.running = true;
+                              logic.update();
+                              EhNetwork()
+                                  .rateGallery(auth, logic.rating.toInt())
+                                  .then((b) {
+                                if (!dialogContext.mounted) return;
+                                if (b) {
+                                  dialogContext.pop();
+                                  showToast(message: "评分成功".tl);
+                                } else {
+                                  logic.running = false;
+                                  logic.update();
+                                  showToast(message: "网络错误".tl);
+                                }
+                              });
+                            },
+                            child: Text("提交".tl),
+                          )
+                        ],
                       ),
-                    )
-                  ],
+                    ),
+                  ),
                 )));
   }
 
@@ -322,113 +316,106 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
     ArchiveDownloadInfo? info;
     bool cancelUnlock = false;
 
-    showDialog(
+    showMiuixDialog<void>(
         context: App.globalContext!,
-        builder: (dialogContext) => Dialog(
-              child: StatefulBuilder(
-                builder: (context, setState) {
-                  void load() async {
-                    if (data?.auth?["archiveDownload"] == null) {
-                      return;
-                    }
-
-                    Res<ArchiveDownloadInfo> res;
-                    if (cancelUnlock) {
-                      cancelUnlock = false;
-                      res = await EhNetwork().cancelAndReloadArchiveInfo(info!);
-                    } else {
-                      res = await EhNetwork().getArchiveDownloadInfo(
-                          data!.auth!["archiveDownload"]!);
-                    }
-                    if (res.error) {
-                      showToast(message: "网络错误".tl);
-                    } else {
-                      info = res.data;
-                      loading = false;
-                      if (context.mounted) {
-                        setState(() {});
-                      }
-                    }
+        title: "下载".tl,
+        contentBuilder: (dialogContext, close) => StatefulBuilder(
+              builder: (context, setState) {
+                void load() async {
+                  if (data?.auth?["archiveDownload"] == null) {
+                    return;
                   }
 
-                  if (loading) {
-                    load();
+                  Res<ArchiveDownloadInfo> res;
+                  if (cancelUnlock) {
+                    cancelUnlock = false;
+                    res = await EhNetwork().cancelAndReloadArchiveInfo(info!);
+                  } else {
+                    res = await EhNetwork().getArchiveDownloadInfo(
+                        data!.auth!["archiveDownload"]!);
                   }
+                  if (res.error) {
+                    showToast(message: "网络错误".tl);
+                  } else {
+                    info = res.data;
+                    loading = false;
+                    if (context.mounted) {
+                      setState(() {});
+                    }
+                  }
+                }
 
-                  return Container(
-                    width: 350,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("下载".tl, style: const TextStyle(fontSize: 20))
-                            .paddingLeft(16),
-                        const Divider(),
-                        RadioListTile(
-                            value: 0,
-                            groupValue: current,
-                            onChanged: (value) =>
-                                setState(() => current = value as int),
-                            title: Text("普通下载".tl)),
-                        ExpansionTile(
-                          title: Text("归档下载".tl),
-                          shape: Border.all(color: Colors.transparent),
-                          children: [
-                            if (loading)
-                              const CircularProgressIndicator()
-                                  .paddingVertical(8)
-                                  .toCenter()
-                            else
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  RadioListTile(
-                                    value: 1,
-                                    groupValue: current,
-                                    onChanged: (value) =>
-                                        setState(() => current = value as int),
-                                    title: Text("Original".tl),
-                                    subtitle: Text(
-                                        "${info!.originCost} ${info!.originSize}"),
+                if (loading) {
+                  load();
+                }
+
+                return Material(
+                  type: MaterialType.transparency,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      MiuixRadioButtonPreference(
+                          title: "普通下载".tl,
+                          selected: current == 0,
+                          onClick: () => setState(() => current = 0)),
+                      MiuixExpandable(
+                        title: "归档下载".tl,
+                        children: [
+                          if (loading)
+                            const MiuixInfiniteProgressIndicator()
+                                .paddingVertical(8)
+                                .toCenter()
+                          else
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                MiuixRadioButtonPreference(
+                                  title: "Original".tl,
+                                  summary:
+                                      "${info!.originCost} ${info!.originSize}",
+                                  selected: current == 1,
+                                  onClick: () => setState(() => current = 1),
+                                ),
+                                MiuixRadioButtonPreference(
+                                  title: "Resample".tl,
+                                  summary:
+                                      "${info!.resampleCost} ${info!.resampleSize}",
+                                  selected: current == 2,
+                                  onClick: () => setState(() => current = 2),
+                                ),
+                                if (info!.cancelUnlockUrl != null)
+                                  GestureDetector(
+                                    onLongPress: () {
+                                      setState(() {
+                                        cancelUnlock = true;
+                                        loading = true;
+                                      });
+                                    },
+                                    child: MiuixBasicComponent(
+                                      startAction: const Icon(Icons.lock_open),
+                                      title: "取消解锁".tl,
+                                      summary: "长按执行此操作".tl,
+                                    ),
                                   ),
-                                  RadioListTile(
-                                    value: 2,
-                                    groupValue: current,
-                                    onChanged: (value) =>
-                                        setState(() => current = value as int),
-                                    title: Text("Resample".tl),
-                                    subtitle: Text(
-                                        "${info!.resampleCost} ${info!.resampleSize}"),
-                                  ),
-                                  if (info!.cancelUnlockUrl != null)
-                                    ListTile(
-                                      leading: const Icon(Icons.lock_open),
-                                      title: Text("取消解锁".tl),
-                                      subtitle: Text("长按执行此操作".tl),
-                                      onLongPress: () {
-                                        setState(() {
-                                          cancelUnlock = true;
-                                          loading = true;
-                                        });
-                                      },
-                                    ).paddingLeft(6),
-                                ],
-                              )
-                          ],
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            startDownload(current);
-                            context.pop();
-                          },
-                          child: Text("确认".tl),
-                        ).toCenter()
-                      ],
-                    ),
-                  );
-                },
-              ),
+                              ],
+                            )
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      MiuixButton(
+                        colors:
+                            MiuixButtonDefaults.buttonColorsPrimary(context),
+                        onPressed: () {
+                          startDownload(current);
+                          close();
+                        },
+                        child: Text("确认".tl),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ));
   }
 
@@ -528,7 +515,11 @@ class CommentLogic extends StateController {
 
 class EhThumbnailLoader extends StatefulWidget {
   const EhThumbnailLoader(
-      {required this.image, required this.width, required this.pageSize, required this.index, super.key});
+      {required this.image,
+      required this.width,
+      required this.pageSize,
+      required this.index,
+      super.key});
 
   final ImageProvider image;
 
@@ -565,7 +556,8 @@ class _EhThumbnailLoaderState extends State<EhThumbnailLoader> {
       return const SizedBox();
     } else {
       return CustomPaint(
-        painter: _EhThumbnailPainter(widget.index, widget.pageSize, widget.width, image!),
+        painter: _EhThumbnailPainter(
+            widget.index, widget.pageSize, widget.width, image!),
         child: const SizedBox(
           width: double.infinity,
           height: double.infinity,

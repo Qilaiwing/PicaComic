@@ -82,7 +82,7 @@ class JmCommentsPage extends StatelessWidget {
           if (logic.loading) {
             logic.get(id, mode);
             return const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixInfiniteProgressIndicator(),
             );
           } else if (logic.comments == null) {
             return NetworkError(message: logic.message!, retry: logic.retry);
@@ -92,6 +92,7 @@ class JmCommentsPage extends StatelessWidget {
                 Expanded(
                     child: CustomScrollView(
                   slivers: [
+const TopInsetSliver(),
                     SliverList(
                         delegate: SliverChildBuilderDelegate(
                             childCount: logic.comments!.length,
@@ -123,57 +124,49 @@ class JmCommentsPage extends StatelessWidget {
                   ],
                 )),
                 Container(
+                  padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
                   decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceTint
-                          .withAlpha(0),
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16))),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withAlpha(160),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(30))),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                            child: TextField(
-                              controller: logic.controller,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                isCollapsed: true,
-                                hintText: "评论".tl,
-                              ),
-                              minLines: 1,
-                              maxLines: 5,
-                            ),
-                          )),
-                          IconButton(
-                              onPressed: () async {
-                                showToast(message: "正在发送评论".tl);
-                                var res = await JmNetwork()
-                                    .comment(id, logic.controller.text);
-                                if (res.error) {
-                                  showToast(message:  res.errorMessage!);
-                                } else {
-                                  showToast(message: "成功发表评论".tl);
-                                  logic.refresh_();
-                                }
-                              },
-                              icon: Icon(
-                                Icons.send,
-                                color: Theme.of(context).colorScheme.secondary,
-                              ))
-                        ],
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E1E22)
+                        : const Color(0xFFF9F9FA),
+                    border: Border(
+                      top: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0x18FFFFFF)
+                            : const Color(0x0E000000),
+                        width: 0.8,
                       ),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: MiuixTextField(controller: logic.controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 5),
+                        ),
+                        MiuixIconButton(
+                          minWidth: 36,
+                          minHeight: 36,
+                          child: MiuixIcon(
+                            vector: MiuixIcons.extended.byName('send') ??
+                                MiuixIcons.os4.share,
+                            size: 19,
+                            tint: Theme.of(context).colorScheme.primary,
+                          ),
+                          onPressed: () async {
+                            showToast(message: "正在发送评论".tl);
+                            var res = await JmNetwork()
+                                .comment(id, logic.controller.text);
+                            if (res.error) {
+                              showToast(message: res.errorMessage!);
+                            } else {
+                              showToast(message: "成功发表评论".tl);
+                              logic.refresh_();
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -184,11 +177,7 @@ class JmCommentsPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text("评论".tl),
-        ),
-        body: body,
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => ScrollUnderBar(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }
@@ -207,7 +196,7 @@ void showReply(BuildContext context, List<Comment> comments, Comment replyTo) {
               content: replyTo.content,
               time: replyTo.time,
             ),
-            const Divider(),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
             for (int index = 0; index < comments.length; index++)
               CommentTile(
                 avatarUrl: comments[index].avatar,

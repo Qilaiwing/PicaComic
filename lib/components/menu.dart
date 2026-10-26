@@ -1,8 +1,15 @@
 part of "components.dart";
 
+/// 右键 / 桌面菜单：以 Miuix 列表弹窗（[showMiuixMenu]）在 [location] 处弹出。
 void showDesktopMenu(
     BuildContext context, Offset location, List<DesktopMenuEntry> entries) {
-  Navigator.of(context).push(DesktopMenuRoute(entries, location));
+  showMiuixMenu(
+    context: context,
+    anchorBounds: Rect.fromLTWH(location.dx, location.dy, 0, 0),
+    items: entries.map((e) => e.text).toList(),
+  ).then((index) {
+    if (index != null) entries[index].onClick();
+  });
 }
 
 class DesktopMenuRoute<T> extends PopupRoute<T> {
@@ -42,18 +49,19 @@ class DesktopMenuRoute<T> extends PopupRoute<T> {
           top: top,
           child: Container(
             width: width,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-            decoration: BoxDecoration(
-                color: App.colors(context).surface,
-                borderRadius: BorderRadius.circular(4),
-                boxShadow: [
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            decoration: ShapeDecoration(
+                color: App.colors(context).surfaceContainer,
+                shape: const MiuixSquircleBorder(cornerRadius: 16),
+                shadows: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.16),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ]),
             child: Material(
+              color: Colors.transparent,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: entries.map((e) => buildEntry(e, context)).toList(),
@@ -66,28 +74,29 @@ class DesktopMenuRoute<T> extends PopupRoute<T> {
   }
 
   Widget buildEntry(DesktopMenuEntry entry, BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(4),
-      onTap: () {
+    return MiuixPressable(
+      borderRadius: BorderRadius.circular(8),
+      shape: const MiuixSquircleBorder(cornerRadius: 8),
+      onPressed: () {
         Navigator.of(context).pop();
         entry.onClick();
       },
-      child: SizedBox(
-        height: 32,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            const SizedBox(
-              width: 4,
-            ),
-            if (entry.icon != null)
+            if (entry.icon != null) ...[
               Icon(
                 entry.icon,
                 size: 18,
               ),
-            const SizedBox(
-              width: 4,
+              const SizedBox(width: 8),
+            ],
+            Text(
+              entry.text,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
-            Text(entry.text),
           ],
         ),
       ),

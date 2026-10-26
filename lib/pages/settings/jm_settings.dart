@@ -83,99 +83,83 @@ class _JmSettingsState extends State<JmSettings> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ListTile(
-          title: Text("禁漫天堂".tl),
-        ),
-        ListTile(
-          leading: const Icon(Icons.track_changes),
-          title: Text("自动选择域名".tl),
-          subtitle: Text("登录时自动选择API域名".tl),
-          trailing: Switch(
-            value: autoSelectStream,
-            onChanged: (b){
-              b ? appdata.settings[15] = "1" : appdata.settings[15] = "0";
-              setState(() {
-                autoSelectStream = b;
-              });
-              appdata.updateSettings();
-              if (autoSelectStream) JmNetwork().loginFromAppdata();
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.dns),
-          title: Text("API域名".tl),
-          trailing: IgnorePointer(
-            ignoring: autoSelectStream,
-            child: Opacity(
-              opacity: !autoSelectStream ? 1.0 : 0.5,
-              child: Select(
-                initialValue: int.parse(appdata.settings[17]),
-                values: [
-                  "分流1".tl,"分流2".tl,"分流3".tl,"分流4".tl,
-                ],
-                onChange: (i){
-                  appdata.settings[17] = i.toString();
-                  appdata.updateSettings();
-                  JmNetwork().loginFromAppdata();
-                },
-              ),
+        MiuixSmallTitle("禁漫天堂设置".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixSwitchPreference(
+              startAction: const Icon(Icons.track_changes),
+              title: "自动选择域名".tl,
+              summary: "登录时自动选择API域名".tl,
+              value: autoSelectStream,
+              onChanged: (b) {
+                b ? appdata.settings[15] = "1" : appdata.settings[15] = "0";
+                setState(() {
+                  autoSelectStream = b;
+                });
+                appdata.updateSettings();
+                if (autoSelectStream) JmNetwork().loginFromAppdata();
+              },
             ),
-          ),
+            SelectSetting(
+              leading: const Icon(Icons.dns),
+              title: "API域名".tl,
+              initialValue: int.parse(appdata.settings[17]),
+              values: [
+                "分流1".tl, "分流2".tl, "分流3".tl, "分流4".tl,
+              ],
+              onChanged: (i) {
+                appdata.settings[17] = i.toString();
+                appdata.updateSettings();
+                JmNetwork().loginFromAppdata();
+              },
+            ),
+            SelectSetting(
+              leading: const Icon(Icons.dns_outlined),
+              title: "图片分流".tl,
+              initialValue: int.parse(appdata.appSettings.jmImgUrlIndex),
+              values: [
+                "分流1".tl, "分流2".tl, "分流3".tl, "分流4".tl
+              ],
+              onChanged: (i) {
+                appdata.settings[37] = i.toString();
+                appdata.updateSettings();
+                if (jm.isLogin) JmNetwork().updateImgUrl(i + 1);
+              },
+            ),
+            SelectSetting(
+              leading: const Icon(Icons.favorite_border),
+              title: "收藏夹漫画排序模式".tl,
+              initialValue: int.parse(appdata.settings[42]),
+              values: [
+                "最新收藏".tl, "最新更新".tl
+              ],
+              onChanged: (i) {
+                appdata.settings[42] = i.toString();
+                appdata.updateSettings();
+              },
+            ),
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.update_outlined),
+              title: "更新API域名".tl,
+              onClick: () => JmSettings.updateApiDomains(true),
+            ),
+            MiuixSwitchPreference(
+              startAction: const Icon(Icons.today),
+              title: "自动签到".tl,
+              summary: "勾选启用, 点击测试".tl,
+              value: autoCheckIn,
+              onChanged: (b) {
+                b ? appdata.settings[88] = "1" : appdata.settings[88] = "0";
+                setState(() {
+                  autoCheckIn = b;
+                });
+                appdata.updateSettings();
+                if (autoCheckIn && jm.isLogin) JmSettings.daily(false);
+              },
+            ),
+          ],
         ),
-        ListTile(
-          leading: const Icon(Icons.dns_outlined),
-          title: Text("图片分流".tl),
-          trailing: Select(
-            initialValue: int.parse(appdata.appSettings.jmImgUrlIndex),
-            values: [
-              "分流1".tl,"分流2".tl,"分流3".tl,"分流4".tl
-            ],
-            onChange: (i){
-              appdata.settings[37] = i.toString();
-              appdata.updateSettings();
-              if (jm.isLogin) JmNetwork().updateImgUrl(i + 1);
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.favorite_border),
-          title: Text("收藏夹漫画排序模式".tl),
-          trailing: Select(
-            initialValue: int.parse(appdata.settings[42]),
-            width: App.locale.languageCode == "en" ? 130 : 120,
-            values: [
-              "最新收藏".tl, "最新更新".tl
-            ],
-            onChange: (i){
-              appdata.settings[42] = i.toString();
-              appdata.updateSettings();
-            },
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.update_outlined),
-          title: Text("更新API域名".tl),
-          onTap: () => JmSettings.updateApiDomains(true),
-          trailing: const Icon(Icons.arrow_right),
-        ),
-        ListTile(
-          leading: const Icon(Icons.today),
-          title: Text("自动签到".tl),
-          subtitle: Text("勾选启用, 点击测试".tl),
-          onTap: () => JmSettings.daily(true),
-          trailing: Switch(
-            value: autoCheckIn,
-            onChanged: (b){
-              b ? appdata.settings[88] = "1" : appdata.settings[88] = "0";
-              setState(() {
-                autoCheckIn = b;
-              });
-              appdata.updateSettings();
-              if (autoCheckIn && jm.isLogin) JmSettings.daily(false);
-            },
-          ),
-        ),
+        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16))
       ],
     );
   }

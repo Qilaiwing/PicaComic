@@ -41,8 +41,8 @@ class _LocalSearchPageState extends StateWithController<LocalSearchPage> {
   @override
   Widget build(BuildContext context) {
     search();
-    return Material(
-      child: Column(
+    return MiuixScaffold(
+      content: (_) => Column(
         children: [
           SizedBox(
             height:
@@ -58,21 +58,48 @@ class _LocalSearchPageState extends StateWithController<LocalSearchPage> {
                         width: 0.8))),
             child: Row(
               children: [
-                Tooltip(
-                  message: "Back",
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_sharp),
-                    onPressed: () {
-                      App.back(context);
-                    },
-                  ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 4),
+                  child: MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("返回".tl)),
+ child: MiuixPressable(
+ onPressed: () => App.back(context),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: ShapeDecoration(
+                            shape: const MiuixSquircleBorder(cornerRadius: 12),
+                            color: Theme.of(context).brightness ==
+                                    Brightness.dark
+                                ? const Color(0x18FFFFFF)
+                                : const Color(0x0A000000),
+                          ),
+                          child: Icon(
+                            Icons.arrow_back,
+                            size: 20,
+                            color: Theme.of(context).brightness ==
+                                    Brightness.dark
+                                ? Colors.white.withOpacity(0.9)
+                                : const Color(0xFF222222),
+                          ),
+                        ),
+),
+),
                 ),
                 Expanded(
-                  child: TextField(
+                  child: MiuixTextField(
                     focusNode: _focusNode,
                     controller: controller,
-                    decoration: const InputDecoration(
-                        border: InputBorder.none, hintText: "Search"),
+                    label: "Search",
+                    useLabelAsPlaceholder: true,
+                    singleLine: true,
+                    insideMargin: EdgeInsets.zero,
+                    colors: MiuixTextFieldColors(
+                      backgroundColor: Colors.transparent,
+                      labelColor: Theme.of(context).hintColor,
+                      borderColor: Colors.transparent,
+                    ),
                     onSubmitted: (s) => search(),
                     onChanged: (s) => setState(() {
                       keyword = s;
@@ -80,24 +107,19 @@ class _LocalSearchPageState extends StateWithController<LocalSearchPage> {
                   ),
                 ),
                 if (keyword.isNotEmpty)
-                  Tooltip(
-                    message: "clear",
-                    child: IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: () {
+                  MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("clear")),
+ child: MiuixIconButton(onPressed: () {
                         controller.clear();
                         setState(() {
                           keyword = "";
                         });
-                      },
-                    ),
-                  ),
+                      }, child: const Icon(Icons.clear_rounded)),
+),
                 if (comics.isNotEmpty)
-                  Tooltip(
-                    message: "create folder",
-                    child: IconButton(
-                      icon: const Icon(Icons.create_new_folder_outlined),
-                      onPressed: () {
+                  MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("create folder")),
+ child: MiuixIconButton(onPressed: () {
                         showConfirmDialog(
                           App.globalContext!,
                           "创建收藏夹".tl,
@@ -112,9 +134,8 @@ class _LocalSearchPageState extends StateWithController<LocalSearchPage> {
                                 ?.update();
                           },
                         );
-                      },
-                    ),
-                  ),
+                      }, child: const Icon(Icons.create_new_folder_outlined)),
+),
               ],
             ),
           ),

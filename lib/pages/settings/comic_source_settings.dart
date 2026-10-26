@@ -53,7 +53,7 @@ extension _WidgetExt on Widget {
     return Column(
       children: [
         this,
-        const Divider(),
+        const MiuixHorizontalDivider(),
       ],
     );
   }
@@ -68,25 +68,23 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
       children: [
         buildCard(context),
         const _BuiltInSources(),
-        if(appdata.appSettings.isComicSourceEnabled("picacg"))
-          const PicacgSettings(false).withDivider(),
-        if(appdata.appSettings.isComicSourceEnabled("ehentai"))
-          const EhSettings(false).withDivider(),
-        if(appdata.appSettings.isComicSourceEnabled("nhentai"))
-          const NhSettings(false).withDivider(),
-        if(appdata.appSettings.isComicSourceEnabled("jm"))
-          const JmSettings(false).withDivider(),
-        if(appdata.appSettings.isComicSourceEnabled("hitomi"))
-          const HitomiSettings(false).withDivider(),
-        if(appdata.appSettings.isComicSourceEnabled("htmanga"))
-          // const HtSettings(false).withDivider(),
+        if (appdata.appSettings.isComicSourceEnabled("picacg"))
+          const PicacgSettings(false),
+        if (appdata.appSettings.isComicSourceEnabled("ehentai"))
+          const EhSettings(false),
+        if (appdata.appSettings.isComicSourceEnabled("nhentai"))
+          const NhSettings(false),
+        if (appdata.appSettings.isComicSourceEnabled("jm"))
+          const JmSettings(false),
+        if (appdata.appSettings.isComicSourceEnabled("hitomi"))
+          const HitomiSettings(false),
+        if (appdata.appSettings.isComicSourceEnabled("htmanga"))
           const HtSettings(false),
-        // buildCustomSettings(),
         for (var source in ComicSource.sources.where((e) => !e.isBuiltIn))
           buildCustom(context, source),
         Padding(
             padding:
-                EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom))
+                EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16))
       ],
     );
   }
@@ -115,38 +113,33 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
   Widget buildCustom(BuildContext context, ComicSource source) {
     return Column(
       children: [
-        const Divider(),
-        ListTile(
-          title: Text(source.name),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (App.isDesktop)
-                Tooltip(
-                  message: "Edit",
-                  child: IconButton(
-                      onPressed: () => edit(source),
-                      icon: const Icon(Icons.edit_note)),
-                ),
-              Tooltip(
-                message: "Update",
-                child: IconButton(
-                    onPressed: () => update(source),
-                    icon: const Icon(Icons.update)),
+        MiuixSmallTitle(source.name),
+        MiuixSettingsCard(
+          children: [
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.info_outline),
+              title: "版本".tl,
+              summary: source.version,
+              onClick: () {},
+            ),
+            if (App.isDesktop)
+              MiuixArrowPreference(
+                startAction: const Icon(Icons.edit_note),
+                title: "编辑代码".tl,
+                onClick: () => edit(source),
               ),
-              Tooltip(
-                message: "Delete",
-                child: IconButton(
-                    onPressed: () => delete(source),
-                    icon: const Icon(Icons.delete)),
-              ),
-            ],
-          ),
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.update),
+              title: "更新漫画源".tl,
+              onClick: () => update(source),
+            ),
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.delete, color: Colors.red),
+              title: "删除漫画源".tl,
+              onClick: () => delete(source),
+            ),
+          ],
         ),
-        ListTile(
-          title: const Text("Version"),
-          subtitle: Text(source.version),
-        )
       ],
     );
   }
@@ -164,22 +157,15 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
   void edit(ComicSource source) async {
     try {
       await Process.run("code", [source.filePath], runInShell: true);
-      await showDialog(
-          context: App.globalContext!,
-          builder: (context) => AlertDialog(
-                title: const Text("Reload Configs"),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("cancel")),
-                  TextButton(
-                      onPressed: () async {
-                        await ComicSource.reload();
-                        MyApp.updater?.call();
-                      },
-                      child: const Text("continue")),
-                ],
-              ));
+      showConfirmDialog(
+        App.globalContext!,
+        "Reload Configs",
+        "Reload configurations?",
+        () async {
+          await ComicSource.reload();
+          MyApp.updater?.call();
+        },
+      );
     } catch (e) {
       showToast(message: "Failed to launch vscode");
     }
@@ -209,74 +195,63 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
   }
 
   Widget buildCard(BuildContext context) {
-    return Card.outlined(
-      child: SizedBox(
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Row(
-                children: [
-                  Text("添加漫画源".tl),
-                  const SizedBox(
-                    width: 2,
-                  ),
-                  InkWell(
-                    borderRadius: const BorderRadius.all(Radius.circular(18)),
-                    onTap: () => showDialogMessage(
-                        context,
-                        "警告".tl,
-                        "${"此功能已不再受支持".tl}\n${"请勿反馈相关问题".tl}"
-                    ),
-                    child: const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.red,
-                      size: 18,
-                    ),
-                  )
-                ]
-              ),
-              leading: const Icon(Icons.dashboard_customize),
-            ),
-            TextField(
-                    decoration: InputDecoration(
-                        hintText: "URL",
-                        border: const UnderlineInputBorder(),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12),
-                        suffix: IconButton(
-                            onPressed: () => handleAddSource(url),
-                            icon: const Icon(Icons.check))),
-                    onChanged: (value) {
-                      url = value;
-                    },
-                    onSubmitted: handleAddSource)
-                .paddingHorizontal(16)
-                .paddingBottom(32),
+    return MiuixSettingsCard(
+      children: [
+        MiuixBasicComponent(
+          content: [
             Row(
-              children: [
-                const Spacer(),
-                TextButton(onPressed: chooseFile, child: Text("选择文件".tl))
-                    .paddingLeft(8),
-                const Spacer(),
-                TextButton(
-                    onPressed: () {
-                      showPopUpWidget(
-                          context, _ComicSourceList(handleAddSource));
-                    },
-                    child: Text("浏览列表".tl)),
-                const Spacer(),
-                // TextButton(onPressed: help, child: Text("查看帮助".tl))
-                //     .paddingRight(8),
-              ],
-            ),
-            const SizedBox(height: 8),
+            children: [
+              Text("添加漫画源".tl),
+              const SizedBox(
+                width: 2,
+              ),
+              MiuixPressable(
+ onPressed: () => showDialogMessage(
+                    context,
+                    "警告".tl,
+                    "${"此功能已不再受支持".tl}\n${"请勿反馈相关问题".tl}"
+                ),
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: const BorderRadius.all(Radius.circular(18)),
+ child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.red,
+                  size: 18,
+                ),
+)
+            ]
+          ),
+          ],
+          startAction: const Icon(Icons.dashboard_customize),
+        ),
+        MiuixTextField(
+                label: "URL",
+                useLabelAsPlaceholder: true,
+                singleLine: true,
+                trailingIcon: MiuixIconButton(onPressed: () => handleAddSource(url), child: const Icon(Icons.check)),
+                onChanged: (value) {
+                  url = value;
+                },
+                onSubmitted: handleAddSource)
+            .paddingHorizontal(16)
+            .paddingBottom(16),
+        Row(
+          children: [
+            const Spacer(),
+            MiuixTextButton(onPressed: chooseFile, "选择文件".tl)
+                .paddingLeft(8),
+            const Spacer(),
+            MiuixTextButton(
+                onPressed: () {
+                  showPopUpWidget(
+                      context, _ComicSourceList(handleAddSource));
+                },
+                "浏览列表".tl),
+            const Spacer(),
           ],
         ),
-      ),
-    ).paddingHorizontal(12);
+        const SizedBox(height: 8),
+      ],
+    );
   }
 
   void chooseFile() async {
@@ -362,21 +337,25 @@ class _ComicSourceListState extends State<_ComicSourceList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("漫画源".tl),
-        actions: const [
-          IconButton(onPressed: App.globalBack, icon: Icon(Icons.close)),
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
+ title: "漫画源".tl,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+ actions: const [
+          MiuixIconButton(onPressed: App.globalBack, child: Icon(Icons.close)),
         ],
-      ),
-      body: buildBody(),
-    );
+),
+ content: (padding) => ScrollUnderBar(
+ padding: padding,
+ child: buildBody(),
+ ),
+);
   }
 
   Widget buildBody() {
     if (loading) {
       load();
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: MiuixCircularProgressIndicator());
     } else {
       var currentKey = ComicSource.sources.map((e) => e.key).toList();
       return ListView.builder(
@@ -385,23 +364,20 @@ class _ComicSourceListState extends State<_ComicSourceList> {
           var key = json![index]["key"];
           var action = currentKey.contains(key)
               ? const Icon(Icons.check)
-              : Tooltip(
-                  message: "Add",
-                  child: IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () async {
+              : MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("Add")),
+ child: MiuixIconButton(onPressed: () async {
                       await widget.onAdd(
                           "https://raw.githubusercontent.com/wgh136/pica_configs/master/${json![index]["fileName"]}");
                       setState(() {});
-                    },
-                  ),
-                );
+                    }, child: const Icon(Icons.add)),
+);
 
-          return ListTile(
-            title: Text(json![index]["name"]),
-            subtitle: Text(json![index]["version"]),
-            trailing: action,
-          );
+          return MiuixBasicComponent(
+                   title: json![index]["name"],
+                   summary: json![index]["version"],
+                   endActions: [action],
+                 );
         },
       );
     }
@@ -420,13 +396,13 @@ class _BuiltInSourcesState extends State<_BuiltInSources> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Divider(),
-        ListTile(
-          title: Text("内置漫画源".tl),
+        MiuixSmallTitle("内置漫画源".tl),
+        MiuixSettingsCard(
+          children: [
+            for (int index = 0; index < builtInSources.length; index++)
+              buildTile(index),
+          ],
         ),
-        for(int index = 0; index < builtInSources.length; index++)
-          buildTile(index),
-        const Divider(),
       ],
     );
   }
@@ -435,33 +411,31 @@ class _BuiltInSourcesState extends State<_BuiltInSources> {
 
   Widget buildTile(int index) {
     var key = builtInSources[index];
-    return ListTile(
-      title: Text(
-          ComicSource.builtIn.firstWhere((e) => e.key == key).name.tl),
-      trailing: Switch(
-        value: appdata.appSettings.isComicSourceEnabled(key),
-        onChanged: (v) async {
-          if (isLoading) return;
-          isLoading = true;
-          appdata.appSettings.setComicSourceEnabled(key, v);
-          await appdata.updateSettings();
-          if(!v) {
-            ComicSource.sources.removeWhere((e) => e.key == key);
-            _validatePages();
-          } else {
-            var source = ComicSource.builtIn.firstWhere((e) => e.key == key);
-            ComicSource.sources.add(source);
-            source.loadData();
-            _addAllPagesWithComicSource(source);
-          }
-          isLoading = false;
-          if (mounted) {
-            setState(() {});
-            context.findAncestorStateOfType<_ComicSourceSettingsState>()
-                ?.setState(() {});
-          }
-        },
-      ),
+    return MiuixSwitchPreference(
+      title: ComicSource.builtIn.firstWhere((e) => e.key == key).name.tl,
+      value: appdata.appSettings.isComicSourceEnabled(key),
+      onChanged: (v) async {
+        if (isLoading) return;
+        isLoading = true;
+        appdata.appSettings.setComicSourceEnabled(key, v);
+        await appdata.updateSettings();
+        if (!v) {
+          ComicSource.sources.removeWhere((e) => e.key == key);
+          _validatePages();
+        } else {
+          var source = ComicSource.builtIn.firstWhere((e) => e.key == key);
+          ComicSource.sources.add(source);
+          source.loadData();
+          _addAllPagesWithComicSource(source);
+        }
+        isLoading = false;
+        if (mounted) {
+          setState(() {});
+          context
+              .findAncestorStateOfType<_ComicSourceSettingsState>()
+              ?.setState(() {});
+        }
+      },
     );
   }
 }

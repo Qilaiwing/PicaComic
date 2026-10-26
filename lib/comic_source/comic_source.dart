@@ -184,14 +184,20 @@ class ComicSource {
     _isSaving = false;
   }
 
+  /// 最近一次自动重新登录失败的原因（用于判断是否需要滑块验证等交互式处理）。
+  String? lastReLoginError;
+
   Future<bool> reLogin() async {
+    lastReLoginError = null;
     if (data["account"] == null) {
+      lastReLoginError = "无账号数据";
       return false;
     }
     final List accountData = data["account"];
     var res = await account!.login!(accountData[0], accountData[1]);
     if (res.error) {
-      Log.error("Failed to re-login", res.errorMessage ?? "Error");
+      lastReLoginError = res.errorMessage ?? "Error";
+      Log.error("Failed to re-login", lastReLoginError!);
     }
     return !res.error;
   }
@@ -283,6 +289,14 @@ class ComicSource {
 class AccountConfig {
   final LoginFunction? login;
 
+  /// 需要滑块/图形验证时的登录函数：额外接收一次性通行证。
+  ///
+  /// 部分站点（如绅士漫画）在登录提交前强制校验滑块拼图，普通 [login]
+  /// 会返回「請先完成滑塊驗證」。实现该函数后，登录页会在首次失败且错误
+  /// 提示需要验证时弹出验证弹窗，通过后带上通行证重试。
+  final Future<Res<bool>> Function(String account, String pwd, String sliderPass)?
+      loginWithSlider;
+
   final FutureOr<void> Function(BuildContext)? onLogin;
 
   final String? loginWebsite;
@@ -297,12 +311,13 @@ class AccountConfig {
 
   const AccountConfig(
       this.login, this.loginWebsite, this.registerWebsite, this.logout,
-      {this.onLogin})
+      {this.onLogin, this.loginWithSlider})
       : allowReLogin = true,
         infoItems = const [];
 
   const AccountConfig.named({
     this.login,
+    this.loginWithSlider,
     this.loginWebsite,
     this.registerWebsite,
     required this.logout,

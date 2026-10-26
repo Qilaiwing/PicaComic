@@ -37,114 +37,134 @@ class CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: const BorderRadius.all(Radius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-        child: SizedBox(
-          width: double.infinity,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if(avatarUrl != null)
-                Avatar(
-                  size: 58,
-                  avatarUrl: avatarUrl,
-                  frame: frameUrl,
-                  slogan: slogan,
-                  name: name,
-                  couldBeShown: level != null,
-                  level: level ?? 0,
-                ),
-              if(leading != null)
-                leading!,
-              const SizedBox(
-                width: 8,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    SelectableText(content, style: const TextStyle(fontSize: 15),),
-                    const SizedBox(
-                      height: 4,
-                    ),
-                    Row(
-                      children: [
-                        if (time != null)
-                          Text(
-                            time!,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        const Spacer(),
-                        if(like != null)
-                          InkWell(
-                            borderRadius: const BorderRadius.all(Radius.circular(8)),
-                            onTap: like,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(3, 5, 3, 5),
-                              child: SizedBox(
-                                width: 50,
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    liked!?Icon(
-                                      Icons.favorite,
-                                      size: 15,
-                                      color: Theme.of(context).colorScheme.primary,
-                                    ):const Icon(
-                                      Icons.favorite_outline,
-                                      size: 15,
-                                    ),
-                                    const SizedBox(width: 5,),
-                                    Text(likes.toString())
-                                  ],
-                                ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final outlineColor =
+        isDark ? const Color(0x99FFFFFF) : const Color(0x8A000000);
+
+    return MiuixPressable(
+        shape: const MiuixSquircleBorder(cornerRadius: 14),
+        onPressed: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: SizedBox(
+            width: double.infinity,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (avatarUrl != null)
+                  Avatar(
+                    size: 52,
+                    avatarUrl: avatarUrl,
+                    frame: frameUrl,
+                    slogan: slogan,
+                    name: name,
+                    couldBeShown: level != null,
+                    level: level ?? 0,
+                  ),
+                if (leading != null) leading!,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      SelectableText(
+                        content,
+                        style: const TextStyle(fontSize: 14.5, height: 1.3),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          if (time != null)
+                            Text(
+                              time!,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: outlineColor,
                               ),
                             ),
-                          ),
-                        if(like != null)
-                          const SizedBox(width: 16,),
-                        if(comments != null)
-                          InkWell(
-                            borderRadius: const BorderRadius.all(Radius.circular(8)),
-                            onTap: onTap,
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(3, 6, 3, 5),
-                              child: SizedBox(
-                                width: 50,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.mode_comment_outlined,
-                                      size: 15,
-                                    ),
-                                    const SizedBox(width: 5,),
-                                    Text(comments.toString())
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                      ],
-                    )
-                  ],
+                          const Spacer(),
+                          if (like != null)
+                            MiuixPressable(
+                                shape:
+                                    const MiuixSquircleBorder(cornerRadius: 8),
+                                onPressed: like,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 4),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      MiuixIcon(
+                                        vector: (liked ?? false)
+                                            ? (MiuixIcons.extended
+                                                    .byName('favoritesFill') ??
+                                                MiuixIcons.os4.favorites)
+                                            : (MiuixIcons.extended
+                                                    .byName('favorites') ??
+                                                MiuixIcons.os4.favorites),
+                                        size: 14,
+                                        tint: (liked ?? false)
+                                            ? primaryColor
+                                            : outlineColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        likes.toString(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: (liked ?? false)
+                                              ? primaryColor
+                                              : outlineColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                          if (like != null) const SizedBox(width: 12),
+                          if (comments != null)
+                            MiuixPressable(
+                                shape:
+                                    const MiuixSquircleBorder(cornerRadius: 8),
+                                onPressed: onTap,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 4),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      MiuixIcon(
+                                        vector: MiuixIcons.extended
+                                                .byName('messages') ??
+                                            MiuixIcons.os4.more,
+                                        size: 14,
+                                        tint: outlineColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        comments.toString(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: outlineColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                        ],
+                      )
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

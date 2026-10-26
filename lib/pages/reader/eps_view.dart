@@ -21,8 +21,7 @@ class _EpsViewState extends State<EpsView> {
     for(int index = 0; index<data.eps!.length; index++){
       String title = data.eps!.values.elementAt(index);
       epsWidgets.add(
-          InkWell(
-            onTap: (){
+          MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, onPressed: (){
               Navigator.pop(App.globalContext!);
               logic.jumpToChapter(index+1);
             },
@@ -76,15 +75,13 @@ class _EpsViewState extends State<EpsView> {
                 Text("章节".tl, style: const TextStyle(fontSize: 18),),
                 const Spacer(),
                 if(type == ReadingType.jm)
-                  IconButton(
-                    icon: Icon(Icons.comment_outlined, color: Theme.of(context).colorScheme.secondary,),
+                  MiuixIconButton(child: Icon(Icons.comment_outlined, color: Theme.of(context).colorScheme.secondary,),
                     onPressed: (){
                       showComments(context, data.eps!.keys.elementAt(logic.order-1),
                           (logic.data as JmReadingData).commentsLength ?? 9999);
                     },
                   ),
-                IconButton(
-                  icon: Icon(Icons.my_location_outlined, color: Theme.of(context).colorScheme.secondary,size: 23,),
+                MiuixIconButton(child: Icon(Icons.my_location_outlined, color: Theme.of(context).colorScheme.secondary,size: 23,),
                   onPressed: (){
                     var length = data.eps!.length;
                     if(!value) {
@@ -97,7 +94,7 @@ class _EpsViewState extends State<EpsView> {
                 Text(" 倒序".tl),
                 Transform.scale(
                   scale: 0.8,
-                  child: Switch(
+                  child: MiuixSwitch(
                     value: value,
                     onChanged: (b)=>setState(() {
                       value = ! value;

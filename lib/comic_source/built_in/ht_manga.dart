@@ -141,9 +141,21 @@ final htManga = ComicSource.named(
       var res = await HtmangaNetwork().login(account, pwd);
       if (!res.error) {
         htManga.data['name'] = account;
+        // 仅在真正登录成功时持久化凭据，避免把待验证状态误存为已登录。
+        htManga.data['account'] = <String>[account, pwd];
+        await htManga.saveData();
       }
-      var a = <String>[account, pwd];
-      htManga.data['account'] = a;
+      return res;
+    },
+    loginWithSlider: (account, pwd, sliderPass) async {
+      var htManga = ComicSource.find('htmanga')!;
+      var res =
+          await HtmangaNetwork().login(account, pwd, sliderPass: sliderPass);
+      if (!res.error) {
+        htManga.data['name'] = account;
+        htManga.data['account'] = <String>[account, pwd];
+        await htManga.saveData();
+      }
       return res;
     },
     logout: () {

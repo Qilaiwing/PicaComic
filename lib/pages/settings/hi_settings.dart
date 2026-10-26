@@ -14,15 +14,17 @@ class _HitomiSettingsState extends State<HitomiSettings> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ListTile(
-          title: Text("Hitomi".tl),
+        MiuixSmallTitle("Hitomi".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.dns),
+              title: "CDN ${"域名".tl}",
+              summary: appdata.settings[87],
+              onClick: () => changeDomain(context),
+            ),
+          ],
         ),
-        ListTile(
-          leading: const Icon(Icons.dns),
-          title: Text("CDN ${"域名".tl}"),
-          subtitle: Text(appdata.settings[87]),
-          trailing: IconButton(onPressed: () => changeDomain(context), icon: const Icon(Icons.edit)),
-        )
       ],
     );
   }
@@ -45,33 +47,31 @@ class _HitomiSettingsState extends State<HitomiSettings> {
       }
     }
 
-    showDialog(context: context, builder: (context){
-      focusNode.requestFocus();
-      return SimpleDialog(
-        title: Text("更改域名".tl),
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            width: 400,
-            child: TextField(
+    showMiuixDialog(
+      context: context,
+      title: "更改域名".tl,
+      contentBuilder: (context, close) {
+        focusNode.requestFocus();
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            MiuixTextField(
               focusNode: focusNode,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                label: Text("域名".tl)
-              ),
+              label: "域名".tl,
+              singleLine: true,
               controller: controller,
-              onEditingComplete: onFinished,
+              onSubmitted: (_) => onFinished(),
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(onPressed: onFinished, child: Text("完成".tl)),
-              const SizedBox(width: 16,),
-            ],
-          )
-        ],
-      );
-    });
+            const SizedBox(height: 16),
+            MiuixButton(
+              colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+              onPressed: onFinished,
+              child: Text("完成".tl,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        );
+      });
   }
 }

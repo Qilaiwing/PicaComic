@@ -101,7 +101,8 @@ class SideBarRoute<T> extends PopupRoute<T> {
       body = IOSBackGestureDetector(
         enabledCallback: () => true,
         gestureWidth: 20.0,
-        onStartPopGesture: () => IOSBackGestureController(controller!, navigator!),
+        onStartPopGesture: () =>
+            IOSBackGestureController(controller!, navigator!),
         child: body,
       );
     }
@@ -188,13 +189,28 @@ class _SidebarBodyState extends State<SidebarBody> {
                 const SizedBox(
                   width: 8,
                 ),
-                Tooltip(
-                  message: "返回",
-                  child: IconButton(
-                    iconSize: 25,
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
+                AppTooltip(
+                  message: "返回".tl,
+                  child: MiuixPressable(
+                      shape: const MiuixSquircleBorder(cornerRadius: 12),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: ShapeDecoration(
+                          shape: const MiuixSquircleBorder(cornerRadius: 12),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0x18FFFFFF)
+                              : const Color(0x0A000000),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back,
+                          size: 20,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white.withOpacity(0.9)
+                              : const Color(0xFF222222),
+                        ),
+                      )),
                 ),
                 const SizedBox(
                   width: 10,

@@ -123,21 +123,25 @@ class _PopUpWidgetScaffoldState extends State<PopUpWidgetScaffold> {
                 const SizedBox(
                   width: 8,
                 ),
-                Tooltip(
+                AppTooltip(
                   message: "返回".tl,
-                  child: IconButton(
-                      icon: const Icon(Icons.arrow_back_sharp),
-                      onPressed: () => Navigator.of(context).canPop()
-                          ? Navigator.of(context).pop()
-                          : App.globalBack()),
+                  child: MiuixIconButton(
+                    onPressed: () => Navigator.of(context).canPop()
+                        ? Navigator.of(context).pop()
+                        : App.globalBack(),
+                    child: MiuixIcon(
+                      vector: MiuixIcons.extended.byName('chevronBackward'),
+                      size: 20,
+                    ),
+                  ),
                 ),
                 const SizedBox(
-                  width: 16,
+                  width: 12,
                 ),
                 Text(
                   widget.title,
                   style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.w500),
+                      fontSize: 18.5, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
                 if (widget.tailing != null) ...widget.tailing!,
@@ -145,27 +149,29 @@ class _PopUpWidgetScaffoldState extends State<PopUpWidgetScaffold> {
               ],
             ),
           ),
-          NotificationListener<ScrollNotification>(
-            onNotification: (notifications) {
-              if (notifications.metrics.pixels ==
-                      notifications.metrics.minScrollExtent &&
-                  !top) {
-                setState(() {
-                  top = true;
-                });
-              } else if (notifications.metrics.pixels !=
-                      notifications.metrics.minScrollExtent &&
-                  top) {
-                setState(() {
-                  top = false;
-                });
-              }
-              return false;
-            },
-            child: MediaQuery.removePadding(
-              removeTop: true,
-              context: context,
-              child: Expanded(child: widget.body),
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notifications) {
+                if (notifications.metrics.pixels ==
+                        notifications.metrics.minScrollExtent &&
+                    !top) {
+                  setState(() {
+                    top = true;
+                  });
+                } else if (notifications.metrics.pixels !=
+                        notifications.metrics.minScrollExtent &&
+                    top) {
+                  setState(() {
+                    top = false;
+                  });
+                }
+                return false;
+              },
+              child: MediaQuery.removePadding(
+                removeTop: true,
+                context: context,
+                child: widget.body,
+              ),
             ),
           ),
           SizedBox(

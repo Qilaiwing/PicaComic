@@ -39,107 +39,64 @@ class JmWeekRecommendationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var key = GlobalKey();
-    const titleLength = 190;
-    return Scaffold(
-      appBar: Appbar(
-        title: Text("每周必看".tl),
-        actions: [
-          StateBuilder<JWRPLogic>(
-            builder: (logic) => Container(
-              key: key,
-              margin: const EdgeInsets.all(5),
-              padding: const EdgeInsets.all(5),
-              width: MediaQuery.of(context).size.width > 250 + titleLength
-                  ? 250
-                  : MediaQuery.of(context).size.width - titleLength,
-              height: 40,
-              decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: const BorderRadius.all(Radius.circular(16))),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 8,
-                  ),
-                  Expanded(
-                    child: Text(
-                      logic.currentName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_drop_down_sharp),
-                    iconSize: 16,
-                    onPressed: () {
-                      if (logic.rec == null) return;
-                      var renderObject =
-                          key.currentContext!.findRenderObject() as RenderBox;
-                      var offset = renderObject.localToGlobal(Offset.zero);
-                      offset = Offset(offset.dx + 246, offset.dy + 53);
-                      showMenu(
-                          constraints: BoxConstraints(
-                              maxHeight: 300,
-                              minWidth: (MediaQuery.of(context).size.width > 250
-                                      ? 250
-                                      : MediaQuery.of(context).size.width) -
-                                  16),
-                          context: context,
-                          position: RelativeRect.fromLTRB(
-                              offset.dx,
-                              offset.dy,
-                              MediaQuery.of(context).size.width - offset.dx,
-                              MediaQuery.of(context).size.height - offset.dy),
-                          items: [
-                            for (var item in logic.rec!.entries)
-                              PopupMenuItem(
-                                child: Text(item.value),
-                                onTap: () {
-                                  logic.currentId = item.key;
-                                  logic.currentName = item.value;
-                                  logic.update();
-                                },
-                              )
-                          ]);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StateBuilder<JWRPLogic>(
-              builder: (logic) {
-                if (logic.loading) {
-                  logic.get();
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                } else if (logic.message != null) {
-                  return NetworkError(
-                    message: logic.message!,
-                    retry: () {
-                      logic.change();
-                      logic.get();
-                    },
-                  );
-                } else {
-                  return WeekRecommendationList(
-                    logic.currentId,
-                    key: Key(logic.currentId),
-                  );
-                }
+    final menuKey = GlobalKey();
+    return StateBuilder<JWRPLogic>(builder: (logic) {
+      return MiuixScaffold(
+        topBar: MiuixSmallTopAppBar(
+          title: "每周必看".tl,
+          subtitle: logic.currentName,
+          navigationIcon: MiuixIconButton(
+            child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          actions: [
+            MiuixIconButton(
+              key: menuKey,
+              child: const Icon(Icons.calendar_month_outlined, size: 22),
+              onPressed: () {
+                if (logic.rec == null) return;
+                showMiuixMenu(
+                  context: context,
+                  anchorBounds: miuixAnchorRectOf(menuKey.currentContext!),
+                  maxHeight: 300,
+                  items: [for (var item in logic.rec!.entries) item.value],
+                ).then((i) {
+                  if (i == null) return;
+                  var item = logic.rec!.entries.elementAt(i);
+                  logic.currentId = item.key;
+                  logic.currentName = item.value;
+                  logic.update();
+                });
               },
             ),
-          )
-        ],
-      ),
-    );
+          ],
+        ),
+        content: (padding) => ScrollUnderBar(
+          padding: EdgeInsets.only(top: padding.top),
+          child: Builder(builder: (context) {
+            if (logic.loading) {
+              logic.get();
+              return const Center(child: MiuixInfiniteProgressIndicator());
+            } else if (logic.message != null) {
+              return TopInsetPadding(
+                child: NetworkError(
+                  message: logic.message!,
+                  retry: () {
+                    logic.change();
+                    logic.get();
+                  },
+                  withAppbar: false,
+                ),
+              );
+            }
+            return WeekRecommendationList(
+              logic.currentId,
+              key: Key(logic.currentId),
+            );
+          }),
+        ),
+      );
+    });
   }
 }
 
@@ -168,58 +125,83 @@ class WRLLogic extends StateController {
   }
 }
 
-class WeekRecommendationList extends StatelessWidget {
+class WeekRecommendationList extends StatefulWidget {
   const WeekRecommendationList(this.id, {Key? key}) : super(key: key);
   final String id;
 
   @override
+  State<WeekRecommendationList> createState() => _WeekRecommendationListState();
+}
+
+class _WeekRecommendationListState extends State<WeekRecommendationList> {
+  String get id => widget.id;
+
+  static const _kTabRowHeight = 52.0;
+
+  @override
   Widget build(BuildContext context) {
+    final inset = MainTopInset.of(context);
     return DefaultTabController(
-        length: 3,
-        child: Column(
-          children: [
-            TabBar(tabs: [
-              Tab(
-                text: "韩漫".tl,
+      length: 3,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: MainTopInset(
+              height: inset + _kTabRowHeight,
+              child: StateBuilder<WRLLogic>(
+                init: WRLLogic(),
+                tag: id,
+                builder: (logic) => TabBarView(
+                  children: [
+                    for (int i = 0; i <= 2; i++) buildPage(i, logic, context)
+                  ],
+                ),
               ),
-              Tab(
-                text: "日漫".tl,
+            ),
+          ),
+          // Tab 条与顶栏同一块毛玻璃，列表从两者下方穿过。
+          Positioned(
+            top: inset,
+            left: 0,
+            right: 0,
+            child: FrostedBackground(
+              child: SizedBox(
+                height: _kTabRowHeight,
+                child: Center(
+                  child: FilledTabBar(tabs: [
+                    Tab(text: "韩漫".tl),
+                    Tab(text: "日漫".tl),
+                    Tab(text: "其它".tl),
+                  ]),
+                ),
               ),
-              Tab(
-                text: "其它".tl,
-              )
-            ]),
-            Expanded(
-                child: StateBuilder<WRLLogic>(
-                    init: WRLLogic(),
-                    tag: id,
-                    builder: (logic) {
-                      return TabBarView(children: [
-                        for (int i = 0; i <= 2; i++)
-                          buildPage(i, logic, context)
-                      ]);
-                    }))
-          ],
-        ));
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildPage(int index, WRLLogic logic, BuildContext context) {
     if (logic.loading[index]) {
       logic.get(index, id);
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: MiuixInfiniteProgressIndicator());
     } else if (logic.comics[index].isEmpty) {
-      return NetworkError(
-        message: logic.messages[index] ?? "未知错误".tl,
-        retry: () => logic.retry(index, id),
-      );
-    } else {
-      return CustomScrollView(
-        slivers: [
-          SliverGridComics(comics: logic.comics[index], sourceKey: "jm"),
-        ],
+      return TopInsetPadding(
+        child: NetworkError(
+          message: logic.messages[index] ?? "未知错误".tl,
+          retry: () => logic.retry(index, id),
+          withAppbar: false,
+        ),
       );
     }
+    return CustomScrollView(
+      slivers: [
+        const TopInsetSliver(),
+        SliverGridComics(comics: logic.comics[index], sourceKey: "jm"),
+        SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.paddingOf(context).bottom + 16)),
+      ],
+    );
   }
 }

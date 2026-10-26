@@ -24,7 +24,7 @@ class _NhentaiCommentsPageState extends State<NhentaiCommentsPage> {
     if (loading) {
       get();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (message != null) {
       return NetworkError(
@@ -59,47 +59,42 @@ class _NhentaiCommentsPageState extends State<NhentaiCommentsPage> {
             ],
           )),
           Container(
+            padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
             decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceTint.withAlpha(0),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(16))),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-              child: Container(
-                decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withAlpha(160),
-                    borderRadius: const BorderRadius.all(Radius.circular(30))),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                      child: TextField(
-                        enabled: false,
-                        controller: controller,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          isCollapsed: true,
-                          hintText: "评论".tl,
-                        ),
-                        minLines: 1,
-                        maxLines: 5,
-                      ),
-                    )),
-                    IconButton(
-                        onPressed: () {
-                          //TODO
-                          showToast(message: "未完成");
-                        },
-                        icon: Icon(
-                          Icons.send,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ))
-                  ],
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1E1E22)
+                  : const Color(0xFFF9F9FA),
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0E000000),
+                  width: 0.8,
                 ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: MiuixTextField(enabled: false,
+                      controller: controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 5),
+                  ),
+                  MiuixIconButton(
+                    minWidth: 36,
+                    minHeight: 36,
+                    child: MiuixIcon(
+                      vector: MiuixIcons.extended.byName('send') ??
+                          MiuixIcons.os4.share,
+                      size: 19,
+                      tint: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () {
+                      showToast(message: "未完成");
+                    },
+                  ),
+                ],
               ),
             ),
           ),

@@ -2,6 +2,7 @@ import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:flutter/material.dart';
+import "package:sliver_tools/sliver_tools.dart";
 import 'package:pica_comic/pages/ranking_page.dart';
 import 'package:pica_comic/pages/search_result_page.dart';
 import 'package:pica_comic/tools/tags_translation.dart';
@@ -9,53 +10,35 @@ import 'package:pica_comic/pages/category_comics_page.dart';
 import 'package:pica_comic/base.dart';
 import 'package:pica_comic/tools/translations.dart';
 
+class CategoryPageController extends StateController {
+  List<String> categories = [];
+  late TabController tabController;
+
+  void init(TickerProvider vsync) {
+    categories = appdata.appSettings.categoryPages;
+    var allCategories = ComicSource.sources
+        .map((e) => e.categoryData?.key)
+        .where((element) => element != null)
+        .map((e) => e!)
+        .toList();
+    categories =
+        categories.where((element) => allCategories.contains(element)).toList();
+    tabController = TabController(length: categories.length, vsync: vsync);
+  }
+}
+
 class AllCategoryPage extends StatelessWidget {
   const AllCategoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StateBuilder<SimpleController>(
-      tag: "category",
-      init: SimpleController(),
-      builder: (controller) {
-        var categories = appdata.appSettings.categoryPages;
-        var allCategories = ComicSource.sources
-            .map((e) => e.categoryData?.key)
-            .where((element) => element != null)
-            .map((e) => e!)
-            .toList();
-        categories = categories.where((element) => allCategories.contains(element)).toList();
-
-        return Material(
-          child: DefaultTabController(
-            length: categories.length,
-            key: Key(categories.toString()),
-            child: Column(
-              children: [
-                FilledTabBar(
-                  tabs: categories.map((e) {
-                    String title = e;
-                    try {
-                      title = getCategoryDataWithKey(e).title;
-                    } catch (e) {
-                      //
-                    }
-                    return Tab(
-                      text: title.tl,
-                      key: Key(e),
-                    );
-                  }).toList(),
-                ),
-                Expanded(
-                  child: TabBarView(
-                      children:
-                          categories.map((e) => CategoryPage(e)).toList()),
-                )
-              ],
-            ),
-          ),
-        );
-      },
+    final logic = StateController.find<CategoryPageController>();
+    return Material(
+      color: Colors.transparent,
+      child: TabBarView(
+        controller: logic.tabController,
+        children: logic.categories.map((e) => CategoryPage(e)).toList(),
+      ),
     );
   }
 }
@@ -119,31 +102,42 @@ class CategoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var children = <Widget>[];
     if (data.enableRankingPage || data.buttons.isNotEmpty) {
-      children.add(buildTitle(data.title));
-      children.add(Padding(
-        padding: const EdgeInsets.fromLTRB(10, 0, 10, 16),
-        child: Wrap(
-          children: [
-            if (data.enableRankingPage)
-              buildTag("排行榜".tl, (p0, p1) {
-                context.to(() => RankingPage(sourceKey: findComicSourceKey()));
-              }),
-            for (var buttonData in data.buttons)
-              buildTag(buttonData.label.tl, (p0, p1) => buttonData.onTap())
-          ],
+      children.add(
+        _categorySection(
+          "热门推荐".tl,
+           Padding(
+            padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
+            child: Wrap(
+              children: [
+                if (data.enableRankingPage)
+                  buildTag("排行榜".tl, (p0, p1) {
+                    context
+                        .to(() => RankingPage(sourceKey: findComicSourceKey()));
+                  }),
+                for (var buttonData in data.buttons)
+                  buildTag(buttonData.label.tl, (p0, p1) => buttonData.onTap())
+              ],
+            ),
+          ),
         ),
-      ));
+      );
     }
 
     for (var part in data.categories) {
       if (part.enableRandom) {
         children.add(StatefulBuilder(builder: (context, updater) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildTitleWithRefresh(part.title, () => updater(() {})),
-              buildTagsWithParams(
+          return MultiSliver(pushPinnedChildren: true, children: [
+            StickySectionHeader(
+              title: part.title.tl,
+              trailing: MiuixIconButton(
+                onPressed: () => updater(() {}),
+                minWidth: 32,
+                minHeight: 32,
+                child: const Icon(Icons.refresh, size: 18),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: buildTagsWithParams(
                 part.categories,
                 part.categoryParams,
                 part.title,
@@ -154,58 +148,73 @@ class CategoryPage extends StatelessWidget {
                   part.title,
                   category,
                 ),
-              )
-            ],
-          );
+              ),
+            ),
+          ]);
         }));
       } else {
-        children.add(buildTitle(part.title));
         children.add(
-          buildTagsWithParams(
-            part.categories,
-            part.categoryParams,
+          _categorySection(
             part.title,
-            (tag, param) => handleClick(
-              tag,
-              param,
-              part.categoryType,
+             buildTagsWithParams(
+              part.categories,
+              part.categoryParams,
               part.title,
-              data.key,
+              (tag, param) => handleClick(
+                tag,
+                param,
+                part.categoryType,
+                part.title,
+                data.key,
+              ),
             ),
           ),
         );
       }
     }
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+    // 每个分组标题吸顶（毛玻璃），下一组的标题会把它顶走。
+    return CustomScrollView(
+      slivers: [
+        const TopInsetSliver(),
+        const SliverToBoxAdapter(child: SizedBox(height: 4)),
+        ...children,
+        const SliverToBoxAdapter(child: SizedBox(height: 110)),
+      ],
     );
   }
 
   Widget buildTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 5, 10),
-      child: Text(title.tl,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500)),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Text(
+        title.tl,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
+        ),
+      ),
     );
   }
 
   Widget buildTitleWithRefresh(String title, void Function() onRefresh) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 5, 10),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 6),
       child: Row(
         children: [
           Text(
             title.tl,
             style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
             ),
           ),
           const Spacer(),
-          IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh))
+          MiuixIconButton(
+            onPressed: onRefresh,
+            child: const Icon(Icons.refresh, size: 20),
+          )
         ],
       ),
     );
@@ -218,7 +227,7 @@ class CategoryPage extends StatelessWidget {
     ClickTagCallback onClick,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 16),
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
       child: Wrap(
         children: List<Widget>.generate(
           tags.length,
@@ -246,27 +255,115 @@ class CategoryPage extends StatelessWidget {
       return tag;
     }
 
+    final isDark = Theme.of(App.globalContext!).brightness == Brightness.dark;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-      child: InkWell(
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
-        onTap: () => onClick(tag, param),
-        child: Builder(
-          builder: (context) {
-            return Material(
-              elevation: 1,
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-              color: context.colorScheme.surfaceContainerLow,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text(translateTag(tag)),
+      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+      child: MiuixPressable(
+          shape: const MiuixSquircleBorder(cornerRadius: 12),
+          onPressed: () => onClick(tag, param),
+          child: Container(
+            decoration: ShapeDecoration(
+              color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F4),
+              shape: MiuixSquircleBorder(
+                cornerRadius: 12,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0C000000),
+                  width: 0.6,
+                ),
               ),
-            );
-          },
-        ),
-      ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            child: Text(
+              translateTag(tag),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          )),
     );
   }
 
   bool get enableTranslation => App.locale.languageCode == 'zh';
+}
+
+/// Sticky frosted header + the group's card body.
+Widget _categorySection(String title, Widget body) {
+  return MultiSliver(pushPinnedChildren: true, children: [
+    StickySectionHeader(title: title.tl),
+    SliverToBoxAdapter(
+      child: _CategoryGroupCard(title: title, showTitle: false, child: body),
+    ),
+  ]);
+}
+
+class _CategoryGroupCard extends StatelessWidget {
+  const _CategoryGroupCard({
+    required this.title,
+    required this.child,
+    this.onRefresh,
+    this.showTitle = true,
+  });
+
+  final bool showTitle;
+
+  final String title;
+  final Widget child;
+  final VoidCallback? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: ShapeDecoration(
+        shape: MiuixSquircleBorder(
+          cornerRadius: 18,
+          side: BorderSide(
+            color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+            width: 0.6,
+          ),
+        ),
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        shadows: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showTitle)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 6),
+            child: Row(
+              children: [
+                Text(
+                  title.tl,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const Spacer(),
+                if (onRefresh != null)
+                  MiuixIconButton(
+                    onPressed: onRefresh,
+                    minWidth: 32,
+                    minHeight: 32,
+                    child: const Icon(Icons.refresh, size: 18),
+                  ),
+              ],
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
 }

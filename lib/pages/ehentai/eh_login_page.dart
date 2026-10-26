@@ -44,11 +44,7 @@ class _EhLoginPageState extends State<EhLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("登录".tl),
-      ),
-      body: SingleChildScrollView(
+    return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "登录".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => ScrollUnderBar(padding: EdgeInsets.only(top: padding.top), child: SingleChildScrollView(padding: EdgeInsets.only(top: padding.top),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -68,39 +64,19 @@ class _EhLoginPageState extends State<EhLoginPage> {
                     ),
                     Padding(
                       padding: const EdgeInsets.all(5),
-                      child: TextField(
-                        controller: c1,
-                        decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: "ipb_member_id"),
-                      ),
+                      child: MiuixTextField(controller: c1, label: "ipb_member_id", singleLine: true),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(5),
-                      child: TextField(
-                        controller: c2,
-                        decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: "ipb_pass_hash"),
-                      ),
+                      child: MiuixTextField(controller: c2, label: "ipb_pass_hash", singleLine: true),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(5),
-                      child: TextField(
-                        controller: c3,
-                        decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            labelText: "igneous(非必要)".tl),
-                      ),
+                      child: MiuixTextField(controller: c3, label: "igneous(非必要)".tl, singleLine: true),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(5),
-                      child: TextField(
-                        controller: c4,
-                        decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            labelText: "star(非必要)".tl),
-                      ),
+                      child: MiuixTextField(controller: c4, label: "star(非必要)".tl, singleLine: true),
                     ),
                     EhUserCookieParser(
                       controller: cookieParserController,
@@ -111,21 +87,18 @@ class _EhLoginPageState extends State<EhLoginPage> {
                       switchOutCurve: Curves.easeInOut,
                       child: cookieParserController.visible
                           ? _buildCookieParserButtonGroup(cookieParserController)
-                          : TextButton(
-                        onPressed: () {
+                          : MiuixTextButton('通过 cookie 身份信息快速填写'.tl, onPressed: () {
                           if (cookieParserController.visible) return;
                           cookieParserController.show();
                           setState(() {});
-                        },
-                        child: Text('通过 cookie 身份信息快速填写'.tl),
-                      ),
+                        },),
                     ),
                     const SizedBox(height: 8,),
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
                         child: !logging
-                            ? FilledButton(
+                            ? MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                                 child: Text("登录".tl),
                                 onPressed: () {
                                   if (c1.text == "" || c2.text == "") {
@@ -135,7 +108,7 @@ class _EhLoginPageState extends State<EhLoginPage> {
                                   }
                                 },
                               )
-                            : const CircularProgressIndicator(),
+                            : const MiuixInfiniteProgressIndicator(),
                       ),
                     ),
                     const SizedBox(
@@ -144,8 +117,7 @@ class _EhLoginPageState extends State<EhLoginPage> {
                     Center(
                       child: SizedBox(
                         height: 40,
-                        child: TextButton(
-                          onPressed: loginWithWebview,
+                        child: MiuixButton(onPressed: loginWithWebview,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -165,8 +137,7 @@ class _EhLoginPageState extends State<EhLoginPage> {
                     Center(
                       child: SizedBox(
                         height: 40,
-                        child: TextButton(
-                          onPressed: () => launchUrlString(
+                        child: MiuixButton(onPressed: () => launchUrlString(
                               "https://forums.e-hentai.org/index.php?act=Reg&CODE=00",
                               mode: LaunchMode.externalApplication),
                           child: Row(
@@ -188,7 +159,7 @@ class _EhLoginPageState extends State<EhLoginPage> {
             )
           ],
         ),
-      ),
+      )),
     );
   }
 

@@ -37,7 +37,7 @@ class CommentsPage extends StatelessWidget {
             logic.change();
           });
           return const Center(
-            child: CircularProgressIndicator(),
+            child: MiuixInfiniteProgressIndicator(),
           );
         } else if (logic.comments.loaded == 0) {
           return NetworkError(
@@ -51,6 +51,7 @@ class CommentsPage extends StatelessWidget {
               Expanded(
                   child: CustomScrollView(
                 slivers: [
+const TopInsetSliver(),
                   SliverList(
                       delegate: SliverChildBuilderDelegate(
                           childCount: logic.comments.comments.length,
@@ -98,77 +99,76 @@ class CommentsPage extends StatelessWidget {
               )),
               Container(
                 decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16))),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                  child: Material(
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withAlpha(160),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(30))),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                            child: TextField(
-                              controller: logic.controller,
-                              decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  isCollapsed: true,
-                                  hintText: "评论".tl),
-                              minLines: 1,
-                              maxLines: 5,
-                            ),
-                          )),
-                          logic.sending
-                              ? const Padding(
-                                  padding: EdgeInsets.all(8.5),
-                                  child: SizedBox(
-                                    width: 23,
-                                    height: 23,
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : IconButton(
-                                  onPressed: () async {
-                                    if (logic.controller.text.length < 2) {
-                                      showToast(message: "评论至少需要2个字".tl);
-                                      return;
-                                    }
-                                    logic.sending = true;
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  8,
+                  12,
+                  8 + MediaQuery.of(context).padding.bottom,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: MiuixTextField(controller: logic.controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 4),
+                        ),
+                        logic.sending
+                            ? const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: MiuixInfiniteProgressIndicator(size: 20),
+                                ),
+                              )
+                            : MiuixIconButton(
+                                minWidth: 36,
+                                minHeight: 36,
+                                child: MiuixIcon(
+                                  vector: MiuixIcons.extended.byName('send') ??
+                                      MiuixIcons.os4.share,
+                                  size: 19,
+                                  tint: Theme.of(context).colorScheme.primary,
+                                ),
+                                onPressed: () async {
+                                  if (logic.controller.text.length < 2) {
+                                    showToast(message: "评论至少需要2个字".tl);
+                                    return;
+                                  }
+                                  logic.sending = true;
+                                  logic.update();
+                                  var b = await network.comment(
+                                      id, logic.controller.text, false);
+                                  if (b) {
+                                    logic.controller.text = "";
+                                    logic.sending = false;
+                                    var res = await network.getCommends(id);
+                                    logic.comments = Comments([], id, 1, 1);
                                     logic.update();
-                                    var b = await network.comment(
-                                        id, logic.controller.text, false);
-                                    if (b) {
-                                      logic.controller.text = "";
-                                      logic.sending = false;
-                                      var res = await network.getCommends(id);
-                                      logic.comments = Comments([], id, 1, 1);
-                                      logic.update();
-                                      await Future.delayed(
-                                          const Duration(milliseconds: 200));
-                                      logic.comments = res;
-                                      logic.update();
-                                    } else {
-                                      showToast(message: "网络错误".tl);
-                                      logic.sending = false;
-                                      logic.update();
-                                    }
-                                  },
-                                  icon: Icon(
-                                    Icons.send,
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                  ))
-                        ],
-                      ),
+                                    await Future.delayed(
+                                        const Duration(milliseconds: 200));
+                                    logic.comments = res;
+                                    logic.update();
+                                  } else {
+                                    showToast(message: "网络错误".tl);
+                                    logic.sending = false;
+                                    logic.update();
+                                  }
+                                },
+                              ),
+                      ],
                     ),
                   ),
                 ),
@@ -182,11 +182,7 @@ class CommentsPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text("评论".tl),
-        ),
-        body: body,
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => ScrollUnderBar(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }
@@ -233,7 +229,7 @@ class ReplyPage extends StatelessWidget {
             commentsPageLogic.change();
           });
           return const Center(
-            child: CircularProgressIndicator(),
+            child: MiuixInfiniteProgressIndicator(),
           );
         } else if (commentsPageLogic.comments.loaded == 0) {
           return NetworkError(
@@ -247,6 +243,7 @@ class ReplyPage extends StatelessWidget {
               Expanded(
                   child: CustomScrollView(
                 slivers: [
+const TopInsetSliver(),
                   SliverToBoxAdapter(
                     child: CommentTile(
                       avatarUrl: replyTo.avatarUrl,
@@ -262,7 +259,7 @@ class ReplyPage extends StatelessWidget {
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: Divider(),
+                      child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
                     ),
                   ),
                   SliverList(
@@ -312,90 +309,78 @@ class ReplyPage extends StatelessWidget {
                 ],
               )),
               Container(
+                padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
                 decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16))),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                  child: Material(
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withAlpha(160),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(30))),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                            child: TextField(
-                              controller: commentsPageLogic.controller,
-                              decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  isCollapsed: true,
-                                  hintText: "回复".tl),
-                              minLines: 1,
-                              maxLines: 5,
-                            ),
-                          )),
-                          commentsPageLogic.sending
-                              ? const Padding(
-                                  padding: EdgeInsets.all(8.5),
-                                  child: SizedBox(
-                                    width: 23,
-                                    height: 23,
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : IconButton(
-                                  onPressed: () async {
-                                    if (commentsPageLogic
-                                            .controller.text.length <
-                                        2) {
-                                      showToast(message: "评论至少需要2个字".tl);
-                                      return;
-                                    }
-                                    commentsPageLogic.sending = true;
-                                    commentsPageLogic.update();
-                                    var b = await network.comment(
-                                        id,
-                                        commentsPageLogic.controller.text,
-                                        true);
-                                    if (b) {
-                                      commentsPageLogic.controller.text = "";
-                                      commentsPageLogic.sending = false;
-                                      var res = await network.getReply(id);
-                                      commentsPageLogic.comments =
-                                          Reply(id, 1, 1, []);
-                                      commentsPageLogic.update();
-                                      await Future.delayed(
-                                          const Duration(milliseconds: 200));
-                                      commentsPageLogic.comments = res;
-                                      commentsPageLogic.update();
-                                    } else {
-                                      showToast(message: "网络错误".tl);
-                                      commentsPageLogic.sending = false;
-                                      commentsPageLogic.update();
-                                    }
-                                  },
-                                  icon: Icon(
-                                    Icons.send,
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                  ))
-                        ],
-                      ),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E1E22)
+                      : const Color(0xFFF9F9FA),
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0x18FFFFFF)
+                          : const Color(0x0E000000),
+                      width: 0.8,
                     ),
                   ),
                 ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: MiuixTextField(controller: commentsPageLogic.controller, label: "回复...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 4),
+                      ),
+                      commentsPageLogic.sending
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: MiuixInfiniteProgressIndicator(size: 20),
+                              ),
+                            )
+                          : MiuixIconButton(
+                              minWidth: 36,
+                              minHeight: 36,
+                              child: MiuixIcon(
+                                vector: MiuixIcons.extended.byName('send') ??
+                                    MiuixIcons.os4.share,
+                                size: 19,
+                                tint: Theme.of(context).colorScheme.primary,
+                              ),
+                              onPressed: () async {
+                                if (commentsPageLogic.controller.text.length < 2) {
+                                  showToast(message: "评论至少需要2个字".tl);
+                                  return;
+                                }
+                                commentsPageLogic.sending = true;
+                                commentsPageLogic.update();
+                                var b = await network.comment(
+                                    id,
+                                    commentsPageLogic.controller.text,
+                                    true);
+                                if (b) {
+                                  commentsPageLogic.controller.text = "";
+                                  commentsPageLogic.sending = false;
+                                  var res = await network.getReply(id);
+                                  commentsPageLogic.comments =
+                                      Reply(id, 1, 1, []);
+                                  commentsPageLogic.update();
+                                  await Future.delayed(
+                                      const Duration(milliseconds: 200));
+                                  commentsPageLogic.comments = res;
+                                  commentsPageLogic.update();
+                                } else {
+                                  showToast(message: "网络错误".tl);
+                                  commentsPageLogic.sending = false;
+                                  commentsPageLogic.update();
+                                }
+                              },
+                            ),
+                    ],
+                  ),
+                ),
               ),
-              Padding(
-                  padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).padding.bottom))
             ],
           );
         }
@@ -405,11 +390,7 @@ class ReplyPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text("回复".tl),
-        ),
-        body: body,
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "回复".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => ScrollUnderBar(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }

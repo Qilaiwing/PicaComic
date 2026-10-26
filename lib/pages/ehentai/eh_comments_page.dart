@@ -120,12 +120,9 @@ class _EhCommentWidgetState extends State<_EhCommentWidget> {
 
     var isUploader = uploader == comment.name;
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      elevation: 0,
-      color: isUploader
+    return Padding(padding: const EdgeInsets.fromLTRB(12, 4, 12, 4), child: MiuixCard(colors: MiuixCardColors(color: isUploader
           ? Theme.of(context).colorScheme.primaryContainer
-          : Theme.of(context).colorScheme.surfaceContainer,
+          : Theme.of(context).colorScheme.surfaceContainer, contentColor: Theme.of(context).colorScheme.onSurface),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Column(
@@ -192,7 +189,7 @@ class _EhCommentWidgetState extends State<_EhCommentWidget> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -213,7 +210,7 @@ class CommentsPage extends StatelessWidget {
         if (logic.isLoading) {
           logic.get(url);
           return const Center(
-            child: CircularProgressIndicator(),
+            child: MiuixInfiniteProgressIndicator(),
           );
         } else if (logic.message != null) {
           return NetworkError(
@@ -256,80 +253,73 @@ class CommentsPage extends StatelessWidget {
   }
 
   Widget buildBottom(BuildContext context, CommentsPageLogic logic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
+      padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-        child: Material(
-          child: Container(
-            decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withAlpha(160),
-                borderRadius: const BorderRadius.all(Radius.circular(30))),
-            child: Row(
-              children: [
-                Expanded(
-                    child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                  child: TextField(
-                    controller: logic.controller,
-                    decoration: InputDecoration(
-                        border: InputBorder.none,
-                        isCollapsed: true,
-                        hintText: "评论".tl),
-                    minLines: 1,
-                    maxLines: 5,
-                  ),
-                )),
-                logic.sending
-                    ? const Padding(
-                        padding: EdgeInsets.all(8.5),
-                        child: SizedBox(
-                          width: 23,
-                          height: 23,
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : IconButton(
-                        onPressed: () async {
-                          var content = logic.controller.text;
-                          if (content.isEmpty) {
-                            showToast(message: "请输入评论".tl);
-                            return;
-                          }
-                          logic.sending = true;
-                          logic.update();
-                          var b = await EhNetwork()
-                              .comment(logic.controller.text, url);
-                          if (b.success) {
-                            logic.controller.text = "";
-                            logic.sending = false;
-                            logic.comments.add(Comment(
-                              '',
-                              ehentai.data['name'] ?? '',
-                              content,
-                              DateTime.now().toIso8601String(),
-                              0,
-                              null,
-                            ));
-                            logic.update();
-                          } else {
-                            showToast(message: b.errorMessage!);
-                            logic.sending = false;
-                            logic.update();
-                          }
-                        },
-                        icon: Icon(
-                          Icons.send,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ))
-              ],
-            ),
+        color: isDark ? const Color(0xFF1E1E22) : const Color(0xFFF9F9FA),
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0x18FFFFFF) : const Color(0x0E000000),
+            width: 0.8,
           ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: MiuixTextField(controller: logic.controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 5),
+            ),
+            logic.sending
+                ? const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: MiuixInfiniteProgressIndicator(size: 20),
+                    ),
+                  )
+                : MiuixIconButton(
+                    minWidth: 36,
+                    minHeight: 36,
+                    child: MiuixIcon(
+                      vector: MiuixIcons.extended.byName('send') ??
+                          MiuixIcons.os4.share,
+                      size: 19,
+                      tint: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: () async {
+                      var content = logic.controller.text;
+                      if (content.isEmpty) {
+                        showToast(message: "请输入评论".tl);
+                        return;
+                      }
+                      logic.sending = true;
+                      logic.update();
+                      var b = await EhNetwork()
+                          .comment(logic.controller.text, url);
+                      if (b.success) {
+                        logic.controller.text = "";
+                        logic.sending = false;
+                        logic.comments.add(Comment(
+                          '',
+                          ehentai.data['name'] ?? '',
+                          content,
+                          DateTime.now().toIso8601String(),
+                          0,
+                          null,
+                        ));
+                        logic.update();
+                      } else {
+                        showToast(message: b.errorMessage!);
+                        logic.sending = false;
+                        logic.update();
+                      }
+                    },
+                  ),
+          ],
         ),
       ),
     );

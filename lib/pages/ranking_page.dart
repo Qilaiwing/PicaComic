@@ -40,21 +40,13 @@ class _RankingPageState extends State<RankingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Appbar(
-        title: Text("排行榜".tl),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-              child: _CustomCategoryComicsList(
-            key: ValueKey("RankingPage with $optionValue"),
-            loader: data.rankingData!.load,
-            optionValue: optionValue,
-            header: buildOptions(),
-            sourceKey: widget.sourceKey,
-          ))
-        ],
+    return MiuixScaffold(
+      content: (_) => _CustomCategoryComicsList(
+        key: ValueKey("RankingPage with $optionValue"),
+        loader: data.rankingData!.load,
+        optionValue: optionValue,
+        pinnedHeader: buildOptions(),
+        sourceKey: widget.sourceKey,
       ),
     );
   }
@@ -72,22 +64,23 @@ class _RankingPageState extends State<RankingPage> {
     );
   }
 
+  /// 排行选项行：作为顶栏的一部分固定显示（见 [SliverAppbar.bottom]）。
   Widget buildOptions() {
-    List<Widget> children = [];
-    children.add(Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (var option in options.entries)
-          buildOptionItem(option.value.tl, option.key, context)
-      ],
-    ));
-    return SliverToBoxAdapter(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [...children, const Divider()],
-      ).paddingLeft(8).paddingRight(8),
+    return SizedBox(
+      height: kOptionRowHeight,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        children: [
+          for (var option in options.entries)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: buildOptionItem(option.value.tl, option.key, context),
+              ),
+            )
+        ],
+      ),
     );
   }
 }
@@ -97,7 +90,7 @@ class _CustomCategoryComicsList extends ComicsPage<BaseComic> {
     super.key,
     required this.loader,
     required this.optionValue,
-    required this.header,
+    required this.pinnedHeader,
     required this.sourceKey,
   });
 
@@ -109,7 +102,10 @@ class _CustomCategoryComicsList extends ComicsPage<BaseComic> {
   final String sourceKey;
 
   @override
-  final Widget header;
+  final Widget pinnedHeader;
+
+  @override
+  double get pinnedHeaderHeight => kOptionRowHeight;
 
   @override
   Future<Res<List<BaseComic>>> getComics(int i) async {
@@ -120,5 +116,5 @@ class _CustomCategoryComicsList extends ComicsPage<BaseComic> {
   String? get tag => "$sourceKey RankingPage with $optionValue";
 
   @override
-  String? get title => null;
+  String? get title => "排行榜".tl;
 }

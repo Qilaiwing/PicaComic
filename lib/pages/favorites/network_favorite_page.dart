@@ -102,7 +102,7 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
     if (_loading) {
       loadPage();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixCircularProgressIndicator(),
       );
     } else if (_errorMessage != null) {
       return NetworkError(message: _errorMessage!, withAppbar: false,);
@@ -153,33 +153,53 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
           ),
           if (widget.data.addFolder != null)
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: 60,
-                width: double.infinity,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Center(
-                  child: TextButton(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("创建收藏夹".tl),
-                        const Icon(
-                          Icons.add,
-                          size: 18,
+                  child: MiuixPressable(
+ onPressed: () {
+                        showMiuixDialog(
+                            context: context,
+                            title: "创建收藏夹".tl,
+                            contentBuilder: (context, close) {
+                              return _CreateFolderDialog(
+                                  widget.data,
+                                  () => setState(() {
+                                        _loading = true;
+                                      }));
+                            });
+                      },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        decoration: ShapeDecoration(
+                          shape: const StadiumBorder(),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.12),
                         ),
-                      ],
-                    ),
-                    onPressed: () {
-                      showDialog(
-                          context: context,
-                          builder: (context) {
-                            return _CreateFolderDialog(
-                                widget.data,
-                                () => setState(() {
-                                      _loading = true;
-                                    }));
-                          });
-                    },
-                  ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 6),
+                            Text(
+                              "创建收藏夹".tl,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+),
                 ),
               ),
             )
@@ -206,81 +226,98 @@ class _FolderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 16,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: MiuixPressable(
+ onPressed: onTap,
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+            decoration: ShapeDecoration(
+              shape: MiuixSquircleBorder(
+                cornerRadius: 14,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0A000000),
+                  width: 0.6,
+                ),
               ),
-              Icon(
-                Icons.folder,
-                size: 35,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(
-                width: 16,
-              ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
+              color: isDark ? const Color(0xFF1E1E22) : Colors.white,
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: ShapeDecoration(
+                    shape: const MiuixSquircleBorder(cornerRadius: 10),
+                    color: primary.withOpacity(isDark ? 0.20 : 0.10),
+                  ),
+                  child: MiuixIcon(
+                    vector: MiuixIcons.os4.folder,
+                    tint: primary,
+                    size: 17,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
                   child: Text(
                     name,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-              if (deleteFolder != null)
-                IconButton(
-                  icon: const Icon(Icons.delete_forever_outlined),
-                  onPressed: () => onDeleteFolder(context),
-                )
-              else
-                const Icon(Icons.arrow_right),
-              if (deleteFolder == null)
-                const SizedBox(
-                  width: 8,
-                )
-            ],
+                if (deleteFolder != null)
+                  MiuixIconButton(onPressed: () => onDeleteFolder(context), child: const Icon(Icons.delete_forever_outlined, size: 20))
+                else
+                  const Icon(Icons.chevron_right, size: 18),
+              ],
+            ),
           ),
-        ),
-      ),
+),
     );
   }
 
   void onDeleteFolder(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text("确认删除".tl),
-            content: Text("要删除这个收藏夹吗".tl),
-            actions: [
-              TextButton(
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              TextButton(
-                  onPressed: () async {
-                    context.pop();
-                    showToast(message: "正在删除收藏夹".tl);
-                    var res = await deleteFolder!();
-                    showToast(
-                        message: res.error ? res.errorMessage! : "删除成功".tl);
-                    if (!res.error) {
-                      updateState?.call();
-                    } else {
-                      showToast(
-                          message: res.error ? res.errorMessage! : "删除失败".tl);
-                    }
-                  },
-                  child: Text("确认".tl)),
-            ],
-          );
-        });
+    showMiuixDialog(
+      context: context,
+      title: "确认删除".tl,
+      summary: "要删除这个收藏夹吗".tl,
+      actionsBuilder: (context, close) => [
+        MiuixTextButton(onPressed: () => close(), "取消".tl),
+        MiuixTextButton(
+            onPressed: () async {
+              close();
+              showToast(message: "正在删除收藏夹".tl);
+              var res = await deleteFolder!();
+              showToast(
+                  message: res.error ? res.errorMessage! : "删除成功".tl);
+              if (!res.error) {
+                updateState?.call();
+              } else {
+                showToast(
+                    message: res.error ? res.errorMessage! : "删除失败".tl);
+              }
+            },
+            "确认".tl),
+      ],
+    );
   }
 }
 
@@ -303,19 +340,13 @@ class _CreateFolderDialogState extends State<_CreateFolderDialog> {
   @override
   Widget build(BuildContext context) {
     focusNode.requestFocus();
-    return SimpleDialog(
-      title: Text("创建收藏夹".tl),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              labelText: "名称".tl,
-            ),
-          ),
+        MiuixTextField(
+          controller: controller,
+          focusNode: focusNode,
+          label: "名称".tl,
         ),
         const SizedBox(
           width: 200,
@@ -324,14 +355,14 @@ class _CreateFolderDialogState extends State<_CreateFolderDialog> {
         if (loading)
           const SizedBox(
             child: Center(
-              child: CircularProgressIndicator(),
+              child: MiuixCircularProgressIndicator(),
             ),
           )
         else
           SizedBox(
               height: 35,
               child: Center(
-                child: TextButton(
+                child: MiuixTextButton(
                     onPressed: () {
                       setState(() {
                         loading = true;
@@ -349,7 +380,7 @@ class _CreateFolderDialogState extends State<_CreateFolderDialog> {
                         }
                       });
                     },
-                    child: Text("提交".tl)),
+                    "提交".tl),
               ))
       ],
     );

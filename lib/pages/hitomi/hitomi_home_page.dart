@@ -93,7 +93,7 @@ class HitomiHomePageComics extends StatelessWidget {
           if (logic.loading) {
             logic.get(url);
             return const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixInfiniteProgressIndicator(),
             );
           } else if (logic.message != null) {
             return NetworkError(
@@ -138,8 +138,7 @@ class _HitomiHomePageState extends State<HitomiHomePage> {
     var url = "https://ltn.${HiNetwork().baseDomain}/$type$lang.nozomi";
     return Column(
       children: [
-        Material(
-          textStyle: Theme.of(context).textTheme.headlineMedium,
+        DefaultTextStyle(style: Theme.of(context).textTheme.headlineMedium ?? const TextStyle(),
           child: SizedBox(
             height: 50,
             child: Row(
@@ -153,8 +152,7 @@ class _HitomiHomePageState extends State<HitomiHomePage> {
                   child: Text("hitomi"),
                 ),
                 const Spacer(),
-                Material(
-                  child: Select(
+                Select(
                     values: [
                       "最新".tl,
                       "热门 | 今天".tl,
@@ -173,12 +171,10 @@ class _HitomiHomePageState extends State<HitomiHomePage> {
                       ][i];
                     }),
                   ),
-                ),
                 const SizedBox(
                   width: 16,
                 ),
-                Material(
-                  child: Select(
+                Select(
                     width: 100,
                     values: const ["All", "中文", "日本語", "English"],
                     initialValue: 0,
@@ -186,7 +182,6 @@ class _HitomiHomePageState extends State<HitomiHomePage> {
                       lang = ["-all", "-chinese", "-japanese", "-english"][i];
                     }),
                   ),
-                ),
                 const SizedBox(
                   width: 16,
                 ),
@@ -194,7 +189,7 @@ class _HitomiHomePageState extends State<HitomiHomePage> {
             ),
           ),
         ),
-        const Divider(),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
         Expanded(
           child: HitomiHomePageComics(
             url,

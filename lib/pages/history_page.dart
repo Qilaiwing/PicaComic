@@ -20,6 +20,8 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final comics = HistoryManager().getAll();
   bool searchInit = false;
+  /// MiuixInputField 的展开状态：进入搜索时（searchInit）自动聚焦。
+  bool searchExpanded = false;
   bool searchMode = false;
   String keyword = "";
   var results = <History>[];
@@ -35,22 +37,28 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget buildTitle() {
     if (searchMode) {
-      final FocusNode focusNode = FocusNode();
-      focusNode.requestFocus();
-      bool focus = searchInit;
-      searchInit = false;
-      return TextField(
-        focusNode: focus ? focusNode : null,
-        decoration:
-        InputDecoration(border: InputBorder.none, hintText: "搜索".tl),
-        onChanged: (s) {
-          setState(() {
-            keyword = s.toLowerCase();
-          });
-        },
+      return Transform.translate(
+        offset: const Offset(12, 6.0),
+        child: Container(
+          height: 38,
+          margin: const EdgeInsets.only(right: 20),
+          child: MiuixInputField(
+            query: keyword,
+            label: "搜索历史记录".tl,
+            expanded: searchExpanded,
+            onExpandedChange: (v) => setState(() => searchExpanded = v),
+            onSearch: (_) {},
+            onQueryChange: (s) {
+              setState(() {
+                keyword = s.toLowerCase();
+                searchInit = false;
+              });
+            },
+          ),
+        ),
       );
     } else {
-      return Text("${"历史记录".tl}(${comics.length})");
+      return Text("${"历史记录".tl} (${comics.length})");
     }
   }
 
@@ -73,52 +81,52 @@ class _HistoryPageState extends State<HistoryPage> {
     if (searchMode) {
       find();
     }
-    return Scaffold(
-      body: SmoothCustomScrollView(
+    return MiuixScaffold(
+      content: (_) => SmoothCustomScrollView(
         slivers: [
           SliverAppbar(
             title: buildTitle(),
+            largeTitle: searchMode ? null : Text("${"历史记录".tl} (${comics.length})"),
             actions: [
-              Tooltip(
-                message: "清除".tl,
-                child: IconButton(
-                  icon: const Icon(Icons.delete_forever),
-                  onPressed: () => showDialog(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                            title: Text("清除记录".tl),
-                            content: Text("要清除历史记录吗?".tl),
-                            actions: [
-                              TextButton(
-                                  onPressed: () => App.globalBack(),
-                                  child: Text("取消".tl)),
-                              TextButton(
-                                  onPressed: () {
-                                    appdata.history.clearHistory();
-                                    setState(() => comics.clear());
-                                    isModified = true;
-                                    App.globalBack();
-                                  },
-                                  child: Text("清除".tl)),
-                            ],
-                          )),
+              if (!searchMode)
+                AppTooltip(
+                  message: "清除".tl,
+                  child: MiuixIconButton(
+                    child: MiuixIcon(
+                      vector: MiuixIcons.extended.byName('delete') ?? MiuixIcons.os4.close,
+                      size: 20,
+                    ),
+                    onPressed: () => showConfirmDialog(
+                      context,
+                      "清除记录".tl,
+                      "要清除历史记录吗?".tl,
+                      () {
+                        appdata.history.clearHistory();
+                        setState(() => comics.clear());
+                        isModified = true;
+                      },
+                    ),
+                  ),
                 ),
-              ),
-              Tooltip(
-                message: "搜索".tl,
-                child: IconButton(
-                  icon: const Icon(Icons.search),
+              AppTooltip(
+                message: searchMode ? "关闭搜索".tl : "搜索".tl,
+                child: MiuixIconButton(
+                  child: MiuixIcon(
+                    vector: searchMode ? MiuixIcons.os4.close : MiuixIcons.os4.search,
+                    size: 20,
+                  ),
                   onPressed: () {
                     setState(() {
                       searchMode = !searchMode;
                       searchInit = true;
+                      searchExpanded = searchMode;
                       if (!searchMode) {
                         keyword = "";
                       }
                     });
                   },
                 ),
-              )
+              ),
             ],
           ),
           if (!searchMode) buildComics(comics) else buildComics(results),
@@ -149,30 +157,18 @@ class _HistoryPageState extends State<HistoryPage> {
           key: Key(comics_[i].target),
           sourceKey: comics_[i].type.comicSource?.key,
           onLongTap: () {
-            showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text("删除".tl),
-                    content: Text("要删除这条历史记录吗".tl),
-                    actions: [
-                      TextButton(
-                          onPressed: () => App.globalBack(),
-                          child: Text("取消".tl)),
-                      TextButton(
-                          onPressed: () {
+            showMiuixDialog(context: context, title: "删除".tl, summary: "要删除这条历史记录吗".tl, actionsBuilder: (context, close) => [
+                      MiuixTextButton("取消".tl, onPressed: () => close()),
+                      MiuixTextButton("删除".tl, onPressed: () {
                             appdata.history.remove(comics_[i].target);
                             setState(() {
                               isModified = true;
                               comics.removeWhere((element) =>
                                   element.target == comics_[i].target);
                             });
-                            App.globalBack();
-                          },
-                          child: Text("删除".tl)),
-                    ],
-                  );
-                });
+                            close();
+                          }),
+                    ]);
           },
           description_: timeToString(comics_[i].time),
           coverPath: comic.path,

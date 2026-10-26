@@ -2,11 +2,13 @@ part of 'components.dart';
 
 class HoverBox extends StatefulWidget {
   const HoverBox(
-      {super.key, required this.child, this.borderRadius = BorderRadius.zero});
+      {super.key, required this.child, this.borderRadius = BorderRadius.zero, this.shape});
 
   final Widget child;
 
   final BorderRadius borderRadius;
+
+  final ShapeBorder? shape;
 
   @override
   State<HoverBox> createState() => _HoverBoxState();
@@ -23,10 +25,18 @@ class _HoverBoxState extends State<HoverBox> {
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-            color:
-                isHover ? Theme.of(context).colorScheme.surfaceContainer : null,
-            borderRadius: widget.borderRadius),
+        decoration: widget.shape != null
+            ? ShapeDecoration(
+                color: isHover
+                    ? Theme.of(context).colorScheme.surfaceContainer
+                    : null,
+                shape: widget.shape!,
+              )
+            : BoxDecoration(
+                color: isHover
+                    ? Theme.of(context).colorScheme.surfaceContainer
+                    : null,
+                borderRadius: widget.borderRadius),
         child: widget.child,
       ),
     );
@@ -180,12 +190,10 @@ class _ButtonState extends State<Button> {
             fontSize: 16,
           ),
           child: isLoading
-              ? CircularProgressIndicator(
-                  color: widget.type == ButtonType.filled
-                      ? context.colorScheme.inversePrimary
-                      : context.colorScheme.primary,
+              ? const MiuixCircularProgressIndicator(
                   strokeWidth: 1.8,
-                ).fixWidth(18).fixHeight(18)
+                  size: 18,
+                )
               : widget.child,
         ));
     if (width != null || height != null) {
@@ -211,15 +219,17 @@ class _ButtonState extends State<Button> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding: padding,
-          decoration: BoxDecoration(
+          decoration: ShapeDecoration(
             color: buttonColor,
-            borderRadius: BorderRadius.circular(16),
-            border: widget.type == ButtonType.outlined
-                ? Border.all(
-                    color: widget.color ??
-                        Theme.of(context).colorScheme.outlineVariant,
-                    width: 0.6)
-                : null,
+            shape: widget.type == ButtonType.outlined
+                ? MiuixSquircleBorder(
+                    cornerRadius: 16,
+                    side: BorderSide(
+                        color: widget.color ??
+                            Theme.of(context).colorScheme.outlineVariant,
+                        width: 0.6),
+                  )
+                : const MiuixSquircleBorder(cornerRadius: 16),
           ),
           child: fixed
               ? SizedBox(
@@ -313,9 +323,10 @@ class _IconButtonState extends State<_IconButton> {
       child: widget.icon,
     );
     if (widget.isLoading) {
-      icon = const CircularProgressIndicator(
+      icon = MiuixCircularProgressIndicator(
         strokeWidth: 1.5,
-      ).paddingAll(2).fixWidth(iconSize).fixHeight(iconSize);
+        size: iconSize - 4,
+      ).paddingAll(2);
     }
     return MouseRegion(
       onEnter: (_) => setState(() => isHover = true),
@@ -327,7 +338,7 @@ class _IconButtonState extends State<_IconButton> {
           if (widget.isLoading) return;
           widget.onPressed();
         },
-        child: Tooltip(
+        child: AppTooltip(
           message: widget.tooltip ?? "",
           child: Container(
             decoration: BoxDecoration(
@@ -371,7 +382,7 @@ class _StatefulSwitchState extends State<StatefulSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    return Switch(
+    return MiuixSwitch(
         value: value,
         onChanged: (b) {
           setState(() {

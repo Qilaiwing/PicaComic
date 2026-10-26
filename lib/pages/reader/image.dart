@@ -305,11 +305,6 @@ class _ComicImageState extends State<ComicImage> with WidgetsBindingObserver {
       height = height.ceilToDouble();
     }
 
-    var brightness = Theme.of(context).brightness;
-    if(appdata.appSettings.useDarkBackground) {
-      brightness = Brightness.dark;
-    }
-
     if(_imageInfo != null){
       // Record the height and the width of the image
       _cache[widget.image.hashCode] = Size(
@@ -365,12 +360,10 @@ class _ComicImageState extends State<ComicImage> with WidgetsBindingObserver {
           child: SizedBox(
             width: 24,
             height: 24,
-            child: CircularProgressIndicator(
-              backgroundColor: brightness == Brightness.dark
-                  ? Colors.white24
-                  : Colors.black12,
+            child: MiuixCircularProgressIndicator(
+              size: 24,
               strokeWidth: 3,
-              value: (_loadingProgress != null &&
+              progress: (_loadingProgress != null &&
                   _loadingProgress!.expectedTotalBytes!=null &&
                   _loadingProgress!.expectedTotalBytes! != 0)
                   ?_loadingProgress!.cumulativeBytesLoaded / _loadingProgress!.expectedTotalBytes!

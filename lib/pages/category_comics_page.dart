@@ -56,27 +56,19 @@ class _CategoryComicsPageState extends State<CategoryComicsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Appbar(
-        title: Text(widget.category),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _CategoryComicsList(
-              key: ValueKey(
-                  "${widget.category} with ${widget.param} and $optionsValue"),
-              loader: data.load,
-              category: widget.category,
-              options: optionsValue,
-              param: widget.param,
-              header: buildOptions(),
-              sourceKey: ComicSource.sources
-                  .firstWhere((e) => e.categoryData?.key == widget.categoryKey)
-                  .key,
-            ),
-          ),
-        ],
+    return MiuixScaffold(
+      content: (_) => _CategoryComicsList(
+        key: ValueKey(
+            "${widget.category} with ${widget.param} and $optionsValue"),
+        loader: data.load,
+        category: widget.category,
+        options: optionsValue,
+        param: widget.param,
+        pinnedHeader: buildOptions(),
+        pinnedHeaderHeight: kOptionRowHeight * options.length,
+        sourceKey: ComicSource.sources
+            .firstWhere((e) => e.categoryData?.key == widget.categoryKey)
+            .key,
       ),
     );
   }
@@ -95,32 +87,34 @@ class _CategoryComicsPageState extends State<CategoryComicsPage> {
     );
   }
 
+  /// 筛选选项：每组一行横向滚动 Chip，作为顶栏的一部分固定显示。
   Widget buildOptions() {
-    List<Widget> children = [];
-    for (var optionList in options) {
-      children.add(Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (var option in optionList.options.entries)
-            buildOptionItem(
-              option.value.tl,
-              option.key,
-              options.indexOf(optionList),
-              context,
-            )
-        ],
-      ));
-      if (options.last != optionList) {
-        children.add(const SizedBox(height: 8));
-      }
-    }
-    return SliverToBoxAdapter(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [...children, const Divider()],
-      ).paddingLeft(8).paddingRight(8),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var optionList in options)
+          SizedBox(
+            height: kOptionRowHeight,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              children: [
+                for (var option in optionList.options.entries)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Center(
+                      child: buildOptionItem(
+                        option.value.tl,
+                        option.key,
+                        options.indexOf(optionList),
+                        context,
+                      ),
+                    ),
+                  )
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -132,7 +126,8 @@ class _CategoryComicsList extends ComicsPage<BaseComic> {
     required this.category,
     required this.options,
     this.param,
-    required this.header,
+    required this.pinnedHeader,
+    required this.pinnedHeaderHeight,
     required this.sourceKey,
   });
 
@@ -148,7 +143,10 @@ class _CategoryComicsList extends ComicsPage<BaseComic> {
   final String sourceKey;
 
   @override
-  final Widget header;
+  final Widget pinnedHeader;
+
+  @override
+  final double pinnedHeaderHeight;
 
   @override
   Future<Res<List<BaseComic>>> getComics(int i) async {
@@ -159,5 +157,5 @@ class _CategoryComicsList extends ComicsPage<BaseComic> {
   String? get tag => "$category with $param and $options";
 
   @override
-  String? get title => null;
+  String? get title => category;
 }

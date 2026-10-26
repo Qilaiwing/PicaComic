@@ -229,7 +229,7 @@ class NhentaiComicPage extends BaseComicPage<NhentaiComic> {
   String? get title => data?.title;
 
   @override
-  Card? get uploaderInfo => null;
+  Widget? get uploaderInfo => null;
 
   @override
   String get source => "Nhentai";

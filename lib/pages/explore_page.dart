@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:pica_comic/base.dart';
 import 'package:pica_comic/comic_source/comic_source.dart';
@@ -9,6 +10,7 @@ import 'package:pica_comic/pages/category_comics_page.dart';
 import 'package:pica_comic/pages/search_result_page.dart';
 import 'package:pica_comic/tools/extensions.dart';
 import 'package:pica_comic/tools/translations.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -17,50 +19,74 @@ class ExplorePage extends StatefulWidget {
   State<ExplorePage> createState() => _ExplorePageState();
 }
 
-class _ExplorePageState extends State<ExplorePage>
-    with TickerProviderStateMixin {
-  late TabController controller;
+class ExplorePageController extends StateController {
+  List<String> pages = [];
+  late TabController tabController;
 
-  bool showFB = true;
-
-  double location = 0;
-
-  var pages = appdata.appSettings.explorePages;
-
-  @override
-  void initState() {
+  void init(TickerProvider vsync) {
     pages = appdata.appSettings.explorePages;
-    var all = ComicSource.sources.map((e) => e.explorePages).expand((e) => e.map((e) => e.title)).toList();
+    var all = ComicSource.sources
+        .map((e) => e.explorePages)
+        .expand((e) => e.map((e) => e.title))
+        .toList();
     pages = pages.where((e) => all.contains(e)).toList();
-    if(pages.isEmpty && appdata.appSettings.explorePages.isNotEmpty) {
-      if(appdata.appSettings.explorePages.first.isNum) {
+    if (pages.isEmpty && appdata.appSettings.explorePages.isNotEmpty) {
+      if (appdata.appSettings.explorePages.first.isNum) {
         // is odd data, update
         appdata.appSettings.explorePages = all;
         pages = all;
         appdata.updateSettings();
       }
     }
-    controller = TabController(
+    tabController = TabController(
       length: pages.length,
-      vsync: this,
+      vsync: vsync,
     );
-    super.initState();
   }
+}
+
+class _ExplorePageState extends State<ExplorePage> {
+  bool showFB = true;
+
+  double location = 0;
 
   void refresh() {
-    int page = controller.index;
-    String currentPageId = pages[page];
+    final logic = StateController.find<ExplorePageController>();
+    int page = logic.tabController.index;
+    String currentPageId = logic.pages[page];
     StateController.find<SimpleController>(tag: currentPageId).refresh();
   }
 
-  Widget buildFAB() => Material(
-        color: Colors.transparent,
-        child: FloatingActionButton(
-          key: const Key("FAB"),
-          onPressed: refresh,
-          child: const Icon(Icons.refresh),
-        ),
-      );
+  Widget buildFAB() {
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return MiuixPressable(
+        key: const Key("FAB"),
+        shape: const MiuixSquircleBorder(cornerRadius: 16),
+        onPressed: refresh,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: ShapeDecoration(
+            color: primary,
+            shape: const MiuixSquircleBorder(cornerRadius: 16),
+            shadows: [
+              BoxShadow(
+                color: primary.withOpacity(0.4),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: MiuixIcon(
+              vector: MiuixIcons.os4.refresh,
+              tint: Colors.white,
+              size: 22,
+            ),
+          ),
+        ));
+  }
 
   Tab buildTab(String i) {
     return Tab(text: i.tl, key: Key(i));
@@ -70,63 +96,49 @@ class _ExplorePageState extends State<ExplorePage>
 
   @override
   Widget build(BuildContext context) {
-    Widget tabBar = Material(
-      child: FilledTabBar(
-        tabs: pages.map((e) => buildTab(e)).toList(),
-        controller: controller,
-      ),
-    );
-
+    final logic = StateController.find<ExplorePageController>();
     return Stack(
       children: [
         Positioned.fill(
-            child: Column(
-          children: [
-            tabBar,
-            Expanded(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: (notifications) {
-                  if (notifications.metrics.axis == Axis.horizontal) {
-                    if (!showFB) {
-                      setState(() {
-                        showFB = true;
-                      });
-                    }
-                    return true;
-                  }
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notifications) {
+              if (notifications.metrics.axis == Axis.horizontal) {
+                if (!showFB) {
+                  setState(() {
+                    showFB = true;
+                  });
+                }
+                return true;
+              }
 
-                  var current = notifications.metrics.pixels;
+              var current = notifications.metrics.pixels;
 
-                  if ((current > location && current != 0) && showFB) {
-                    setState(() {
-                      showFB = false;
-                    });
-                  } else if ((current < location || current == 0) && !showFB) {
-                    setState(() {
-                      showFB = true;
-                    });
-                  }
+              if ((current > location && current != 0) && showFB) {
+                setState(() {
+                  showFB = false;
+                });
+              } else if ((current < location || current == 0) && !showFB) {
+                setState(() {
+                  showFB = true;
+                });
+              }
 
-                  location = current;
-                  return false;
-                },
-                child: MediaQuery.removePadding(
-                  context: context,
-                  removeTop: true,
-                  child: TabBarView(
-                    controller: controller,
-                    children: pages
-                        .map((e) => buildBody(e))
-                        .toList(),
-                  ),
-                ),
+              location = current;
+              return false;
+            },
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: TabBarView(
+                controller: logic.tabController,
+                children: logic.pages.map((e) => buildBody(e)).toList(),
               ),
-            )
-          ],
-        )),
+            ),
+          ),
+        ),
         Positioned(
           right: 16,
-          bottom: 16,
+          bottom: 88,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 150),
             reverseDuration: const Duration(milliseconds: 150),
@@ -196,15 +208,17 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
         key: ValueKey(key),
       );
     } else if (data.overridePageBuilder != null) {
-      return Builder(
-        builder: (context) {
-          return data.overridePageBuilder!(context);
-        },
+      return TopInsetPadding(
         key: ValueKey(key),
+        child: Builder(
+          builder: (context) {
+            return data.overridePageBuilder!(context);
+          },
+        ),
       );
     } else {
-      return const Center(
-        child: Text("Empty Page"),
+      return const TopInsetPadding(
+        child: Center(child: Text("Empty Page")),
       );
     }
   }
@@ -229,14 +243,16 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
   Widget buildMultiPart() {
     if (loading) {
       load();
-      return const Center(
-        child: CircularProgressIndicator(),
+      return const TopInsetPadding(
+        child: Center(child: MiuixCircularProgressIndicator()),
       );
     } else if (message != null) {
-      return NetworkError(
-        message: message!,
-        retry: refresh,
-        withAppbar: false,
+      return TopInsetPadding(
+        child: NetworkError(
+          message: message!,
+          retry: refresh,
+          withAppbar: false,
+        ),
       );
     } else {
       return buildPage();
@@ -245,7 +261,7 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
 
   Widget buildPage() {
     return SmoothCustomScrollView(
-      slivers: _buildPage().toList(),
+      slivers: [const TopInsetSliver(), ..._buildPage()],
     );
   }
 
@@ -253,6 +269,9 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
     for (var part in parts!) {
       yield* _buildExplorePagePart(part, comicSourceKey);
     }
+    yield const SliverToBoxAdapter(
+      child: SizedBox(height: 100),
+    );
   }
 
   @override
@@ -294,6 +313,10 @@ class _ComicList extends ComicsPage<BaseComic> {
 
   @override
   String? get title => null;
+
+  @override
+  // 顶栏占位由 ComicsPage 统一插入（滚动态用吸顶占位，加载/出错态用 SizedBox）。
+  Widget? get header => const SliverToBoxAdapter(child: SizedBox(height: 12));
 }
 
 class _MixedExplorePage extends StatefulWidget {
@@ -318,11 +341,17 @@ class _MixedExplorePageState
             comics: (cache),
             sourceKey: widget.sourceKey,
           );
-          yield const SliverToBoxAdapter(child: Divider());
+          yield const SliverToBoxAdapter(
+              child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: MiuixHorizontalDivider()));
           cache.clear();
         }
         yield* _buildExplorePagePart(part, widget.sourceKey);
-        yield const SliverToBoxAdapter(child: Divider());
+        yield const SliverToBoxAdapter(
+            child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: MiuixHorizontalDivider()));
       } else {
         cache.addAll(part as List<BaseComic>);
       }
@@ -339,6 +368,7 @@ class _MixedExplorePageState
   Widget buildContent(BuildContext context, List<Object> data) {
     return SmoothCustomScrollView(
       slivers: [
+        const TopInsetSliver(),
         ...buildSlivers(context, data),
         if (haveNextPage) const ListLoadingIndicator().toSliver()
       ],
@@ -363,21 +393,29 @@ class _MixedExplorePageState
 Iterable<Widget> _buildExplorePagePart(
     ExplorePagePart part, String sourceKey) sync* {
   Widget buildTitle(ExplorePagePart part) {
-    return SliverToBoxAdapter(
-      child: SizedBox(
-        height: 60,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 5, 10),
-          child: Row(
-            children: [
-              Text(
-                part.title,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+    // 分区标题吸顶：滚动到该分区时固定在内容顶部（顶栏下方），被下一分区标题推走。
+    return SliverPinnedHeader(
+      child: Builder(builder: (context) => FrostedBackground(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 12, 6),
+        child: Row(
+          children: [
+            Text(
+              part.title.contains("連載更新") || part.title.contains("连载更新")
+                  ? "连载更新".tl
+                  : part.title
+                      .replaceAll("→右滑看更多→", "")
+                      .replaceAll("->右滑看更多->", "")
+                      .trim(),
+              style: MiuixTheme.of(context).textStyles.title4.copyWith(
+                fontWeight: FontWeight.w600,
+                color: MiuixTheme.of(context).colors.onBackground,
               ),
-              const Spacer(),
-              if (part.viewMore != null)
-                TextButton(
+            ),
+            const Spacer(),
+            if (part.viewMore != null)
+              MiuixPressable(
+                  shape: const MiuixSquircleBorder(cornerRadius: 14),
                   onPressed: () {
                     var context = App.mainNavigatorKey!.currentContext!;
                     if (part.viewMore!.startsWith("search:")) {
@@ -404,12 +442,42 @@ Iterable<Widget> _buildExplorePagePart(
                       );
                     }
                   },
-                  child: Text("查看更多".tl),
-                )
-            ],
-          ),
+                  child: Container(
+                    decoration: ShapeDecoration(
+                      shape: const MiuixSquircleBorder(cornerRadius: 14),
+                      color: Theme.of(App.globalContext!).brightness ==
+                              Brightness.dark
+                          ? const Color(0x18FFFFFF)
+                          : const Color(0x0A000000),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "查看更多".tl,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(App.globalContext!)
+                                .colorScheme
+                                .primary,
+                          ),
+                        ),
+                        MiuixIcon(
+                          vector: MiuixIcons.os4.chevronForward,
+                          size: 14,
+                          tint:
+                              Theme.of(App.globalContext!).colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  )),
+          ],
         ),
       ),
+      )),
     );
   }
 
@@ -417,6 +485,8 @@ Iterable<Widget> _buildExplorePagePart(
     return SliverGridComics(comics: part.comics, sourceKey: sourceKey);
   }
 
-  yield buildTitle(part);
-  yield buildComics(part);
+  yield MultiSliver(
+    pushPinnedChildren: true,
+    children: [buildTitle(part), buildComics(part)],
+  );
 }

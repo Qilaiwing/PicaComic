@@ -10,27 +10,21 @@ void findUpdate(BuildContext context) {
       getUpdatesInfo().then((s) {
         if (!context.mounted) return;
         if (s != null) {
-          showDialog(
+          showMiuixDialog(
               context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: Text("有可用更新".tl),
-                  content: Text(s),
-                  actions: [
-                    TextButton(
-                        onPressed: () => App.globalBack(),
-                        child: Text("取消".tl)),
-                    TextButton(
+              title: "有可用更新".tl,
+              summary: s,
+              actionsBuilder: (context, close) => [
+                    MiuixTextButton(onPressed: () => close(), "取消".tl),
+                    MiuixTextButton(
                         onPressed: () {
                           getDownloadUrl().then((s) {
                             launchUrlString(s,
                                 mode: LaunchMode.externalApplication);
                           });
                         },
-                        child: Text("下载".tl))
-                  ],
-                );
-              });
+                        "下载".tl)
+                  ]);
         } else {
           context.showMessage(message: "网络错误".tl);
         }
@@ -48,73 +42,71 @@ class ProxyController extends StateController {
 }
 
 void setProxy(BuildContext context) {
-  showDialog(
+  showMiuixDialog(
       context: context,
-      builder: (dialogContext) {
+      title: "设置代理".tl,
+      contentBuilder: (dialogContext, close) {
         return StateBuilder(
             init: ProxyController(),
             builder: (controller) {
-              return SimpleDialog(
-                title: Text("设置代理".tl),
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(
-                    width: 400,
-                  ),
-                  ListTile(
-                    title: Text("使用系统代理".tl),
-                    trailing: Switch(
-                      value: controller.value,
-                      onChanged: (value) {
-                        if (value == true) {
-                          controller.controller.text = "";
-                        }
-                        controller.value = !controller.value;
-                        controller.update();
-                      },
-                    ),
+                  MiuixSwitchPreference(
+                    title: "使用系统代理".tl,
+                    value: controller.value,
+                    onChanged: (value) {
+                      if (value == true) {
+                        controller.controller.text = "";
+                      }
+                      controller.value = !controller.value;
+                      controller.update();
+                    },
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
-                    child: TextField(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+                    child: MiuixTextField(
                       readOnly: controller.value,
                       controller: controller.controller,
-                      decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
-                          hintText: controller.value
-                              ? "使用系统代理时无法手动设置".tl
-                              : "设置代理, 例如127.0.0.1:7890".tl),
+                      singleLine: true,
+                      useLabelAsPlaceholder: true,
+                      label: controller.value
+                          ? "使用系统代理时无法手动设置".tl
+                          : "设置代理, 例如127.0.0.1:7890".tl,
                     ),
                   ),
                   if (!controller.value)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 10, 15, 10),
+                      padding: const EdgeInsets.fromLTRB(2, 0, 0, 12),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.info_outline,
-                            size: 20,
+                            size: 18,
                           ),
-                          Text("  ${"留空表示禁用网络代理".tl}")
+                          Text("  ${"留空表示禁用网络代理".tl}",
+                              style: const TextStyle(fontSize: 13))
                         ],
                       ),
                     ),
-                  Center(
-                    child: FilledButton(
-                        onPressed: () {
-                          if (controller.value) {
-                            appdata.settings[8] = "0";
-                            appdata.writeData();
-                            setNetworkProxy();
-                            App.globalBack();
-                          } else {
-                            appdata.settings[8] = controller.controller.text;
-                            appdata.writeData();
-                            setNetworkProxy();
-                            App.globalBack();
-                          }
-                        },
-                        child: Text("确认".tl)),
-                  )
+                  MiuixButton(
+                      colors: MiuixButtonDefaults.buttonColorsPrimary(dialogContext),
+                      onPressed: () {
+                        if (controller.value) {
+                          appdata.settings[8] = "0";
+                          appdata.writeData();
+                          setNetworkProxy();
+                          close();
+                        } else {
+                          appdata.settings[8] = controller.controller.text;
+                          appdata.writeData();
+                          setNetworkProxy();
+                          close();
+                        }
+                      },
+                      child: Text("确认".tl,
+                          style: const TextStyle(fontWeight: FontWeight.w600))),
                 ],
               );
             });
@@ -133,16 +125,18 @@ void setDownloadFolder() async {
         directories?.length ?? 0, (index) => directories?[index].path ?? "");
     var havePermission = await const MethodChannel("pica_comic/settings")
         .invokeMethod("files_check");
-    showDialog(
+    showMiuixDialog(
         context: App.globalContext!,
-        builder: (context) => SetDownloadFolderDialog(
+        title: "设置下载目录".tl,
+        contentBuilder: (context, close) => SetDownloadFolderDialog(
               paths: paths,
               haveManageFilesPermission: havePermission,
             ));
   } else {
-    showDialog(
+    showMiuixDialog(
         context: App.globalContext!,
-        builder: (context) => const SetDownloadFolderDialog());
+        title: "设置下载目录".tl,
+        contentBuilder: (context, close) => const SetDownloadFolderDialog());
   }
 }
 
@@ -165,8 +159,8 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleDialog(
-      title: Text("设置下载目录".tl),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (App.isDesktop || widget.haveManageFilesPermission)
           SizedBox(
@@ -176,22 +170,20 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: TextField(
+                  child: MiuixTextField(
                     controller: controller,
-                    decoration: InputDecoration(
-                        border: const OutlineInputBorder(),
-                        labelText: "路径".tl,
-                        hintText: "为空表示使用App数据目录".tl),
+                    label: "路径".tl,
+                    singleLine: true,
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: CheckboxListTile(
+                  child: MiuixCheckboxPreference(
                     value: transform,
                     onChanged: (b) => setState(() {
-                      transform = b!;
+                      transform = b;
                     }),
-                    title: Text("转移数据".tl),
+                    title: "转移数据".tl,
                   ),
                 ),
                 Padding(
@@ -215,7 +207,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                   ),
                 ),
                 Center(
-                  child: FilledButton(
+                  child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                     onPressed: () async {
                       if (controller.text == appdata.settings[22]) return;
                       var directory = Directory(controller.text);
@@ -263,27 +255,25 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RadioListTile<String>(
-                    title: Text("App数据目录".tl),
-                    value: "",
-                    groupValue: current,
-                    onChanged: (value) => setState(() {
-                          current = value!;
+                MiuixRadioButtonPreference(
+                    title: "App数据目录".tl,
+                    selected: current == "",
+                    onClick: () => setState(() {
+                          current = "";
                         })),
                 for (int i = 0; i < widget.paths!.length; i++)
-                  RadioListTile<String>(
-                      title: Text(widget.paths![i]),
-                      value: widget.paths![i],
-                      groupValue: current,
-                      onChanged: (value) => setState(() {
-                            current = value!;
+                  MiuixRadioButtonPreference(
+                      title: widget.paths![i],
+                      selected: current == widget.paths![i],
+                      onClick: () => setState(() {
+                            current = widget.paths![i];
                           })),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: ListTile(
-                    title: Text("允许储存权限".tl),
-                    subtitle: Text("需要储存权限以选取任意目录".tl),
-                    onTap: () {
+                  child: MiuixBasicComponent(
+                    title: "允许储存权限".tl,
+                    summary: "需要储存权限以选取任意目录".tl,
+                    onClick: () {
                       const MethodChannel("pica_comic/settings")
                           .invokeMethod("files");
                       App.globalBack();
@@ -292,12 +282,12 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: CheckboxListTile(
+                  child: MiuixCheckboxPreference(
                     value: transform,
                     onChanged: (b) => setState(() {
-                      transform = b!;
+                      transform = b;
                     }),
-                    title: Text("转移数据".tl),
+                    title: "转移数据".tl,
                   ),
                 ),
                 Padding(
@@ -323,7 +313,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                 SizedBox(
                   height: 60,
                   child: Center(
-                    child: FilledButton(
+                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                       child: Text("确认".tl),
                       onPressed: () async {
                         if (appdata.settings[22] != current) {
@@ -360,7 +350,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
 }
 
 void setExplorePages(BuildContext context) {
-  showPopUpWidget(App.globalContext!, const SetExplorePages());
+  showPopUpWidget(context, const SetExplorePages());
 }
 
 class SetExplorePages extends StatefulWidget {
@@ -383,35 +373,47 @@ class _SetExplorePagesState extends State<SetExplorePages> {
   Widget buildItem(String i) {
     Widget removeButton = Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: IconButton(
-          onPressed: () {
+      child: MiuixIconButton(onPressed: () {
             setState(() {
               var config = appdata.appSettings.explorePages;
               config.remove(i);
               appdata.appSettings.explorePages = config;
             });
-          },
-          icon: const Icon(Icons.delete)),
+          }, child: const Icon(Icons.delete)),
     );
 
-    return ListTile(
-      title: Text(i.tl),
-      key: Key(i),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          removeButton,
-          const Icon(Icons.drag_handle),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Container(
+        key: Key(i),
+        decoration: ShapeDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1C1C1E)
+              : Colors.white,
+          shape: const MiuixSquircleBorder(cornerRadius: 14),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                i.tl,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ),
+            removeButton,
+            const Icon(Icons.drag_handle),
+          ],
+        ),
       ),
     );
   }
 
   Widget buildNotShowPageSelector(String i, BuildContext context) {
-    var widget = ListTile(title: Text(i.tl), key: Key(i));
-    return InkWell(
-      child: widget,
-      onTap: () {
+    return MiuixBasicComponent(
+      key: Key(i),
+      title: i.tl,
+      onClick: () {
         App.back(context);
         setState(() {
           appdata.appSettings.explorePages = appdata.appSettings.explorePages
@@ -450,6 +452,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
           ? const Duration(milliseconds: 100)
           : const Duration(milliseconds: 500),
       dragChildBoxDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
         color: Theme.of(context).colorScheme.surfaceContainer,
         boxShadow: const [
           BoxShadow(
@@ -482,22 +485,18 @@ class _SetExplorePagesState extends State<SetExplorePages> {
       title: "探索页面".tl,
       tailing: [
         if (notShowPages.isNotEmpty)
-          IconButton(
-            onPressed: () {
-              showDialog(
+          MiuixIconButton(onPressed: () {
+              showMiuixDialog(
                 context: context,
-                builder: (context) {
-                  return SimpleDialog(
-                    title: const Text("Add"),
-                    children: notShowPages
-                        .map((e) => buildNotShowPageSelector(e, context))
-                        .toList(),
-                  );
-                },
+                title: "添加".tl,
+                contentBuilder: (context, close) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: notShowPages
+                      .map((e) => buildNotShowPageSelector(e, context))
+                      .toList(),
+                ),
               );
-            },
-            icon: const Icon(Icons.add),
-          )
+            }, child: const Icon(Icons.add))
       ],
       body: view,
     );
@@ -505,23 +504,16 @@ class _SetExplorePagesState extends State<SetExplorePages> {
 }
 
 void clearUserData(BuildContext context) {
-  showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-            title: Text("警告".tl),
-            content: Text("此操作无法撤销, 是否继续?".tl),
-            actions: [
-              TextButton(
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              TextButton(
-                  onPressed: () async {
-                    await clearAppdata();
-                    App.offAll(() => const WelcomePage());
-                    MyApp.updater?.call();
-                  },
-                  child: Text("继续".tl)),
-            ],
-          ));
+  showConfirmDialog(
+    context,
+    "警告".tl,
+    "此操作无法撤销, 是否继续?".tl,
+    () async {
+      await clearAppdata();
+      App.offAll(() => const WelcomePage());
+      MyApp.updater?.call();
+    },
+  );
 }
 
 void exportDataSetting(BuildContext context) {
@@ -539,56 +531,58 @@ void exportDataSetting(BuildContext context) {
     }
   }
 
-  showDialog(
+  showMiuixDialog(
       context: context,
-      builder: (context) => AlertDialog(
-            title: Text("导出用户数据".tl),
-            content: Text("将导出设置, 账号, 历史记录, 下载内容, 本地收藏等数据".tl),
-            actions: [
-              TextButton(
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              TextButton(
+      title: "导出用户数据".tl,
+      summary: "将导出设置, 账号, 历史记录, 下载内容, 本地收藏等数据".tl,
+      contentBuilder: (context, close) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MiuixButton(
+                  colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                   onPressed: () {
-                    App.globalBack();
-                    export(false);
-                  },
-                  child: Text("导出不含下载的数据".tl)),
-              TextButton(
-                  onPressed: () {
-                    App.globalBack();
+                    close();
                     export(true);
                   },
-                  child: Text("导出所有数据".tl))
+                  child: Text("导出所有数据".tl)),
+              const SizedBox(height: 12),
+              MiuixTextButton(
+                  onPressed: () {
+                    close();
+                    export(false);
+                  },
+                  "导出不含下载的数据".tl),
+              const SizedBox(height: 12),
+              MiuixTextButton(onPressed: () => close(), "取消".tl),
             ],
           ));
 }
 
 void importDataSetting(BuildContext context) {
-  showDialog(
+  showMiuixDialog(
       context: context,
-      builder: (context) => AlertDialog(
-            title: Text("导入用户数据".tl),
-            content: Text("${"将导入设置, 账号, 历史记录, 下载内容, 本地收藏等数据, 现在的所有数据将会被覆盖".tl}"
-                "\n${"如果导入的数据中包含下载数据, 则当前的下载数据也将被覆盖".tl}"),
-            actions: [
-              TextButton(
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              TextButton(
-                  onPressed: () {
-                    App.globalBack();
-                    var dialog = showLoadingDialog(context, allowCancel: false);
-                    importData().then((v) {
-                      dialog.close();
-                      if (v) {
-                        showToast(message: "成功导入".tl);
-                      } else {
-                        showToast(message: "导入失败".tl);
-                      }
-                    });
-                  },
-                  child: Text("继续".tl))
-            ],
-          ));
+      title: "导入用户数据".tl,
+      summary: "${"将导入设置, 账号, 历史记录, 下载内容, 本地收藏等数据, 现在的所有数据将会被覆盖".tl}"
+          "\n${"如果导入的数据中包含下载数据, 则当前的下载数据也将被覆盖".tl}",
+      actionsBuilder: (context, close) => [
+            MiuixTextButton(onPressed: () => close(), "取消".tl),
+            MiuixButton(
+                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                onPressed: () {
+                  close();
+                  var dialog = showLoadingDialog(App.globalContext!, allowCancel: false);
+                  importData().then((v) {
+                    dialog.close();
+                    if (v) {
+                      showToast(message: "成功导入".tl);
+                    } else {
+                      showToast(message: "导入失败".tl);
+                    }
+                  });
+                },
+                child: Text("继续".tl)),
+          ]);
 }
 
 void syncDataSettings(BuildContext context) {
@@ -601,82 +595,74 @@ void syncDataSettings(BuildContext context) {
   String pwd = configs[2];
   String path = configs[3];
   int value = 0;
-  showDialog(
+  showMiuixDialog(
     context: context,
-    useSafeArea: false,
-    builder: (context) => ContentDialog(
-      title: "Webdav",
-      content: Column(
+    title: "Webdav",
+    contentBuilder: (context, close) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
+          MiuixTextField(
               onChanged: (s) => url = s,
               controller: TextEditingController(text: url),
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  label: Text("URL"),
-                  hintText: "https://example.com:4433/webdav")),
+              label: "URL",
+              singleLine: true),
           const SizedBox(
             height: 8,
           ),
-          TextField(
+          MiuixTextField(
               onChanged: (s) => username = s,
               controller: TextEditingController(text: username),
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                label: Text("用户名".tl),
-              )),
+              label: "用户名".tl,
+              singleLine: true),
           const SizedBox(
             height: 8,
           ),
-          TextField(
+          MiuixTextField(
               onChanged: (s) => pwd = s,
               controller: TextEditingController(text: pwd),
               obscureText: true,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                label: Text("密码".tl),
-              )),
+              label: "密码".tl,
+              singleLine: true),
           const SizedBox(
             height: 8,
           ),
-          TextField(
+          MiuixTextField(
               onChanged: (s) => path = s,
               controller: TextEditingController(text: path),
-              decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  label: Text("储存路径".tl),
-                  hintText: "请确保路径存在".tl)),
+              label: "储存路径".tl,
+              singleLine: true),
           const SizedBox(
             height: 8,
           ),
           StatefulBuilder(builder: (context, stateSetter) {
-            return Row(
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("立即执行:".tl),
-                Radio<int>(
-                    value: 0,
-                    groupValue: value,
-                    onChanged: (i) => stateSetter(() => value = 0)),
-                Text("上传数据".tl),
-                Radio<int>(
-                    value: 1,
-                    groupValue: value,
-                    onChanged: (i) => stateSetter(() => value = 1)),
-                Text("下载数据".tl),
+                MiuixSmallTitle("立即执行:".tl),
+                MiuixRadioButtonPreference(
+                    title: "上传数据".tl,
+                    selected: value == 0,
+                    onClick: () => stateSetter(() => value = 0)),
+                MiuixRadioButtonPreference(
+                    title: "下载数据".tl,
+                    selected: value == 1,
+                    onClick: () => stateSetter(() => value = 1)),
               ],
             );
           }),
           const SizedBox(
             height: 8,
           ),
-          Center(
-            child: FilledButton(
+          MiuixButton(
+              colors: MiuixButtonDefaults.buttonColorsPrimary(context),
               child: Text("提交".tl),
               onPressed: () async {
                 if (url.isEmpty) {
                   appdata.settings[45] = "$url;$username;$pwd;$path";
                   appdata.updateSettings();
-                  App.globalBack();
+                  close();
                   return;
                 }
                 var dialog = showLoadingDialog(context,
@@ -691,13 +677,12 @@ void syncDataSettings(BuildContext context) {
                   appdata.settings[45] = "$url;$username;$pwd;$path";
                   appdata.updateSettings();
                   dialog.close();
-                  App.globalBack();
+                  close();
                 }
               },
             ),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+            padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -716,8 +701,7 @@ void syncDataSettings(BuildContext context) {
             ),
           )
         ],
-      ).paddingHorizontal(12),
-    ),
+      ),
   );
 }
 
@@ -727,39 +711,43 @@ void setCacheLimit() {
   bool isValid = true;
   final FocusNode focusNode = FocusNode();
   final TextEditingController controller = TextEditingController(text: size.toString());
-  showDialog(
+  showMiuixDialog(
     context: App.globalContext!,
-    useSafeArea: false,
-    builder: (context) => StatefulBuilder(
+    title: "设置缓存限制".tl,
+    contentBuilder: (context, close) => StatefulBuilder(
       builder: (context, setState) {
         focusNode.requestFocus();
-        return ContentDialog(
-          title: "设置缓存限制".tl,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                focusNode: focusNode,
-                controller: controller,
-                keyboardType: TextInputType.number,
-                onChanged: (s) {
-                  size = int.tryParse(s) ?? 500;
-                  setState(() {
-                    isValid = size < minSize ? false : true;
-                  });
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide(color: isValid ? Colors.grey : Colors.red),
-                  ),
-                  suffix: const Text("MB"),
-                  errorText: isValid ? null : "${"不能小于".tl} $minSize MB",
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            MiuixTextField(
+              focusNode: focusNode,
+              controller: controller,
+              keyboardType: TextInputType.number,
+              label: "MB",
+              trailingIcon: const Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: Text("MB"),
+              ),
+              onChanged: (s) {
+                size = int.tryParse(s) ?? 500;
+                setState(() {
+                  isValid = size < minSize ? false : true;
+                });
+              },
+            ),
+            if (!isValid)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 4),
+                child: Text(
+                  "${"不能小于".tl} $minSize MB",
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
                 ),
-              ).paddingHorizontal(16),
-            ],
-          ),
-          actions: [
-            Button.filled(
+              ),
+            const SizedBox(height: 16),
+            MiuixButton(
+              colors: MiuixButtonDefaults.buttonColorsPrimary(context),
               child: Text("确认".tl),
               onPressed: () {
                 if (size < minSize) {
@@ -771,7 +759,7 @@ void setCacheLimit() {
                   appdata.appSettings.cacheLimit = size;
                   appdata.writeData();
                   CacheManager().setLimitSize(size);
-                  App.globalBack();
+                  close();
                 }
               },
             ),

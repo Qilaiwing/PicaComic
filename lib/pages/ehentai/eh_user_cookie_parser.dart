@@ -58,16 +58,7 @@ class _EhUserCookieParserState extends State<EhUserCookieParser>
             scale: scaleAnimation.value,
             child: Padding(
               padding: const EdgeInsets.all(5),
-              child: TextField(
-                maxLines: null,
-                minLines: 5,
-                scrollPhysics: const AlwaysScrollableScrollPhysics(),
-                controller: cookieDataController,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: sample.tl,
-                ),
-              ),
+              child: MiuixTextField(minLines: 5, maxLines: 5, controller: cookieDataController, label: sample.tl, useLabelAsPlaceholder: true),
             ),
           ),
         ),

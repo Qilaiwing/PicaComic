@@ -38,72 +38,42 @@ class _FloatingSearchBar extends StatefulWidget {
 class _FloatingSearchBarState extends State<_FloatingSearchBar> {
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final TextTheme textTheme = Theme.of(context).textTheme;
-    var padding = 12.0;
-    return Container(
-      padding: EdgeInsets.fromLTRB(padding, 0, padding, 0),
-      margin: const EdgeInsets.symmetric(horizontal: 12) +
-          const EdgeInsets.only(top: 8),
-      width: double.infinity,
-      height: 48,
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(32),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14) +
+          const EdgeInsets.only(top: 8, bottom: 4),
       child: Row(children: [
-        Tooltip(
-          message: "返回".tl,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
+        MiuixTooltipBox(
+          tooltip: (_, scope) =>
+              MiuixPlainTooltip(scope: scope, child: Text("返回".tl)),
+          child: MiuixIconButton(
+            minWidth: 36,
+            minHeight: 36,
             onPressed: () => context.pop(),
+            child: MiuixIcon(
+              vector: MiuixIcons.extended.byName('chevronBackward') ??
+                  MiuixIcons.os4.back,
+              size: 20,
+            ),
           ),
         ),
+        const SizedBox(width: 4),
         Expanded(
-          child: Center(
-            child: TextField(
-              controller: widget.controller,
-              onChanged: (s) {
-                if (s.length <= 1) {
-                  setState(() {});
-                }
-                widget.onChanged?.call(s);
-              },
-              focusNode: widget.focusNode,
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: widget.supportingText,
-                hintStyle: textTheme.bodyLarge?.apply(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: widget.onFinish,
-            ),
+          // 直接把外部 controller 交给 TextField（唯一数据源），不再在 build 中
+          // 把文本同步进 MiuixInputField 的内部 controller——那会在构建期间触发
+          // EditableText/选区 Overlay 的 markNeedsBuild。
+          child: AppSearchField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            hint: widget.supportingText,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onFinish,
           ),
         ),
-        if (widget.controller.text.isNotEmpty)
-          Tooltip(
-            message: "clear",
-            child: IconButton(
-              icon: const Icon(Icons.clear_rounded),
-              iconSize: 18,
-              onPressed: () {
-                setState(() {
-                  widget.controller.text = "";
-                });
-              },
-            ),
-          ),
-        Tooltip(
-          message: "search",
-          child: IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              widget.onFinish(widget.controller.text);
-            },
-          ),
+        const SizedBox(width: 6),
+        MiuixButton(
+          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+          onPressed: () => widget.onFinish(widget.controller.text),
+          child: Text("搜索".tl),
         ),
       ]),
     );
@@ -252,12 +222,8 @@ class PreSearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: search,
-        child: const Icon(Icons.search),
-      ),
-      body: Column(
+    return MiuixScaffold(
+ content: (_) => Column(
         children: [
           if (UiMode.m1(context))
             SizedBox(
@@ -279,12 +245,12 @@ class PreSearchPage extends StatelessWidget {
             ),
           ),
           const SizedBox(
-            height: 8,
+            height: 6,
           ),
           buildBody(context)
         ],
       ),
-    );
+);
   }
 
   Widget buildBody(BuildContext context) {
@@ -326,9 +292,9 @@ class PreSearchPage extends StatelessWidget {
             child: CustomScrollView(
           slivers: [
             if (showSideBar)
-              ListTile(
-                leading: const Icon(Icons.select_all),
-                title: Text("搜索选项".tl),
+              MiuixBasicComponent(
+                startAction: const Icon(Icons.select_all),
+                title: "搜索选项".tl,
               ).toSliver(),
             buildTargetSelector(context).toSliver(),
             SliverAnimatedPaintExtent(
@@ -415,16 +381,11 @@ class PreSearchPage extends StatelessWidget {
           bool showTranslation = App.locale.languageCode == "zh";
           Widget buildItem(Pair<String, TranslationType> value) {
             if (value.left == "**URL**") {
-              return ListTile(
-                leading: const Icon(Icons.link),
-                title: Text("打开链接".tl),
-                subtitle: Text(
-                  controller.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                ),
-                trailing: const Icon(Icons.arrow_right),
-                onTap: () {
+              return MiuixArrowPreference(
+                startAction: const Icon(Icons.link),
+                title: "打开链接".tl,
+                summary: controller.text,
+                onClick: () {
                   handleAppLinks(Uri.parse(controller.text));
                 },
               );
@@ -436,16 +397,11 @@ class PreSearchPage extends StatelessWidget {
               if (comicSource == null) {
                 return const SizedBox();
               }
-              return ListTile(
-                leading: const Icon(Icons.link),
-                title: Text("${"打开漫画".tl}: ${comicSource.name}"),
-                subtitle: Text(
-                  controller.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                ),
-                trailing: const Icon(Icons.arrow_right),
-                onTap: () {
+              return MiuixArrowPreference(
+                startAction: const Icon(Icons.link),
+                title: "${"打开漫画".tl}: ${comicSource.name}",
+                summary: controller.text,
+                onClick: () {
                   context.to(
                     () => ComicPage(
                       sourceKey: key,
@@ -458,8 +414,9 @@ class PreSearchPage extends StatelessWidget {
 
             var subTitle = TagsTranslation.translationTagWithNamespace(
                 value.left, value.right.name);
-            return ListTile(
-              title: Row(
+            return MiuixBasicComponent(
+              content: [
+                Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(value.left),
@@ -476,43 +433,61 @@ class PreSearchPage extends StatelessWidget {
                     )
                 ],
               ),
-              subtitle: (showMethod && showTranslation) ? Text(subTitle) : null,
-              trailing: Text(
-                value.right.name,
-                style: const TextStyle(fontSize: 13),
+                if (showMethod && showTranslation) Text(subTitle),
+              ],
+              endActions: [
+                Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: ShapeDecoration(
+                  color:
+                      Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(
+                  value.right.name,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ),
-              onTap: () => onSelected(value.left, value.right),
+              ],
+              onClick: () => onSelected(value.left, value.right),
             );
           }
 
           widget = Column(
             children: [
-              SizedBox(
-                height: 32,
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 child: Row(
                   children: [
-                    const SizedBox(
-                      width: 32,
-                    ),
-                    Text("建议".tl),
-                    const Spacer(),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () {
-                        searchController.suggestions.clear();
-                        logic.update([100]);
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.close,
-                          size: 20,
-                        ),
+                    Text(
+                      "建议".tl,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(
-                      width: 36,
-                    ),
+                    const Spacer(),
+                    MiuixPressable(
+ onPressed: () {
+                          searchController.suggestions.clear();
+                          logic.update([100]);
+                        },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                          ),
+                        ),
+),
                   ],
                 ),
               ),
@@ -534,32 +509,93 @@ class PreSearchPage extends StatelessWidget {
   }
 
   Widget buildTargetSelector(BuildContext context) {
-    buildItem(PreSearchController logic, String id, String text) => Padding(
-          padding: const EdgeInsets.all(4),
-          child: FilterChip(
-            label: Text(text),
-            selected: logic.target == id,
-            onSelected: (b) {
-              logic.updateTarget(id);
-            },
-          ),
-        );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    Widget buildItem(PreSearchController logic, String id, String text) {
+      final isSelected = logic.target == id;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: MiuixPressable(
+ onPressed: () => logic.updateTarget(id),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6.5),
+              decoration: ShapeDecoration(
+                shape: const StadiumBorder(),
+                color: isSelected
+                    ? primaryColor
+                    : (isDark
+                        ? const Color(0xFF2A2A2E)
+                        : const Color(0xFFF0F1F5)),
+              ),
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? const Color(0xDDFFFFFF)
+                          : const Color(0xDD000000)),
+                ),
+              ),
+            ),
+),
+      );
+    }
 
     return StateBuilder<PreSearchController>(
       builder: (logic) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(title: Text("目标".tl)),
-            Wrap(
-              children: [
-                for (var source in comicSources)
-                  buildItem(logic, source.key, source.name.tl)
-              ],
-            ).paddingHorizontal(12),
-            const SizedBox(height: 8)
-          ],
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: ShapeDecoration(
+            shape: MiuixSquircleBorder(
+              cornerRadius: 18,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                width: 0.6,
+              ),
+            ),
+            color: isDark ? const Color(0xFF222226) : Colors.white,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  MiuixIcon(
+                    vector: MiuixIcons.os4.more,
+                    size: 16,
+                    tint: primaryColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "漫画源".tl,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                children: [
+                  for (var source in comicSources)
+                    buildItem(logic, source.key, source.name.tl)
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -593,6 +629,7 @@ class PreSearchPage extends StatelessWidget {
     return StateBuilder<PreSearchController>(
       id: "mode",
       builder: (logic) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         var children = <Widget>[];
         if (logic.searchPageData.customOptionsBuilder != null) {
           children.add(
@@ -605,8 +642,17 @@ class PreSearchPage extends StatelessWidget {
               logic.searchPageData.searchOptions ?? <SearchOptions>[];
           for (int i = 0; i < searchOptions.length; i++) {
             final option = searchOptions[i];
-            children.add(ListTile(
-              title: Text(option.label.tl),
+            children.add(Padding(
+              padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+              child: Text(
+                option.label.tl,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ));
             children.add(Wrap(
               runSpacing: 8,
@@ -621,16 +667,35 @@ class PreSearchPage extends StatelessWidget {
                   },
                 );
               }).toList(),
-            ).paddingHorizontal(16));
+            ));
+            if (i < searchOptions.length - 1) {
+              children.add(const SizedBox(height: 10));
+            }
           }
         }
         if (logic.searchPageData.enableLanguageFilter) {
           children.add(buildLangSelector());
         }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        ).paddingBottom(12);
+        if (children.isEmpty) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: ShapeDecoration(
+            shape: MiuixSquircleBorder(
+              cornerRadius: 18,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                width: 0.6,
+              ),
+            ),
+            color: isDark ? const Color(0xFF222226) : Colors.white,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        );
       },
     );
   }
@@ -644,12 +709,18 @@ class PreSearchPage extends StatelessWidget {
         return FlyoutContent(
           title: "要删除此项目吗?".tl,
           actions: [
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.error,
-                ),
-              ),
+            MiuixButton(
+              colors: MiuixButtonColors(
+                  color: Theme.of(context).colorScheme.error,
+                  disabledColor: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.5),
+                  contentColor: Theme.of(context).colorScheme.onError,
+                  disabledContentColor: Theme.of(context)
+                      .colorScheme
+                      .onError
+                      .withValues(alpha: 0.5)),
               onPressed: () {
                 appdata.searchHistory.remove(history);
                 logic.update(["history"]);
@@ -661,9 +732,10 @@ class PreSearchPage extends StatelessWidget {
           ],
         );
       },
-      child: InkWell(
-        onTap: () => search(history),
-        child: SizedBox(
+      child: MiuixPressable(
+ onPressed: () => search(history),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: SizedBox(
           width: double.infinity,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -676,7 +748,7 @@ class PreSearchPage extends StatelessWidget {
             ),
           ),
         ),
-      ),
+),
     );
   }
 
@@ -689,12 +761,18 @@ class PreSearchPage extends StatelessWidget {
         return FlyoutContent(
           title: "要删除此项目吗?".tl,
           actions: [
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.error,
-                ),
-              ),
+            MiuixButton(
+              colors: MiuixButtonColors(
+                  color: Theme.of(context).colorScheme.error,
+                  disabledColor: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.5),
+                  contentColor: Theme.of(context).colorScheme.onError,
+                  disabledContentColor: Theme.of(context)
+                      .colorScheme
+                      .onError
+                      .withValues(alpha: 0.5)),
               onPressed: () {
                 appdata.favoriteTags.remove(tag);
                 searchController.update();
@@ -706,10 +784,10 @@ class PreSearchPage extends StatelessWidget {
           ],
         );
       },
-      child: ListTile(
-        title: Text(tag.substring(tag.indexOf(':') + 1)),
-        subtitle: Text(tag.split(':').first),
-        onTap: () {
+      child: MiuixBasicComponent(
+        title: tag.substring(tag.indexOf(':') + 1),
+        summary: tag.split(':').first,
+        onClick: () {
           String type = switch (tag.split(':').first) {
             "Picacg" => 'picacg',
             "EHentai" => 'ehentai',
@@ -727,59 +805,59 @@ class PreSearchPage extends StatelessWidget {
   }
 
   Widget buildClearHistoryButton(PreSearchController logic) {
-    return FlyoutIconButton(
-      navigator: App.navigatorKey.currentState,
-      flyoutBuilder: (context) {
-        return FlyoutContent(
-          title: "要清空历史记录吗?".tl,
-          actions: [
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.error,
-                ),
-              ),
-              onPressed: () {
-                appdata.searchHistory.clear();
-                appdata.writeHistory();
-                logic.update(["history"]);
-                App.globalBack();
-              },
-              child: Text("确认".tl),
-            )
-          ],
-        );
-      },
-      icon: const Icon(Icons.delete_forever),
-    );
+    return MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("清空历史记录".tl)),
+ child: MiuixIconButton(
+        minWidth: 32,
+        minHeight: 32,
+        onPressed: () {
+          showConfirmDialog(
+            App.globalContext!,
+            "清空历史记录".tl,
+            "要清空历史记录吗?".tl,
+            () {
+              appdata.searchHistory.clear();
+              appdata.writeHistory();
+              logic.update(["history"]);
+            },
+          );
+        },
+        child: MiuixIcon(
+          vector: MiuixIcons.extended.byName('delete') ?? MiuixIcons.os4.close,
+          size: 17,
+          tint:
+              Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
+        ),
+      ),
+);
   }
 
   Widget buildClearFavoriteButton(PreSearchController logic) {
-    return FlyoutIconButton(
-      navigator: App.navigatorKey.currentState,
-      flyoutBuilder: (context) {
-        return FlyoutContent(
-          title: "要清空收藏吗?".tl,
-          actions: [
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.error,
-                ),
-              ),
-              onPressed: () {
-                appdata.favoriteTags.clear();
-                appdata.writeHistory();
-                logic.update();
-                App.globalBack();
-              },
-              child: Text("确认".tl),
-            )
-          ],
-        );
-      },
-      icon: const Icon(Icons.delete_forever),
-    );
+    return MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("清空收藏".tl)),
+ child: MiuixIconButton(
+        minWidth: 32,
+        minHeight: 32,
+        onPressed: () {
+          showConfirmDialog(
+            App.globalContext!,
+            "清空收藏".tl,
+            "要清空收藏标签吗?".tl,
+            () {
+              appdata.favoriteTags.clear();
+              appdata.writeHistory();
+              logic.update();
+            },
+          );
+        },
+        child: MiuixIcon(
+          vector: MiuixIcons.extended.byName('delete') ?? MiuixIcons.os4.close,
+          size: 17,
+          tint:
+              Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
+        ),
+      ),
+);
   }
 
   Widget buildHistorySideBar() {
@@ -791,10 +869,10 @@ class PreSearchPage extends StatelessWidget {
           itemCount: appdata.searchHistory.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
-              return ListTile(
-                leading: const Icon(Icons.history),
-                title: Text("历史搜索".tl),
-                trailing: buildClearHistoryButton(logic),
+              return MiuixBasicComponent(
+                startAction: const Icon(Icons.history_rounded),
+                title: "历史搜索".tl,
+                endActions: [buildClearHistoryButton(logic)],
               );
             } else {
               var history =
@@ -814,10 +892,10 @@ class PreSearchPage extends StatelessWidget {
         itemCount: appdata.favoriteTags.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
-            return ListTile(
-              leading: const Icon(Icons.favorite_border),
-              title: Text("收藏".tl),
-              trailing: buildClearFavoriteButton(logic),
+            return MiuixBasicComponent(
+              startAction: const Icon(Icons.favorite_rounded),
+              title: "收藏".tl,
+              endActions: [buildClearFavoriteButton(logic)],
             );
           } else {
             final s = appdata.favoriteTags.elementAt(index - 1);
@@ -830,54 +908,327 @@ class PreSearchPage extends StatelessWidget {
 
   Iterable<Widget> buildHistoryAndFavoritesForMobile(
       PreSearchController logic) sync* {
-    yield const Divider().paddingHorizontal(16).toSliver();
-    yield ListTile(
-      leading: const Icon(Icons.history),
-      title: Text("历史搜索".tl),
-      trailing: buildClearHistoryButton(logic),
-    ).toSliver();
-    yield StateBuilder<PreSearchController>(
-      id: "history",
-      builder: (logic) {
-        var length = appdata.searchHistory.length;
-        if (length < 10) {
-          logic.limitHistory = false;
-        }
-        if (logic.limitHistory) {
-          length = length.clamp(0, 10);
-        }
-        return SliverList.builder(
-          itemCount: length,
-          itemBuilder: (context, index) {
-            if (index == length - 1 && logic.limitHistory) {
-              return TextButton(
-                child: Text("查看更多".tl),
-                onPressed: () {
-                  logic.limitHistory = false;
-                  logic.update(["history"]);
-                },
-              ).toAlign(Alignment.center);
-            }
-            var history =
-                appdata.searchHistory[appdata.searchHistory.length - index - 1];
-            return buildHistoryItem(history, logic);
-          },
-        );
-      },
-    );
-    yield const Divider().paddingHorizontal(16).toSliver();
-    yield ListTile(
-      leading: const Icon(Icons.favorite_border),
-      title: Text("收藏".tl),
-      trailing: buildClearFavoriteButton(logic),
-    ).toSliver();
+    final isDark = Theme.of(App.globalContext!).brightness == Brightness.dark;
+    final primaryColor = Theme.of(App.globalContext!).colorScheme.primary;
 
-    yield StateBuilder<PreSearchController>(
-      builder: (logic) => SliverList.builder(
-        itemCount: appdata.favoriteTags.length,
-        itemBuilder: (context, index) {
-          final s = appdata.favoriteTags.elementAt(index);
-          return buildFavoriteItem(s, logic);
+    yield SliverToBoxAdapter(
+      child: StateBuilder<PreSearchController>(
+        id: "history",
+        builder: (logic) {
+          final isEmpty = appdata.searchHistory.isEmpty;
+          var length = appdata.searchHistory.length;
+          if (length < 12) {
+            logic.limitHistory = false;
+          }
+          final showCount = logic.limitHistory ? length.clamp(0, 12) : length;
+
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            decoration: ShapeDecoration(
+              shape: MiuixSquircleBorder(
+                cornerRadius: 18,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0A000000),
+                  width: 0.6,
+                ),
+              ),
+              color: isDark ? const Color(0xFF222226) : Colors.white,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    MiuixIcon(
+                      vector: MiuixIcons.extended.byName('recent') ??
+                          MiuixIcons.os4.settings,
+                      size: 16,
+                      tint: primaryColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "历史搜索".tl,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (!isEmpty) buildClearHistoryButton(logic),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      "暂无搜索历史".tl,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark
+                            ? const Color(0x66FFFFFF)
+                            : const Color(0x66000000),
+                      ),
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (int i = 0; i < showCount; i++) ...[
+                        Builder(
+                          builder: (context) {
+                            final history = appdata.searchHistory[
+                                appdata.searchHistory.length - i - 1];
+                            return MiuixPressable(
+ onPressed: () => search(history),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(13, 6, 8, 6),
+                                  decoration: ShapeDecoration(
+                                    shape: const StadiumBorder(),
+                                    color: isDark
+                                        ? const Color(0xFF2A2A2E)
+                                        : const Color(0xFFF0F1F5),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        history,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isDark
+                                              ? const Color(0xDDFFFFFF)
+                                              : const Color(0xDD000000),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          appdata.searchHistory.remove(history);
+                                          logic.update(["history"]);
+                                          appdata.writeHistory();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(2),
+                                          child: MiuixIcon(
+                                            vector: MiuixIcons.basic.close,
+                                            size: 12,
+                                            tint: isDark
+                                                ? const Color(0x88FFFFFF)
+                                                : const Color(0x77000000),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+);
+                          },
+                        ),
+                      ],
+                      if (length > 12)
+                        MiuixPressable(
+ onPressed: () {
+                              logic.limitHistory = !logic.limitHistory;
+                              logic.update(["history"]);
+                            },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: ShapeDecoration(
+                                shape: const StadiumBorder(),
+                                color: primaryColor.withOpacity(0.12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    logic.limitHistory ? "展开更多".tl : "收起".tl,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                  Icon(
+                                    logic.limitHistory
+                                        ? Icons.keyboard_arrow_down_rounded
+                                        : Icons.keyboard_arrow_up_rounded,
+                                    size: 16,
+                                    color: primaryColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+),
+                    ],
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    yield SliverToBoxAdapter(
+      child: StateBuilder<PreSearchController>(
+        builder: (logic) {
+          final isEmpty = appdata.favoriteTags.isEmpty;
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            decoration: ShapeDecoration(
+              shape: MiuixSquircleBorder(
+                cornerRadius: 18,
+                side: BorderSide(
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0A000000),
+                  width: 0.6,
+                ),
+              ),
+              color: isDark ? const Color(0xFF222226) : Colors.white,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    MiuixIcon(
+                      vector: MiuixIcons.os4.favorites,
+                      size: 16,
+                      tint: primaryColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      "收藏标签".tl,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (!isEmpty) buildClearFavoriteButton(logic),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      "暂无收藏标签".tl,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark
+                            ? const Color(0x66FFFFFF)
+                            : const Color(0x66000000),
+                      ),
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (var tag in appdata.favoriteTags) ...[
+                        Builder(
+                          builder: (context) {
+                            final source = tag.split(':').first;
+                            final keyword = tag.substring(tag.indexOf(':') + 1);
+                            return MiuixPressable(
+ onPressed: () {
+                                  String type = switch (source) {
+                                    "Picacg" => 'picacg',
+                                    "EHentai" => 'ehentai',
+                                    "JMComic" => 'jm',
+                                    "hitomi" => 'hitomi',
+                                    "HtComic" => 'htmanga',
+                                    "Nhentai" => 'nhentai',
+                                    _ => source
+                                  };
+                                  search(keyword, type);
+                                },
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(6, 4, 8, 4),
+                                  decoration: ShapeDecoration(
+                                    shape: const StadiumBorder(),
+                                    color: isDark
+                                        ? const Color(0xFF2A2A2E)
+                                        : const Color(0xFFF0F1F5),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: ShapeDecoration(
+                                          shape: const StadiumBorder(),
+                                          color: primaryColor.withOpacity(0.12),
+                                        ),
+                                        child: Text(
+                                          source,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: primaryColor,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        keyword,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isDark
+                                              ? const Color(0xDDFFFFFF)
+                                              : const Color(0xDD000000),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          appdata.favoriteTags.remove(tag);
+                                          logic.update();
+                                          appdata.writeHistory();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(2),
+                                          child: MiuixIcon(
+                                            vector: MiuixIcons.basic.close,
+                                            size: 12,
+                                            tint: isDark
+                                                ? const Color(0x88FFFFFF)
+                                                : const Color(0x77000000),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+);
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+              ],
+            ),
+          );
         },
       ),
     );

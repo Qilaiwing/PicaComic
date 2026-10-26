@@ -20,7 +20,7 @@ class Appbar extends StatefulWidget implements PreferredSizeWidget {
   State<Appbar> createState() => _AppbarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(56);
+  Size get preferredSize => const Size.fromHeight(_kAppBarHeight);
 }
 
 class _AppbarState extends State<Appbar> {
@@ -75,60 +75,107 @@ class _AppbarState extends State<Appbar> {
   Widget build(BuildContext context) {
     var content = SizedBox(
       height: _kAppBarHeight,
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          const SizedBox(width: 8),
-          widget.leading ??
-              Tooltip(
-                message: "返回".tl,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
+          Positioned.fill(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 60),
+                child: DefaultTextStyle(
+                  style: DefaultTextStyle.of(context).style.copyWith(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  child: widget.title,
                 ),
               ),
-          const SizedBox(
-            width: 16,
-          ),
-          Expanded(
-            child: DefaultTextStyle(
-              style: DefaultTextStyle.of(context).style.copyWith(fontSize: 20),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              child: widget.title,
             ),
           ),
-          ...?widget.actions,
-          const SizedBox(
-            width: 8,
-          )
+          Positioned(
+            left: 8,
+            child: widget.leading ??
+                (Navigator.of(context).canPop()
+                    ? AppTooltip(
+                        message: "返回".tl,
+                        child: MiuixIconButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: MiuixIcon(
+                            vector:
+                                MiuixIcons.extended.byName('chevronBackward') ??
+                                    MiuixIcons.os4.back,
+                            size: 20,
+                            tint:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : const Color(0xFF111111),
+                          ),
+                        ),
+                      )
+                    : const SizedBox()),
+          ),
+          if (widget.actions != null)
+            Positioned(
+              right: 8,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: widget.actions!,
+              ),
+            ),
         ],
       ),
     ).paddingTop(context.padding.top);
     if (widget.backgroundColor != Colors.transparent) {
-      return Material(
-        elevation: (_scrolledUnder && UiMode.m1(context)) ? 1 : 0,
-        surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
-        color: widget.backgroundColor ?? Theme.of(context).colorScheme.surface,
-        child: content,
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final baseColor =
+          widget.backgroundColor ?? MiuixTheme.of(context).colors.background;
+      final translucentColor = baseColor.withValues(alpha: frostTintAlpha(context));
+      return ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+          child: ColoredBox(
+            color: translucentColor,
+            child: content,
+          ),
+        ),
       );
     }
     return content;
   }
 }
 
+/// 统一的大标题 Sliver 顶栏（全项目子页面共用）。
+///
+/// - 背景延伸到状态栏下（沉浸式），颜色取 Miuix 页面底色，避免与页面割裂；
+/// - 大标题随滚动上移淡出，布局与 [MiuixTopAppBar] 一致：折叠带 52 + 标题行高
+///   + 6，标题行高按字体实测，不再写死 bottom 偏移，避免字形（如 g）被裁掉；
+/// - [bottom]（如筛选 Chip / Tab 行）作为顶栏的一部分固定显示，高度计入
+///   min/maxExtent，滚动时不会被顶栏盖住。
 class SliverAppbar extends StatelessWidget {
   const SliverAppbar({
     super.key,
     required this.title,
+    this.largeTitle,
+    this.leftSmallTitle = false,
     this.leading,
     this.actions,
     this.color,
     this.radius = 0,
+    this.bottom,
+    this.bottomHeight = 0,
   });
 
   final Widget? leading;
 
   final Widget title;
+
+  final Widget? largeTitle;
+
+  final bool leftSmallTitle;
 
   final List<Widget>? actions;
 
@@ -136,28 +183,52 @@ class SliverAppbar extends StatelessWidget {
 
   final double radius;
 
+  /// 固定在顶栏底部的附加内容（Tab / 筛选 Chip 行）。
+  final Widget? bottom;
+
+  /// [bottom] 的高度。
+  final double bottomHeight;
+
   @override
   Widget build(BuildContext context) {
+    final textScaler = MediaQuery.textScalerOf(context);
     return SliverPersistentHeader(
       pinned: true,
       delegate: _MySliverAppBarDelegate(
         leading: leading,
         title: title,
+        largeTitle: largeTitle,
+        leftSmallTitle: leftSmallTitle,
         actions: actions,
         topPadding: MediaQuery.of(context).padding.top,
-        color: color,
+        color: color ?? MiuixTheme.of(context).colors.background,
         radius: radius,
+        bottom: bottom,
+        bottomHeight: bottom == null ? 0 : bottomHeight,
+        largeTitleLineHeight:
+            textScaler.scale(_kLargeTitleFontSize) * _kLargeTitleLineHeight,
       ),
     );
   }
 }
 
-const _kAppBarHeight = 58.0;
+const _kAppBarHeight = 52.0;
+
+/// 大标题字号 / 行高（与 [MiuixTopAppBar] 一致）。
+const _kLargeTitleFontSize = 25.0;
+const _kLargeTitleLineHeight = 1.3;
+
+/// 大标题与折叠带、底部之间的统一间距。
+const _kLargeTitleBottomPadding = 6.0;
 
 class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget? leading;
 
   final Widget title;
+
+  final Widget? largeTitle;
+
+  final bool leftSmallTitle;
 
   final List<Widget>? actions;
 
@@ -167,69 +238,213 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   final double radius;
 
-  _MySliverAppBarDelegate(
-      {this.leading,
-      required this.title,
-      this.actions,
-      this.color,
-      required this.topPadding,
-      this.radius = 0});
+  final Widget? bottom;
+
+  final double bottomHeight;
+
+  final double largeTitleLineHeight;
+
+  _MySliverAppBarDelegate({
+    this.leading,
+    required this.title,
+    this.largeTitle,
+    this.leftSmallTitle = false,
+    this.actions,
+    this.color,
+    required this.topPadding,
+    this.radius = 0,
+    this.bottom,
+    this.bottomHeight = 0,
+    required this.largeTitleLineHeight,
+  });
+
+  double get _expansion => largeTitleLineHeight + _kLargeTitleBottomPadding;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final maxShrink = maxExtent - minExtent;
+    final shrink = shrinkOffset.clamp(0.0, maxShrink);
+    final progress = maxShrink > 0 ? (shrink / maxShrink).clamp(0.0, 1.0) : 0.0;
+    final largeTitleOpacity = (1.0 - progress * 2.2).clamp(0.0, 1.0);
+    final smallTitleOpacity = ((progress - 0.45) / 0.55).clamp(0.0, 1.0);
+
+    final baseColor = color ?? MiuixTheme.of(context).colors.background;
+    // 全局统一的毛玻璃：与吸顶分区头同 tint/sigma，无分割线，融为一体。
+    final bgColor = baseColor.withValues(alpha: frostTintAlpha(context));
+    final fg = isDark ? Colors.white : const Color(0xFF111111);
+
     return SizedBox.expand(
-      child: Material(
-        color: color,
-        elevation: 0,
-        borderRadius: BorderRadius.circular(radius),
-        child: Row(
-          children: [
-            const SizedBox(width: 8),
-            leading ??
-                (Navigator.of(context).canPop()
-                    ? Tooltip(
-                        message: "返回".tl,
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => Navigator.pop(context),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+          child: Container(
+            color: bgColor,
+            child: Stack(
+              children: [
+                // 大标题层：位于折叠带下方，随收缩上移并在折叠带下缘被裁掉。
+                Positioned(
+                  top: topPadding + _kAppBarHeight - 8,
+                  left: 0,
+                  right: 0,
+                  height: largeTitleLineHeight + 8,
+                  child: ClipRect(
+                    child: Stack(
+                      children: [
+                        if (largeTitleOpacity > 0.01)
+                          Positioned(
+                            left: 24,
+                            right: 24,
+                            top: 8 - shrink,
+                            child: Opacity(
+                              opacity: largeTitleOpacity,
+                              child: DefaultTextStyle(
+                                style: TextStyle(
+                                  fontSize: _kLargeTitleFontSize,
+                                  height: _kLargeTitleLineHeight,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.4,
+                                  color: fg,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                child: largeTitle ?? title,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: topPadding,
+                  left: 0,
+                  right: 0,
+                  height: _kAppBarHeight,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned.fill(
+                        child: leftSmallTitle
+                            ? Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 58, right: 54),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Opacity(
+                                    opacity: smallTitleOpacity,
+                                    child: Transform.translate(
+                                      offset: Offset(0,
+                                          10 * (1 - smallTitleOpacity) - 1.0),
+                                      child: DefaultTextStyle(
+                                        style: TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
+                                          height: 1.2,
+                                          color: fg,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                        child: title,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  child: Opacity(
+                                    opacity: smallTitleOpacity,
+                                    child: Transform.translate(
+                                      offset: Offset(0,
+                                          10 * (1 - smallTitleOpacity) - 1.0),
+                                      child: DefaultTextStyle(
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
+                                          height: 1.2,
+                                          color: fg,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        child: title,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
+                      Positioned(
+                        left: 8,
+                        child: leading ??
+                            (Navigator.of(context).canPop()
+                                ? AppTooltip(
+                                    message: "返回".tl,
+                                    child: MiuixIconButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: MiuixIcon(
+                                        vector: MiuixIcons.extended
+                                                .byName('chevronBackward') ??
+                                            MiuixIcons.os4.back,
+                                        size: 20,
+                                        tint: fg,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox()),
+                      ),
+                      if (actions != null)
+                        Positioned(
+                          right: 8,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: actions!,
+                          ),
                         ),
-                      )
-                    : const SizedBox()),
-            const SizedBox(
-              width: 24,
+                    ],
+                  ),
+                ),
+                if (bottom != null)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: bottomHeight,
+                    child: bottom!,
+                  ),
+              ],
             ),
-            Expanded(
-              child: DefaultTextStyle(
-                style:
-                    DefaultTextStyle.of(context).style.copyWith(fontSize: 20),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                child: title,
-              ),
-            ),
-            ...?actions,
-            const SizedBox(
-              width: 8,
-            )
-          ],
-        ).paddingTop(topPadding),
+          ),
+        ),
       ),
     );
   }
 
   @override
-  double get maxExtent => _kAppBarHeight + topPadding;
+  double get maxExtent =>
+      topPadding + _kAppBarHeight + _expansion + bottomHeight;
 
   @override
-  double get minExtent => _kAppBarHeight + topPadding;
+  double get minExtent => topPadding + _kAppBarHeight + bottomHeight;
 
   @override
   bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) {
     return oldDelegate is! _MySliverAppBarDelegate ||
         leading != oldDelegate.leading ||
         title != oldDelegate.title ||
-        actions != oldDelegate.actions;
+        actions != oldDelegate.actions ||
+        bottom != oldDelegate.bottom ||
+        bottomHeight != oldDelegate.bottomHeight ||
+        color != oldDelegate.color ||
+        topPadding != oldDelegate.topPadding ||
+        largeTitleLineHeight != oldDelegate.largeTitleLineHeight;
   }
 }
 
@@ -266,54 +481,75 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
     return math.max(widget.height, 53);
   }
 
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(FloatingSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    var text = widget.controller.text;
-    if (text.isEmpty) {
-      text = "Search";
-    }
-    var padding = 12.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: EdgeInsets.fromLTRB(padding, 9, padding, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       width: double.infinity,
       height: effectiveHeight,
-      child: Material(
-        elevation: 0,
-        color: colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(effectiveHeight / 2),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(children: [
-            Tooltip(
-              message: "返回".tl,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.pop(),
-              ),
+      child: Row(children: [
+        AppTooltip(
+          message: "返回".tl,
+          child: MiuixIconButton(
+            minWidth: 36,
+            minHeight: 36,
+            onPressed: () => context.pop(),
+            child: MiuixIcon(
+              vector: MiuixIcons.extended.byName('chevronBackward') ??
+                  MiuixIcons.os4.back,
+              size: 20,
+              tint: isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: TextField(
-                  controller: widget.controller,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (s) {
-                    widget.onSearch(s);
-                  },
-                  onChanged: widget.onChanged,
-                ),
-              ),
-            ),
-            if (widget.trailing != null) widget.trailing!
-          ]),
+          ),
         ),
-      ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SizedBox(
+            height: 46,
+            child: AppSearchField(
+              controller: widget.controller,
+              hint: "Search",
+              autofocus: false,
+              onChanged: widget.onChanged,
+              onSubmitted: widget.onSearch,
+            ),
+          ),
+        ),
+        if (widget.trailing != null) widget.trailing!
+      ]),
     );
   }
 }
+
+
 
 class FilledTabBar extends StatefulWidget {
   const FilledTabBar({super.key, this.controller, required this.tabs});
@@ -331,19 +567,13 @@ class _FilledTabBarState extends State<FilledTabBar> {
 
   late List<GlobalKey> keys;
 
-  static const _kTabHeight = 48.0;
+  static const _kTabHeight = 44.0;
 
-  static const tabPadding = EdgeInsets.symmetric(horizontal: 6, vertical: 6);
+  final scrollController = ScrollController();
 
-  static const tabRadius = 12.0;
+  final tabBarKey = GlobalKey();
 
-  _IndicatorPainter? painter;
-
-  var scrollController = ScrollController();
-
-  var tabBarKey = GlobalKey();
-
-  var offsets = <double>[];
+  int? previousIndex;
 
   @override
   void initState() {
@@ -352,15 +582,9 @@ class _FilledTabBarState extends State<FilledTabBar> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   void didChangeDependencies() {
     _controller = widget.controller ?? DefaultTabController.of(context);
     _controller.animation!.addListener(onTabChanged);
-    initPainter();
     super.didChangeDependencies();
   }
 
@@ -369,22 +593,55 @@ class _FilledTabBarState extends State<FilledTabBar> {
     if (widget.controller != oldWidget.controller) {
       _controller = widget.controller ?? DefaultTabController.of(context);
       _controller.animation!.addListener(onTabChanged);
-      initPainter();
+    }
+    if (widget.tabs.length != keys.length) {
+      keys = widget.tabs.map((e) => GlobalKey()).toList();
     }
     super.didUpdateWidget(oldWidget);
   }
 
-  void initPainter() {
-    var old = painter;
-    painter = _IndicatorPainter(
-      controller: _controller,
-      color: context.colorScheme.primary,
-      padding: tabPadding,
-      radius: tabRadius,
-    );
-    if (old != null) {
-      painter!.update(old.offsets!, old.itemHeight!);
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  void onTabChanged() {
+    final int i = _controller.index;
+    if (i == previousIndex) {
+      return;
     }
+    _scrollToCenter(i);
+    previousIndex = i;
+  }
+
+  void _scrollToCenter(int i) {
+    if (i < 0 || i >= keys.length) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !scrollController.hasClients) return;
+      final keyContext = keys[i].currentContext;
+      if (keyContext == null) return;
+      final renderBox = keyContext.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+      final position = renderBox.localToGlobal(Offset.zero,
+          ancestor: tabBarKey.currentContext?.findRenderObject());
+      final tabBarBox =
+          tabBarKey.currentContext?.findRenderObject() as RenderBox?;
+      if (tabBarBox == null) return;
+      final double tabCenter = position.dx + renderBox.size.width / 2;
+      final double screenCenter = tabBarBox.size.width / 2;
+      final double target = (scrollController.offset + tabCenter - screenCenter)
+          .clamp(0.0, scrollController.position.maxScrollExtent);
+      scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void onTabClicked(int i) {
+    _controller.animateTo(i);
   }
 
   @override
@@ -395,229 +652,77 @@ class _FilledTabBarState extends State<FilledTabBar> {
     );
   }
 
-  void _tabLayoutCallback(List<double> offsets, double itemHeight) {
-    painter!.update(offsets, itemHeight);
-    this.offsets = offsets;
-  }
-
   Widget buildTabBar(BuildContext context, Widget? _) {
-    var child = SmoothScrollProvider(
-      controller: scrollController,
-      builder: (context, controller, physics) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
-          controller: controller,
-          physics: physics,
-          child: CustomPaint(
-            painter: painter,
-            child: _TabRow(
-              callback: _tabLayoutCallback,
-              children: List.generate(widget.tabs.length, buildTab),
-            ),
-          ).paddingHorizontal(4),
-        );
-      },
-    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       key: tabBarKey,
       height: _kTabHeight,
       width: double.infinity,
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: context.colorScheme.outlineVariant,
-            width: 0.6,
-          ),
-        ),
-      ),
+      color: Colors.transparent,
       child: widget.tabs.isEmpty
           ? const SizedBox()
-          : child
-    );
-  }
-
-  int? previousIndex;
-
-  void onTabChanged() {
-    final int i = _controller.index;
-    if (i == previousIndex) {
-      return;
-    }
-    updateScrollOffset(i);
-    previousIndex = i;
-  }
-
-  void updateScrollOffset(int i) {
-    // try to scroll to center the tab
-    final RenderBox tabBarBox =
-        tabBarKey.currentContext!.findRenderObject() as RenderBox;
-    final double tabLeft = offsets[i];
-    final double tabRight = offsets[i + 1];
-    final double tabWidth = tabRight - tabLeft;
-    final double tabCenter = tabLeft + tabWidth / 2;
-    final double tabBarWidth = tabBarBox.size.width;
-    final double scrollOffset = tabCenter - tabBarWidth / 2;
-    if (scrollOffset == scrollController.offset) {
-      return;
-    }
-    scrollController.animateTo(
-      scrollOffset,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void onTabClicked(int i) {
-    _controller.animateTo(i);
-  }
-
-  Widget buildTab(int i) {
-    return InkWell(
-      onTap: () => onTabClicked(i),
-      borderRadius: BorderRadius.circular(tabRadius),
-      child: KeyedSubtree(
-        key: keys[i],
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DefaultTextStyle(
-            style: DefaultTextStyle.of(context).style.copyWith(
-              color: i == _controller.index
-                  ? context.colorScheme.primary
-                  : context.colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
+          : SmoothScrollProvider(
+              controller: scrollController,
+              builder: (context, controller, physics) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                  controller: controller,
+                  physics: physics,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < widget.tabs.length; i++)
+                        _buildCapsuleTab(context, i, isDark, primaryColor),
+                    ],
+                  ),
+                );
+              },
             ),
-            child: widget.tabs[i],
-          ),
-        ),
-      ),
-    ).padding(tabPadding);
-  }
-}
-
-typedef _TabRenderCallback = void Function(
-  List<double> offsets,
-  double itemHeight,
-);
-
-class _TabRow extends Row {
-  const _TabRow({required this.callback, required super.children});
-
-  final _TabRenderCallback callback;
-
-  @override
-  RenderFlex createRenderObject(BuildContext context) {
-    return _RenderTabFlex(
-        direction: Axis.horizontal,
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        textDirection: Directionality.of(context),
-        verticalDirection: VerticalDirection.down,
-        callback: callback);
-  }
-
-  @override
-  void updateRenderObject(BuildContext context, _RenderTabFlex renderObject) {
-    super.updateRenderObject(context, renderObject);
-    renderObject.callback = callback;
-  }
-}
-
-class _RenderTabFlex extends RenderFlex {
-  _RenderTabFlex({
-    required super.direction,
-    required super.mainAxisSize,
-    required super.mainAxisAlignment,
-    required super.crossAxisAlignment,
-    required TextDirection super.textDirection,
-    required super.verticalDirection,
-    required this.callback,
-  });
-
-  _TabRenderCallback callback;
-
-  @override
-  void performLayout() {
-    super.performLayout();
-    RenderBox? child = firstChild;
-    final List<double> xOffsets = <double>[];
-    while (child != null) {
-      final FlexParentData childParentData =
-          child.parentData! as FlexParentData;
-      xOffsets.add(childParentData.offset.dx);
-      assert(child.parentData == childParentData);
-      child = childParentData.nextSibling;
-    }
-    xOffsets.add(size.width);
-    callback(xOffsets, firstChild!.size.height);
-  }
-}
-
-class _IndicatorPainter extends CustomPainter {
-  _IndicatorPainter({
-    required this.controller,
-    required this.color,
-    required this.padding,
-    this.radius = 4.0,
-  }) : super(repaint: controller.animation);
-
-  final TabController controller;
-  final Color color;
-  final EdgeInsets padding;
-  final double radius;
-
-  List<double>? offsets;
-  double? itemHeight;
-  Rect? _currentRect;
-
-  void update(List<double> offsets, double itemHeight) {
-    this.offsets = offsets;
-    this.itemHeight = itemHeight;
-  }
-
-  int get maxTabIndex => offsets!.length - 2;
-
-  Rect indicatorRect(Size tabBarSize, int tabIndex) {
-    assert(offsets != null);
-    assert(offsets!.isNotEmpty);
-    assert(tabIndex >= 0);
-    assert(tabIndex <= maxTabIndex);
-    var (tabLeft, tabRight) = (offsets![tabIndex], offsets![tabIndex + 1]);
-
-    const horizontalPadding = 12.0;
-
-    var rect = Rect.fromLTWH(
-      tabLeft + padding.left + horizontalPadding,
-      _FilledTabBarState._kTabHeight - 3.6,
-      tabRight - tabLeft - padding.horizontal - horizontalPadding * 2,
-      3,
     );
-
-    return rect;
   }
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (offsets == null || itemHeight == null) {
-      return;
-    }
-    final double index = controller.index.toDouble();
-    final double value = controller.animation!.value;
-    final bool ltr = index > value;
-    final int from = (ltr ? value.floor() : value.ceil()).clamp(0, maxTabIndex);
-    final int to = (ltr ? from + 1 : from - 1).clamp(0, maxTabIndex);
-    final Rect fromRect = indicatorRect(size, from);
-    final Rect toRect = indicatorRect(size, to);
-    _currentRect = Rect.lerp(fromRect, toRect, (value - from).abs());
-    final Paint paint = Paint()..color = color;
-    final RRect rrect =
-        RRect.fromRectAndCorners(_currentRect!, topLeft: Radius.circular(radius), topRight: Radius.circular(radius));
-    canvas.drawRRect(rrect, paint);
-  }
+  Widget _buildCapsuleTab(
+      BuildContext context, int i, bool isDark, Color primaryColor) {
+    final isSelected = i == _controller.index;
+    final tab = widget.tabs[i];
+    final String text =
+        tab.text ?? (tab.child is Text ? (tab.child as Text).data ?? '' : '');
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+    return Padding(
+      key: keys[i],
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: MiuixPressable(
+          shape: const StadiumBorder(),
+          onPressed: () {
+            onTabClicked(i);
+            _scrollToCenter(i);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            // HyperOS 风格胶囊：无描边；选中为主色实底，未选中为容器色浅底。
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+            decoration: ShapeDecoration(
+              shape: const StadiumBorder(),
+              color: isSelected
+                  ? MiuixTheme.of(context).colors.primary
+                  : MiuixTheme.of(context).colors.surfaceContainerHigh,
+            ),
+            child: Text(
+              text.isNotEmpty ? text : 'Tab ${i + 1}',
+              style: TextStyle(
+                fontSize: 14.0,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? MiuixTheme.of(context).colors.onPrimary
+                    : MiuixTheme.of(context).colors.onSurfaceContainerHigh,
+                height: 1.2,
+              ),
+            ),          )),
+    );
   }
 }

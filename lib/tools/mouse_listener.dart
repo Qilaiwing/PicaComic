@@ -14,7 +14,7 @@ void listenMouseSideButtonToBack() async{
   if(!App.isWindows){
     return;
   }
-  const channel = EventChannel("com.github.pacalini.pica_comic/mouse");
+  const channel = EventChannel("com.picacomic_miuix/mouse");
   await for(var res in channel.receiveBroadcastStream()){
     if(res == 0){
       mouseSideButtonCallback();
