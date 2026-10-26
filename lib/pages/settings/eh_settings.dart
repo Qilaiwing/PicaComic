@@ -114,7 +114,7 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
  title: "Profile",
  navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
 ),
- content: (padding) => Padding(
+ content: (padding) => ScrollUnderBar(
  padding: padding,
  child: loading
           ? const Center(

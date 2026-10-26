@@ -87,9 +87,10 @@ class _EditRuleViewState extends State<EditRuleView> {
  title: "rule.json",
  navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
 ),
- content: (padding) => Padding(
+ content: (padding) => ScrollUnderBar(
  padding: padding,
  child: SingleChildScrollView(
+        padding: EdgeInsets.only(top: padding.top),
         child: Padding(
           padding: EdgeInsets.fromLTRB(8, 0, 8, MediaQuery.of(context).padding.bottom),
           child: MiuixTextField(

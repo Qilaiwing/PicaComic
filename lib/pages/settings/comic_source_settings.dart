@@ -345,7 +345,7 @@ class _ComicSourceListState extends State<_ComicSourceList> {
           MiuixIconButton(onPressed: App.globalBack, child: Icon(Icons.close)),
         ],
 ),
- content: (padding) => Padding(
+ content: (padding) => ScrollUnderBar(
  padding: padding,
  child: buildBody(),
  ),

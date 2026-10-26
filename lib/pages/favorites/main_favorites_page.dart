@@ -368,6 +368,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
 
     return SmoothCustomScrollView(
         slivers: [
+          const TopInsetSliver(),
           if (hasNetwork)
             MultiSliver(pushPinnedChildren: true, children: [
               StickySectionHeader(title: "网络".tl),
@@ -677,9 +678,9 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
     if (controller.current == null) {
       return const SizedBox();
     } else if (controller.isNetwork!) {
-      return NetworkFavoritePage(
-        controller.networkData!,
+      return TopInsetPadding(
         key: Key(controller.current ?? ""),
+        child: NetworkFavoritePage(controller.networkData!),
       );
     } else {
       var count = LocalFavoritesManager().count(controller.current!);
@@ -949,7 +950,7 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
 
   Widget buildFolderComics(String folder) {
     if (comics.isEmpty) {
-      return buildEmptyView();
+      return TopInsetPadding(child: buildEmptyView());
     }
 
     return MiuixScaffold(
@@ -983,7 +984,7 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
                       controller: controller,
                       gridDelegate: SliverGridDelegateWithComics(),
                       itemCount: comics.length,
-                      padding: const EdgeInsets.fromLTRB(0, 16, 0, 100),
+                      padding: EdgeInsets.fromLTRB(0, 16 + MainTopInset.of(context), 0, 100),
                       physics: physic,
                       itemBuilder: (BuildContext context, int index) {
                         var comic = comics[index];
@@ -1161,7 +1162,7 @@ class _FoldersReorderPageState extends State<_FoldersReorderPage> {
  title: "排序".tl,
  navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
 ),
- content: (padding) => Padding(
+ content: (padding) => ScrollUnderBar(
  padding: padding,
  child: Column(
         children: [

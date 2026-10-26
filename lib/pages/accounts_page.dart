@@ -258,7 +258,7 @@ class _LoginPageState extends State<_LoginPage> {
       color: MiuixTheme.of(context).colors.background,
       child: MiuixScaffold(
         containerColor: MiuixTheme.of(context).colors.background,
-        topBar: MiuixTopAppBar(color: MiuixTheme.of(context).colors.background, blurred: true, blurRadius: 50, blurTintAlpha: frostTintAlpha(context), 
+        topBar: MiuixTopAppBar(color: MiuixTheme.of(context).colors.background, blurred: true, blurRadius: 0, blurTintAlpha: 0, 
           title: "登录".tl,
           scrollBehavior: _behavior,
           navigationIcon: MiuixIconButton(

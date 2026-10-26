@@ -165,6 +165,11 @@ class MiuixScaffold extends StatelessWidget {
         ),
       );
     }
+    if (bar is m.MiuixTopAppBar && bar.blurred) {
+      // 包里的模糊随滚动 0→20px 渐入；这里给常驻毛玻璃，内容一进到顶栏下方就模糊
+      // （静止时下方是纯背景，常驻毛玻璃看起来和不透明一致）。调用方把包内模糊设成 0。
+      effectiveBar = FrostedBackground(child: bar);
+    }
     if (effectiveBar != null) {
       effectiveBar = MiuixBarTextStyle(child: effectiveBar);
     }

@@ -365,10 +365,9 @@ class _NaviPaneState extends State<NaviPane>
                                           _behavior.state.collapsedFraction)
                                       .clamp(0.0, double.infinity)
                                   : 0.0;
-                              // 探索/分类：内容从顶栏下方穿过（顶栏毛玻璃），
+                              // 主页面：内容从顶栏下方穿过（顶栏毛玻璃），
                               // 由页面自身的透明吸顶占位让出顶栏高度。
-                              final underBar = value == 0 &&
-                                  (currentPage == 2 || currentPage == 3);
+                              final underBar = value == 0;
                               return Padding(
                                 padding: EdgeInsets.only(
                                     top: underBar ? 0 : topPadding),
@@ -386,7 +385,8 @@ class _NaviPaneState extends State<NaviPane>
                             child: Align(
                               alignment: Alignment.topCenter,
                               heightFactor: (1 - value).clamp(0.0, 1.0),
-                              child: MiuixBarTextStyle(child: buildTop()),
+                              child: MiuixBarTextStyle(
+                                  child: FrostedBackground(child: buildTop())),
                             ),
                           ),
                       ],
@@ -463,8 +463,8 @@ class _NaviPaneState extends State<NaviPane>
               color: MiuixTheme.of(context).colors.background,
               scrollBehavior: _behavior,
               blurred: true,
-              blurRadius: 50,
-              blurTintAlpha: frostTintAlpha(context),
+              blurRadius: 0,
+              blurTintAlpha: 0,
               onHeightChanged: (info) => _onTopBarHeightChanged(1, info),
               navigationIcon: isViewingComics
                   ? MiuixIconButton(
@@ -511,8 +511,8 @@ class _NaviPaneState extends State<NaviPane>
         color: MiuixTheme.of(context).colors.background,
         scrollBehavior: _behavior,
         blurred: true,
-        blurRadius: 50,
-        blurTintAlpha: frostTintAlpha(context),
+        blurRadius: 0,
+        blurTintAlpha: 0,
         onHeightChanged: (info) => _onTopBarHeightChanged(2, info),
         bottomContentHeightHint: hasTabs ? _kTabBarHeight : 0,
         bottomContent: hasTabs
@@ -547,8 +547,8 @@ class _NaviPaneState extends State<NaviPane>
         color: MiuixTheme.of(context).colors.background,
         scrollBehavior: _behavior,
         blurred: true,
-        blurRadius: 50,
-        blurTintAlpha: frostTintAlpha(context),
+        blurRadius: 0,
+        blurTintAlpha: 0,
         onHeightChanged: (info) => _onTopBarHeightChanged(3, info),
         bottomContentHeightHint: hasTabs ? _kTabBarHeight : 0,
         bottomContent: hasTabs
@@ -582,8 +582,8 @@ class _NaviPaneState extends State<NaviPane>
       color: MiuixTheme.of(context).colors.background,
       scrollBehavior: _behavior,
       blurred: true,
-      blurRadius: 50,
-      blurTintAlpha: frostTintAlpha(context),
+      blurRadius: 0,
+      blurTintAlpha: 0,
       onHeightChanged: (info) => _onTopBarHeightChanged(0, info),
       actions: [
         for (var action in widget.paneActions)

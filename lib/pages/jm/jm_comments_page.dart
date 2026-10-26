@@ -92,6 +92,7 @@ class JmCommentsPage extends StatelessWidget {
                 Expanded(
                     child: CustomScrollView(
                   slivers: [
+const TopInsetSliver(),
                     SliverList(
                         delegate: SliverChildBuilderDelegate(
                             childCount: logic.comments!.length,
@@ -176,7 +177,7 @@ class JmCommentsPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => ScrollUnderBar(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }

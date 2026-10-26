@@ -240,8 +240,8 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         title: "设置".tl,
         scrollBehavior: _leftBehavior,
         blurred: true,
-        blurRadius: 50,
-        blurTintAlpha: isDark ? 0.42 : 0.48,
+        blurRadius: 0,
+        blurTintAlpha: 0,
         navigationIcon: Navigator.of(context).canPop()
             ? MiuixTooltipBox(
  tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("返回".tl)),
@@ -659,8 +659,8 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
           title: categories[currentPage].tl,
           scrollBehavior: _rightBehavior,
           blurred: true,
-          blurRadius: 50,
-          blurTintAlpha: isDark ? 0.42 : 0.48,
+          blurRadius: 0,
+          blurTintAlpha: 0,
           navigationIcon: enableTwoViews
               ? null
               : MiuixIconButton(

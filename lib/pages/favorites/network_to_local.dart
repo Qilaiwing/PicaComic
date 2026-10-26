@@ -94,12 +94,13 @@ class _ChooseNetworkFolderWidgetState
           MiuixIconButton(onPressed: context.pop, child: const Icon(Icons.close))
         ],
 ),
- content: (padding) => Padding(
+ content: (padding) => ScrollUnderBar(
  padding: padding,
  child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
+              padding: EdgeInsets.only(top: padding.top),
               child: Column(
                 children: _folders.map((e) => buildItem(e)).toList(),
               ),

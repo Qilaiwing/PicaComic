@@ -32,7 +32,7 @@ class _MePageState extends State<MePage> {
           final width = constrains.maxWidth;
           bool shouldShowTwoPanel = width > 600;
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 100),
+            padding: EdgeInsets.fromLTRB(12, MainTopInset.of(context), 12, 100),
             child: Column(
               children: [
                 const SizedBox(

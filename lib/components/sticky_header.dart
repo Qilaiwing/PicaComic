@@ -67,6 +67,35 @@ class TopInsetPadding extends StatelessWidget {
       Padding(padding: EdgeInsets.only(top: MainTopInset.of(context)), child: child);
 }
 
+/// Content area of a page whose top bar floats over it: content starts below
+/// the bar at rest and scrolls under it. Replaces `Padding(padding: padding)`
+/// around a scaffold body. Box scroll views (ListView/GridView without an
+/// explicit padding) pick the inset up from MediaQuery; CustomScrollViews add
+/// [TopInsetSliver]; other scrollables use [MainTopInset.of].
+class ScrollUnderBar extends StatelessWidget {
+  const ScrollUnderBar({super.key, required this.padding, required this.child});
+
+  final EdgeInsets padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    return Padding(
+      padding: padding.copyWith(top: 0),
+      child: MediaQuery(
+        data: mq.copyWith(
+          padding: mq.padding.copyWith(
+            top: padding.top,
+            bottom: padding.bottom > 0 ? 0 : mq.padding.bottom,
+          ),
+        ),
+        child: MainTopInset(height: padding.top, child: child),
+      ),
+    );
+  }
+}
+
 class FrostedBackground extends StatelessWidget {
   const FrostedBackground({super.key, required this.child, this.alpha});
 

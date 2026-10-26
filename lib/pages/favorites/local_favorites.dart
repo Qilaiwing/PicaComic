@@ -1069,7 +1069,7 @@ class _LocalFavoritesFolderState extends State<LocalFavoritesFolder> {
                 child: const Icon(Icons.arrow_back))
             : null,
       ),
-      content: (padding) => Padding(
+      content: (padding) => ScrollUnderBar(
         padding: padding,
         child: Column(
           children: [

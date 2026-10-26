@@ -674,8 +674,8 @@ class DownloadPage extends StatelessWidget {
   Widget buildAppbar(BuildContext context, DownloadPageLogic logic) {
     return MiuixTopAppBar(
       blurred: true,
-      blurRadius: 50,
-      blurTintAlpha: frostTintAlpha(context),
+      blurRadius: 0,
+      blurTintAlpha: 0,
       color: logic.selecting
         ? Theme.of(context).colorScheme.primaryContainer
         : null,
