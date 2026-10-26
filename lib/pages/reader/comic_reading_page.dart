@@ -445,12 +445,9 @@ class ComicReadingPage extends StatelessWidget {
                           width: 400,
                         );
                       } else {
-                        showModalBottomSheet(
+                        showMiuixBottomSheet<void>(
                           context: context,
-                          useSafeArea: false,
-                          builder: (context) {
-                            return buildEpsView();
-                          },
+                          builder: (context, close) => SizedBox(height: MediaQuery.of(context).size.height * 9 / 16, child: Material(type: MaterialType.transparency, child:  buildEpsView())),
                         );
                       }
                     },
@@ -493,12 +490,9 @@ class ComicReadingPage extends StatelessWidget {
         addTopPadding: true,
       );
     } else {
-      showModalBottomSheet(
+      showMiuixBottomSheet<void>(
         context: context,
-        useSafeArea: false,
-        builder: (context) {
-          return buildEpsView();
-        },
+        builder: (context, close) => SizedBox(height: MediaQuery.of(context).size.height * 9 / 16, child: Material(type: MaterialType.transparency, child:  buildEpsView())),
       );
     }
   }
@@ -513,31 +507,25 @@ class ComicReadingPage extends StatelessWidget {
       return items[0].index;
     }
     int? res;
-    await showDialog(
+    await showMiuixDialog<void>(
         context: App.globalContext!,
-        builder: (context) {
-          return SimpleDialog(
-            title: Text("选择屏幕上的图片".tl),
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 400,
-                ),
-                child: Column(
-                  children: [
-                    for (var item in items)
-                      ListTile(
-                        title: Text((item.index + 1).toString()),
-                        onTap: () {
-                          res = item.index;
-                          App.globalBack();
-                        },
-                        trailing: const Icon(Icons.arrow_right),
-                      )
-                  ],
-                ),
-              )
-            ],
+        title: "选择屏幕上的图片".tl,
+        contentBuilder: (context, close) {
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var item in items)
+                  MiuixArrowPreference(
+                    title: (item.index + 1).toString(),
+                    onClick: () {
+                      res = item.index;
+                      close();
+                    },
+                  )
+              ],
+            ),
           );
         });
     return res;
@@ -614,7 +602,7 @@ class ComicReadingPage extends StatelessWidget {
     if (!readingData.hasEp) return null;
     switch (logic.showFloatingButtonValue) {
       case -1:
-        return FloatingActionButton(
+        return MiuixFloatingActionButton(
           onPressed: () => logic.jumpToLastChapter(),
           child: const Icon(Icons.arrow_back_ios_outlined),
         );

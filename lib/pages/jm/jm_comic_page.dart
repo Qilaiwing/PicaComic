@@ -226,14 +226,14 @@ void downloadComic(JmComicInfo comic, BuildContext context) async {
   }
 
   if (UiMode.m1(App.globalContext!)) {
-    showModalBottomSheet(
+    showMiuixBottomSheet<void>(
         context: App.globalContext!,
-        builder: (context) {
-          return SelectDownloadChapter(eps, (selectedEps) {
+        builder: (context, close) {
+          return SizedBox(height: MediaQuery.of(context).size.height * 9 / 16, child: Material(type: MaterialType.transparency, child:  SelectDownloadChapter(eps, (selectedEps) {
             downloadManager.addJmDownload(comic, selectedEps);
             App.globalBack();
             showToast(message: "已加入下载队列".tl);
-          }, downloaded);
+          }, downloaded)));
         });
   } else {
     showSideBar(

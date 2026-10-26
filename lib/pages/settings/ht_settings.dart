@@ -50,39 +50,31 @@ class _HtSettingsState extends State<HtSettings> {
       }
     }
 
-    showDialog(context: context, builder: (context){
-      focusNode.requestFocus();
-      return SimpleDialog(
-        shape: const MiuixSquircleBorder(cornerRadius: 28),
-        title: Text("更改域名".tl,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            width: 400,
-            child: TextField(
+    showMiuixDialog(
+      context: context,
+      title: "更改域名".tl,
+      contentBuilder: (context, close) {
+        focusNode.requestFocus();
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            MiuixTextField(
               focusNode: focusNode,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16))),
-                label: Text("域名".tl),
-              ),
+              label: "域名".tl,
+              singleLine: true,
               controller: controller,
-              onEditingComplete: onFinished,
+              onSubmitted: (_) => onFinished(),
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), onPressed: onFinished,
-                child: Text("完成".tl,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(width: 16,),
-            ],
-          )
-        ],
-      );
-    });
+            const SizedBox(height: 16),
+            MiuixButton(
+              colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+              onPressed: onFinished,
+              child: Text("完成".tl,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        );
+      });
   }
 }

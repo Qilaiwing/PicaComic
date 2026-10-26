@@ -269,9 +269,9 @@ void _downloadComic(
     downloaded,
   );
   if (UiMode.m1(App.globalContext!)) {
-    showModalBottomSheet(
+    showMiuixBottomSheet<void>(
       context: App.globalContext!,
-      builder: (context) => content,
+      builder: (context, close) => SizedBox(height: MediaQuery.of(context).size.height * 9 / 16, child: Material(type: MaterialType.transparency, child:  content)),
     );
   } else {
     showSideBar(

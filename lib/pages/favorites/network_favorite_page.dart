@@ -163,9 +163,10 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: () {
-                        showDialog(
+                        showMiuixDialog(
                             context: context,
-                            builder: (context) {
+                            title: "创建收藏夹".tl,
+                            contentBuilder: (context, close) {
                               return _CreateFolderDialog(
                                   widget.data,
                                   () => setState(() {
@@ -305,34 +306,29 @@ class _FolderTile extends StatelessWidget {
   }
 
   void onDeleteFolder(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            shape: const MiuixSquircleBorder(cornerRadius: 20),
-            title: Text("确认删除".tl),
-            content: Text("要删除这个收藏夹吗".tl),
-            actions: [
-              MiuixTextButton(
-                  onPressed: () => App.globalBack(), "取消".tl),
-              MiuixTextButton(
-                  onPressed: () async {
-                    context.pop();
-                    showToast(message: "正在删除收藏夹".tl);
-                    var res = await deleteFolder!();
-                    showToast(
-                        message: res.error ? res.errorMessage! : "删除成功".tl);
-                    if (!res.error) {
-                      updateState?.call();
-                    } else {
-                      showToast(
-                          message: res.error ? res.errorMessage! : "删除失败".tl);
-                    }
-                  },
-                  "确认".tl),
-            ],
-          );
-        });
+    showMiuixDialog(
+      context: context,
+      title: "确认删除".tl,
+      summary: "要删除这个收藏夹吗".tl,
+      actionsBuilder: (context, close) => [
+        MiuixTextButton(onPressed: () => close(), "取消".tl),
+        MiuixTextButton(
+            onPressed: () async {
+              close();
+              showToast(message: "正在删除收藏夹".tl);
+              var res = await deleteFolder!();
+              showToast(
+                  message: res.error ? res.errorMessage! : "删除成功".tl);
+              if (!res.error) {
+                updateState?.call();
+              } else {
+                showToast(
+                    message: res.error ? res.errorMessage! : "删除失败".tl);
+              }
+            },
+            "确认".tl),
+      ],
+    );
   }
 }
 
@@ -355,20 +351,13 @@ class _CreateFolderDialogState extends State<_CreateFolderDialog> {
   @override
   Widget build(BuildContext context) {
     focusNode.requestFocus();
-    return SimpleDialog(
-      shape: const MiuixSquircleBorder(cornerRadius: 20),
-      title: Text("创建收藏夹".tl),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              labelText: "名称".tl,
-            ),
-          ),
+        MiuixTextField(
+          controller: controller,
+          focusNode: focusNode,
+          label: "名称".tl,
         ),
         const SizedBox(
           width: 200,

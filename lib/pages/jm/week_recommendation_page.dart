@@ -72,34 +72,18 @@ class JmWeekRecommendationPage extends StatelessWidget {
                   MiuixIconButton(child: const Icon(Icons.arrow_drop_down_sharp, size: 16),
                     onPressed: () {
                       if (logic.rec == null) return;
-                      var renderObject =
-                          key.currentContext!.findRenderObject() as RenderBox;
-                      var offset = renderObject.localToGlobal(Offset.zero);
-                      offset = Offset(offset.dx + 246, offset.dy + 53);
-                      showMenu(
-                          constraints: BoxConstraints(
-                              maxHeight: 300,
-                              minWidth: (MediaQuery.of(context).size.width > 250
-                                      ? 250
-                                      : MediaQuery.of(context).size.width) -
-                                  16),
-                          context: context,
-                          position: RelativeRect.fromLTRB(
-                              offset.dx,
-                              offset.dy,
-                              MediaQuery.of(context).size.width - offset.dx,
-                              MediaQuery.of(context).size.height - offset.dy),
-                          items: [
-                            for (var item in logic.rec!.entries)
-                              PopupMenuItem(
-                                child: Text(item.value),
-                                onTap: () {
-                                  logic.currentId = item.key;
-                                  logic.currentName = item.value;
-                                  logic.update();
-                                },
-                              )
-                          ]);
+                      showMiuixMenu(
+                        context: context,
+                        anchorBounds: miuixAnchorRectOf(key.currentContext!),
+                        maxHeight: 300,
+                        items: [for (var item in logic.rec!.entries) item.value],
+                      ).then((i) {
+                        if (i == null) return;
+                        var item = logic.rec!.entries.elementAt(i);
+                        logic.currentId = item.key;
+                        logic.currentName = item.value;
+                        logic.update();
+                      });
                     },
                   ),
                 ],

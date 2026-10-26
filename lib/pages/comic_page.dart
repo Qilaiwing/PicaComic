@@ -101,14 +101,18 @@ class _ComicPageImpl extends BaseComicPage<ComicInfoData> {
       }
     }
     if (UiMode.m1(App.globalContext!)) {
-      showModalBottomSheet(
+      showMiuixBottomSheet<void>(
           context: App.globalContext!,
-          builder: (context) {
-            return SelectDownloadChapter(eps, (selectedEps) {
-              DownloadManager().addCustomDownload(data!, selectedEps);
-              App.globalBack();
-              showToast(message: "已加入下载队列".tl);
-            }, downloaded);
+          builder: (context, close) {
+            return SizedBox(
+                height: MediaQuery.of(context).size.height * 9 / 16,
+                child: Material(
+                    type: MaterialType.transparency,
+                    child: SelectDownloadChapter(eps, (selectedEps) {
+                      DownloadManager().addCustomDownload(data!, selectedEps);
+                      App.globalBack();
+                      showToast(message: "已加入下载队列".tl);
+                    }, downloaded)));
           });
     } else {
       showSideBar(
@@ -468,7 +472,8 @@ class _CommentsPageState extends State<_CommentsPage> {
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(
+          12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E22) : const Color(0xFFF9F9FA),
         border: Border(
@@ -867,7 +872,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                 width: double.infinity,
                 child: buildComicInfo(_logic, context, false),
               ),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: MiuixHorizontalDivider()),
               SizedBox(
                 width: 100,
                 child: Row(
@@ -1032,9 +1039,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   height: 1.1,
                                 ),
                               ),
@@ -1116,9 +1121,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
           shape: MiuixSquircleBorder(
             cornerRadius: 14,
             side: BorderSide(
-              color: isDark
-                  ? const Color(0x22FFFFFF)
-                  : const Color(0x0E000000),
+              color: isDark ? const Color(0x22FFFFFF) : const Color(0x0E000000),
               width: 0.8,
             ),
           ),
@@ -1153,27 +1156,27 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       text = "未知".tl;
     }
 
-    List<PopupMenuEntry<dynamic>> buildPopMenus() {
+    List<(String, void Function())> buildPopMenus() {
       return [
-        PopupMenuItem(
-          child: Text("复制".tl),
-          onTap: () {
+        (
+          "复制".tl,
+          () {
             Clipboard.setData(ClipboardData(text: (text)));
             showToast(message: "已复制".tl);
-          },
+          }
         ),
         if (!title)
-          PopupMenuItem(
-            child: Text("屏蔽".tl),
-            onTap: () {
+          (
+            "屏蔽".tl,
+            () {
               appdata.blockingKeyword.add(text);
               appdata.writeData();
-            },
+            }
           ),
         if (!title)
-          PopupMenuItem(
-            child: Text("收藏".tl),
-            onTap: () {
+          (
+            "收藏".tl,
+            () {
               var res = source.tlEN;
               if (source == "EHentai") {
                 res += ":$key";
@@ -1188,9 +1191,20 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
               }
               appdata.favoriteTags.add(res);
               appdata.writeHistory();
-            },
-          )
+            }
+          ),
       ];
+    }
+
+    void showPopMenus(Offset position) {
+      final menus = buildPopMenus();
+      showMiuixMenu(
+        context: App.globalContext!,
+        anchorBounds: Rect.fromCenter(center: position, width: 1, height: 1),
+        items: [for (var m in menus) m.$1],
+      ).then((i) {
+        if (i != null) menus[i].$2();
+      });
     }
 
     Widget label(String text) =>
@@ -1202,14 +1216,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
     return GestureDetector(
       onLongPressStart: (details) {
-        showMenu(
-            context: App.globalContext!,
-            position: RelativeRect.fromLTRB(
-                details.globalPosition.dx,
-                details.globalPosition.dy,
-                details.globalPosition.dx,
-                details.globalPosition.dy),
-            items: buildPopMenus());
+        showPopMenus(details.globalPosition);
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(4, 4, 4, 4),
@@ -1217,14 +1224,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
           borderRadius: const BorderRadius.all(Radius.circular(12)),
           onTap: title ? null : () => tapOnTag(text, key),
           onSecondaryTapDown: (details) {
-            showMenu(
-                context: App.globalContext!,
-                position: RelativeRect.fromLTRB(
-                    details.globalPosition.dx,
-                    details.globalPosition.dy,
-                    details.globalPosition.dx,
-                    details.globalPosition.dy),
-                items: buildPopMenus());
+            showPopMenus(details.globalPosition);
           },
           child: Material(
             color: Colors.transparent,
@@ -1302,9 +1302,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                     width: 0.7,
                   ),
                 ),
-                color: isDark
-                    ? const Color(0xFF242428)
-                    : const Color(0xFFE8E8EE),
+                color:
+                    isDark ? const Color(0xFF242428) : const Color(0xFFE8E8EE),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1370,10 +1369,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
         }
       }),
       if (width >= 500)
-        buildItem(
-            "下载".tl,
-            MiuixIcons.extended.byName('download') ?? Icons.download,
-            download),
+        buildItem("下载".tl,
+            MiuixIcons.extended.byName('download') ?? Icons.download, download),
       if (onLike != null)
         buildItem(
             likeCount ?? "喜欢".tl,
@@ -1385,8 +1382,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       if (openComments != null)
         buildItem(
             commentsCount ?? "评论".tl,
-            MiuixIcons.extended.byName('messages') ??
-                Icons.comment_outlined,
+            MiuixIcons.extended.byName('messages') ?? Icons.comment_outlined,
             openComments!),
       if (searchSimilar != null)
         buildItem("相似".tl, MiuixIcons.os4.search, searchSimilar!),
@@ -1445,9 +1441,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       if (width >= 500) {
         return Wrap(
           alignment: center ? WrapAlignment.center : WrapAlignment.start,
-          children: actionItems
-              .map((w) => SizedBox(width: 58, child: w))
-              .toList(),
+          children:
+              actionItems.map((w) => SizedBox(width: 58, child: w)).toList(),
         );
       }
       if (actionItems.length <= 5) {
@@ -1518,8 +1513,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 MiuixIcon(
-                                  vector: MiuixIcons.extended.byName('download') ??
-                                      MiuixIcons.os4.download,
+                                  vector:
+                                      MiuixIcons.extended.byName('download') ??
+                                          MiuixIcons.os4.download,
                                   size: 17,
                                   tint: Theme.of(context).colorScheme.primary,
                                 ),
@@ -1529,7 +1525,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                               ],
@@ -1546,11 +1543,13 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                         shape: const MiuixSquircleBorder(cornerRadius: 16),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
-                          onTap: () => openReadingWithChapterSelect(context, _logic.history),
+                          onTap: () => openReadingWithChapterSelect(
+                              context, _logic.history),
                           child: Container(
                             alignment: Alignment.center,
                             decoration: ShapeDecoration(
-                              shape: const MiuixSquircleBorder(cornerRadius: 16),
+                              shape:
+                                  const MiuixSquircleBorder(cornerRadius: 16),
                               color: Theme.of(context).colorScheme.primary,
                               shadows: [
                                 BoxShadow(
@@ -1621,7 +1620,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
+          const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: MiuixHorizontalDivider()),
           SizedBox(
               width: 100,
               child: Row(
@@ -1689,7 +1690,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (eps == null) return;
 
     yield const SliverToBoxAdapter(
-      child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
+      child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: MiuixHorizontalDivider()),
     );
 
     yield SliverToBoxAdapter(
@@ -1797,7 +1800,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return [
       const SliverPadding(padding: EdgeInsets.all(5)),
       const SliverToBoxAdapter(
-        child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
+        child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1847,7 +1852,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return [
       const SliverPadding(padding: EdgeInsets.all(5)),
       const SliverToBoxAdapter(
-        child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
+        child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1958,7 +1965,9 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (recommendation == null) return [];
     return [
       const SliverToBoxAdapter(
-        child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
+        child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1983,7 +1992,11 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
   void favoriteComic(FavoriteComicWidget widget) {
     if (UiMode.m1(context)) {
-      showModalBottomSheet(context: context, builder: (context) => widget);
+      showMiuixBottomSheet<void>(
+          context: context,
+          builder: (context, close) => SizedBox(
+              height: MediaQuery.of(context).size.height * 9 / 16,
+              child: Material(type: MaterialType.transparency, child: widget)));
     } else {
       showSideBar(
         App.globalContext!,
@@ -2292,9 +2305,7 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
               const Icon(Icons.add),
             ],
           ),
-          onPressed: () => showDialog(
-                  context: App.globalContext!,
-                  builder: (_) => const CreateFolderDialog())
+          onPressed: () => CreateFolderDialog.show(App.globalContext!)
               .then((value) => setState(() {})),
         ),
       ),
@@ -2391,7 +2402,8 @@ class _ChapterSelectModalState extends State<_ChapterSelectModal> {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xF01C1C1E) : const Color(0xF4F6F6F8),
+                color:
+                    isDark ? const Color(0xF01C1C1E) : const Color(0xF4F6F6F8),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -2402,7 +2414,9 @@ class _ChapterSelectModalState extends State<_ChapterSelectModal> {
                       width: 36,
                       height: 4.5,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0x38FFFFFF) : const Color(0x28000000),
+                        color: isDark
+                            ? const Color(0x38FFFFFF)
+                            : const Color(0x28000000),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -2421,13 +2435,15 @@ class _ChapterSelectModalState extends State<_ChapterSelectModal> {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
                           decoration: ShapeDecoration(
                             shape: const StadiumBorder(),
                             color: primary.withOpacity(isDark ? 0.22 : 0.12),
                           ),
                           child: Text(
-                            "共 @count 话".tlParams({"count": totalEps.toString()}),
+                            "共 @count 话"
+                                .tlParams({"count": totalEps.toString()}),
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -2476,8 +2492,9 @@ class _ChapterSelectModalState extends State<_ChapterSelectModal> {
                       itemCount: totalEps,
                       itemBuilder: (context, i) {
                         final epIndex = reverseOrder ? totalEps - 1 - i : i;
-                        final visited = (widget.history?.readEpisode ?? const {})
-                            .contains(epIndex + 1);
+                        final visited =
+                            (widget.history?.readEpisode ?? const {})
+                                .contains(epIndex + 1);
                         final isCurrent = widget.history?.ep == epIndex + 1;
 
                         return Material(
@@ -2488,11 +2505,14 @@ class _ChapterSelectModalState extends State<_ChapterSelectModal> {
                             onTap: () => widget.onSelect(epIndex),
                             child: Container(
                               alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: ShapeDecoration(
                                 color: isCurrent
                                     ? primary.withOpacity(isDark ? 0.28 : 0.16)
-                                    : (isDark ? const Color(0xFF26262A) : Colors.white),
+                                    : (isDark
+                                        ? const Color(0xFF26262A)
+                                        : Colors.white),
                                 shape: MiuixSquircleBorder(
                                   cornerRadius: 12,
                                   side: BorderSide(
@@ -2514,11 +2534,15 @@ class _ChapterSelectModalState extends State<_ChapterSelectModal> {
                                   fontSize: 13,
                                   fontWeight: isCurrent
                                       ? FontWeight.w600
-                                      : (visited ? FontWeight.w400 : FontWeight.w500),
+                                      : (visited
+                                          ? FontWeight.w400
+                                          : FontWeight.w500),
                                   color: isCurrent
                                       ? primary
                                       : (visited
-                                          ? (isDark ? Colors.white38 : Colors.black38)
+                                          ? (isDark
+                                              ? Colors.white38
+                                              : Colors.black38)
                                           : null),
                                 ),
                               ),

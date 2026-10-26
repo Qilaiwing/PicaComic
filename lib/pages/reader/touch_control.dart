@@ -179,31 +179,21 @@ class TapController {
 
   static void handleSecondaryTapUp(PointerDownEvent detail){
     var logic = StateController.find<ComicReadingPageLogic>();
-    showMenu(
+    final menus = <(String, void Function())>[
+      ("设置".tl, () => showSettings(App.globalContext!)),
+      if(App.isWindows)
+        ("全屏".tl, logic.fullscreen),
+      ("退出".tl, () => App.globalBack()),
+      if(logic.data.hasEp)
+        ("章节".tl, logic.openEpsView),
+    ];
+    showMiuixMenu(
       context: App.globalContext!,
-      position: RelativeRect.fromLTRB(
-        detail.position.dx, detail.position.dy, detail.position.dx, detail.position.dy),
-      items: [
-        PopupMenuItem(
-          child: Text("设置".tl),
-          onTap: () => showSettings(App.globalContext!),
-        ),
-        if(App.isWindows)
-          PopupMenuItem(
-            onTap: logic.fullscreen,
-            child: Text("全屏".tl),
-          ),
-        PopupMenuItem(
-          child: Text("退出".tl),
-          onTap: () => App.globalBack(),
-        ),
-        if(logic.data.hasEp)
-          PopupMenuItem(
-            onTap: logic.openEpsView,
-            child: Text("章节".tl),
-          ),
-      ]
-    );
+      anchorBounds: Rect.fromCenter(center: detail.position, width: 1, height: 1),
+      items: [for (var m in menus) m.$1],
+    ).then((i) {
+      if (i != null) menus[i].$2();
+    });
   }
 
   static void onTapUp(PointerUpEvent detail) async {

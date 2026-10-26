@@ -446,35 +446,30 @@ class DownloadPage extends StatelessWidget {
                     Future.delayed(const Duration(milliseconds: 200), () {
                   Future<void>.delayed(
                     const Duration(milliseconds: 200),
-                    () => showDialog(
+                    () => showMiuixDialog(
                       context: App.globalContext!,
-                      barrierDismissible: false,
-                      barrierColor: Colors.black26,
-                      builder: (context) => SimpleDialog(
-                        children: [
-                          SizedBox(
-                            width: 200,
-                            height: 200,
-                            child: Center(
-                              child: SizedBox(
-                                width: 50,
-                                height: 80,
-                                child: Column(
-                                  children: [
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    const MiuixCircularProgressIndicator(),
-                                    const SizedBox(
-                                      height: 9,
-                                    ),
-                                    Text("打包中".tl)
-                                  ],
+                      dismissible: false,
+                      contentBuilder: (context, close) => SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: Center(
+                          child: SizedBox(
+                            width: 50,
+                            height: 80,
+                            child: Column(
+                              children: [
+                                const SizedBox(
+                                  height: 10,
                                 ),
-                              ),
+                                const MiuixCircularProgressIndicator(),
+                                const SizedBox(
+                                  height: 9,
+                                ),
+                                Text("打包中".tl)
+                              ],
                             ),
-                          )
-                        ],
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -526,12 +521,11 @@ class DownloadPage extends StatelessWidget {
 
   void showInfo(int index, DownloadPageLogic logic, BuildContext context) {
     if (UiMode.m1(context)) {
-      showModalBottomSheet(
+      showMiuixBottomSheet(
         context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) {
-          return DownloadedComicInfoView(logic.comics[index], logic);
+        builder: (context, close) {
+          return DownloadedComicInfoView(logic.comics[index], logic,
+              inMiuixSheet: true);
         },
       );
     } else {
@@ -752,55 +746,56 @@ class DownloadPage extends StatelessWidget {
             ),
             onPressed: () async {
               bool changed = false;
-              await showDialog(
+              await showMiuixDialog(
                   context: context,
-                  builder: (context) => SimpleDialog(
-                    title: Text("漫画排序模式".tl),
-                    children: [
-                      SizedBox(
+                  title: "漫画排序模式".tl,
+                  contentBuilder: (context, close) => SizedBox(
                         width: 400,
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            ListTile(
-                              title: Text("漫画排序模式".tl),
-                              trailing: Select(
-                                initialValue:
-                                int.parse(appdata.settings[26][0]),
-                                onChange: (i) {
-                                  appdata.settings[26] = appdata
-                                      .settings[26]
-                                      .setValueAt(i.toString(), 0);
-                                  appdata.updateSettings();
-                                  changed = true;
-                                },
-                                values: ["时间", "漫画名", "作者名", "大小"].tl,
-                              ),
+                            MiuixBasicComponent(
+                              title: "漫画排序模式".tl,
+                              endActions: [
+                                Select(
+                                  initialValue:
+                                  int.parse(appdata.settings[26][0]),
+                                  onChange: (i) {
+                                    appdata.settings[26] = appdata
+                                        .settings[26]
+                                        .setValueAt(i.toString(), 0);
+                                    appdata.updateSettings();
+                                    changed = true;
+                                  },
+                                  values: ["时间", "漫画名", "作者名", "大小"].tl,
+                                ),
+                              ],
                             ),
-                            ListTile(
-                              title: Text("倒序".tl),
-                              trailing: StatefulSwitch(
-                                initialValue:
-                                appdata.settings[26][1] == "1",
-                                onChanged: (b) {
-                                  if (b) {
-                                    appdata.settings[26] = appdata
-                                        .settings[26]
-                                        .setValueAt("1", 1);
-                                  } else {
-                                    appdata.settings[26] = appdata
-                                        .settings[26]
-                                        .setValueAt("0", 1);
-                                  }
-                                  appdata.updateSettings();
-                                  changed = true;
-                                },
-                              ),
+                            MiuixBasicComponent(
+                              title: "倒序".tl,
+                              endActions: [
+                                StatefulSwitch(
+                                  initialValue:
+                                  appdata.settings[26][1] == "1",
+                                  onChanged: (b) {
+                                    if (b) {
+                                      appdata.settings[26] = appdata
+                                          .settings[26]
+                                          .setValueAt("1", 1);
+                                    } else {
+                                      appdata.settings[26] = appdata
+                                          .settings[26]
+                                          .setValueAt("0", 1);
+                                    }
+                                    appdata.updateSettings();
+                                    changed = true;
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      )
-                    ],
-                  ));
+                      ));
               if (changed) {
                 logic.refresh();
               }
@@ -908,35 +903,30 @@ class DownloadPage extends StatelessWidget {
     } else {
       Future<void>.delayed(
         const Duration(milliseconds: 200),
-        () => showDialog(
+        () => showMiuixDialog(
           context: App.globalContext!,
-          barrierColor: Colors.black26,
-          barrierDismissible: false,
-          builder: (context) => const SimpleDialog(
-            children: [
-              SizedBox(
-                width: 200,
-                height: 200,
-                child: Center(
-                  child: SizedBox(
-                    width: 50,
-                    height: 75,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 10,
-                        ),
-                        MiuixCircularProgressIndicator(),
-                        SizedBox(
-                          height: 9,
-                        ),
-                        Text("打包中")
-                      ],
+          dismissible: false,
+          contentBuilder: (context, close) => const SizedBox(
+            width: 200,
+            height: 200,
+            child: Center(
+              child: SizedBox(
+                width: 50,
+                height: 75,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 10,
                     ),
-                  ),
+                    MiuixCircularProgressIndicator(),
+                    SizedBox(
+                      height: 9,
+                    ),
+                    Text("打包中")
+                  ],
                 ),
-              )
-            ],
+              ),
+            ),
           ),
         ),
       );
@@ -947,25 +937,25 @@ class DownloadPage extends StatelessWidget {
 
   void addToLocalFavoriteFolder(BuildContext context, DownloadPageLogic logic) {
     String? folder;
-    showDialog(
+    showMiuixDialog(
         context: context,
-        builder: (context) => SimpleDialog(
-              title: const Text("复制到..."),
-              children: [
-                SizedBox(
+        title: "复制到...",
+        contentBuilder: (context, close) => SizedBox(
                   width: 400,
                   height: 132,
                   child: Column(
                     children: [
-                      ListTile(
-                        title: Text("收藏夹".tl),
-                        trailing: Select(
-                          width: 156,
-                          values: LocalFavoritesManager().folderNames,
-                          initialValue: null,
-                          onChange: (i) =>
-                              folder = LocalFavoritesManager().folderNames[i],
-                        ),
+                      MiuixBasicComponent(
+                        title: "收藏夹".tl,
+                        endActions: [
+                          Select(
+                            width: 156,
+                            values: LocalFavoritesManager().folderNames,
+                            initialValue: null,
+                            onChange: (i) =>
+                                folder = LocalFavoritesManager().folderNames[i],
+                          ),
+                        ],
                       ),
                       const Spacer(),
                       Center(
@@ -1032,7 +1022,7 @@ class DownloadPage extends StatelessWidget {
                                     });
                               }
                             }
-                            App.globalBack();
+                            close();
                           },
                         ),
                       ),
@@ -1041,17 +1031,19 @@ class DownloadPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                )
-              ],
-            ));
+                ));
   }
 }
 
 class DownloadedComicInfoView extends StatefulWidget {
-  const DownloadedComicInfoView(this.item, this.logic, {Key? key})
+  const DownloadedComicInfoView(this.item, this.logic,
+      {Key? key, this.inMiuixSheet = false})
       : super(key: key);
   final DownloadedItem item;
   final DownloadPageLogic logic;
+
+  /// 是否显示在 showMiuixBottomSheet 中（外框由 Miuix 底部弹窗提供）
+  final bool inMiuixSheet;
 
   @override
   State<DownloadedComicInfoView> createState() =>
@@ -1086,7 +1078,7 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
       mainAxisSize: isMobile ? MainAxisSize.min : MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isMobile)
+        if (isMobile && !widget.inMiuixSheet)
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 10, bottom: 6),
@@ -1270,6 +1262,16 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
         ),
       ],
     );
+
+    if (isMobile && widget.inMiuixSheet) {
+      // 由 showMiuixBottomSheet 提供外框，这里只保留高度限制
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.60,
+        ),
+        child: content,
+      );
+    }
 
     if (isMobile) {
       return ConstrainedBox(

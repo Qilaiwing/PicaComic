@@ -145,60 +145,53 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
     );
   }
 
-  void multiSelectedMenu() {
+  void multiSelectedMenu() async {
     final size = MediaQuery.of(App.globalContext!).size;
-    showMenu(
-        context: App.globalContext!,
-        position: RelativeRect.fromLTRB(size.width, 0, 0, size.height),
-        items: [
-          PopupMenuItem(
-            child: Text("删除".tl),
-            onTap: () {
-              for (var comic in controller.selectedComics) {
-                LocalFavoritesManager().deleteComic(controller.current!, comic);
-              }
-              controller.selectedComics.clear();
-              controller.update();
-            },
-          ),
-          PopupMenuItem(
-            child: Text("复制到".tl),
-            onTap: () {
-              Future.delayed(
-                const Duration(milliseconds: 200),
-                () => copyAllTo(controller.current!, controller.selectedComics),
-              );
-            },
-          ),
-          PopupMenuItem(
-            child: Text("下载".tl),
-            onTap: () {
-              Future.delayed(
-                const Duration(milliseconds: 200),
-                () {
-                  var comics = controller.selectedComics;
-                  for (var comic in comics) {
-                    DownloadManager().addFavoriteDownload(comic);
-                  }
-                  showToast(message: "已添加下载任务".tl);
-                },
-              );
-            },
-          ),
-          PopupMenuItem(
-            child: Text("更新漫画信息".tl),
-            onTap: () {
-              Future.delayed(
-                const Duration(milliseconds: 200),
-                () {
-                  var comics = controller.selectedComics;
-                  UpdateFavoritesInfoDialog.show(comics, controller.current!);
-                },
-              );
-            },
-          ),
-        ]);
+    final actions = <String, VoidCallback>{
+      "删除".tl: () {
+        for (var comic in controller.selectedComics) {
+          LocalFavoritesManager().deleteComic(controller.current!, comic);
+        }
+        controller.selectedComics.clear();
+        controller.update();
+      },
+      "复制到".tl: () {
+        Future.delayed(
+          const Duration(milliseconds: 200),
+          () => copyAllTo(controller.current!, controller.selectedComics),
+        );
+      },
+      "下载".tl: () {
+        Future.delayed(
+          const Duration(milliseconds: 200),
+          () {
+            var comics = controller.selectedComics;
+            for (var comic in comics) {
+              DownloadManager().addFavoriteDownload(comic);
+            }
+            showToast(message: "已添加下载任务".tl);
+          },
+        );
+      },
+      "更新漫画信息".tl: () {
+        Future.delayed(
+          const Duration(milliseconds: 200),
+          () {
+            var comics = controller.selectedComics;
+            UpdateFavoritesInfoDialog.show(comics, controller.current!);
+          },
+        );
+      },
+    };
+    final i = await showMiuixMenu(
+      context: App.globalContext!,
+      anchorBounds: Rect.fromLTWH(size.width, 0, 0, 0),
+      alignment: MiuixPopupAlign.end,
+      items: actions.keys.toList(),
+    );
+    if (i != null) actions.values.elementAt(i)();
   }
+
 
   Widget buildTopBar(BuildContext context) {
     final iconColor = Theme.of(context).colorScheme.primary;
@@ -689,10 +682,8 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
             buildItem("新建".tl,
                 MiuixIcons.extended.byName('addFolder') ?? MiuixIcons.os4.folder,
                 () {
-              showDialog(
-                context: context,
-                builder: (context) => const CreateFolderDialog(),
-              ).then((value) => controller.update());
+              CreateFolderDialog.show(context)
+                  .then((value) => controller.update());
             }),
             buildItem("搜索".tl, MiuixIcons.os4.search,
                 () => App.to(context, () => const LocalSearchPage())),
@@ -743,66 +734,48 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
     }
   }
 
-  void _showMenu(String folder, Offset location) {
-    showMenu(
-        context: App.globalContext!,
-        position: RelativeRect.fromLTRB(
-            location.dx, location.dy, location.dx, location.dy),
-        items: [
-          PopupMenuItem(
-            child: Text("删除".tl),
-            onTap: () {
-              App.globalBack();
-              deleteFolder(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("排序".tl),
-            onTap: () {
-              App.globalBack();
-              App.globalTo(() => LocalFavoritesFolder(folder))
-                  .then((value) => controller.update());
-            },
-          ),
-          PopupMenuItem(
-            child: Text("重命名".tl),
-            onTap: () {
-              App.globalBack();
-              rename(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("检查漫画存活".tl),
-            onTap: () {
-              App.globalBack();
-              checkFolder(folder).then((value) {
-                controller.update();
-              });
-            },
-          ),
-          PopupMenuItem(
-            child: Text("导出".tl),
-            onTap: () {
-              App.globalBack();
-              export(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("下载全部".tl),
-            onTap: () {
-              App.globalBack();
-              addDownload(folder);
-            },
-          ),
-          PopupMenuItem(
-            child: Text("更新漫画信息".tl),
-            onTap: () {
-              App.globalBack();
-              var comics = LocalFavoritesManager().getAllComics(folder);
-              UpdateFavoritesInfoDialog.show(comics, folder);
-            },
-          ),
-        ]);
+  void _showMenu(String folder, Offset location) async {
+    // 与原 showMenu 一致：菜单先关闭，再执行对应操作（原 onTap 中的 App.globalBack 保留）
+    final actions = <String, VoidCallback>{
+      "删除".tl: () {
+        App.globalBack();
+        deleteFolder(folder);
+      },
+      "排序".tl: () {
+        App.globalBack();
+        App.globalTo(() => LocalFavoritesFolder(folder))
+            .then((value) => controller.update());
+      },
+      "重命名".tl: () {
+        App.globalBack();
+        rename(folder);
+      },
+      "检查漫画存活".tl: () {
+        App.globalBack();
+        checkFolder(folder).then((value) {
+          controller.update();
+        });
+      },
+      "导出".tl: () {
+        App.globalBack();
+        export(folder);
+      },
+      "下载全部".tl: () {
+        App.globalBack();
+        addDownload(folder);
+      },
+      "更新漫画信息".tl: () {
+        App.globalBack();
+        var comics = LocalFavoritesManager().getAllComics(folder);
+        UpdateFavoritesInfoDialog.show(comics, folder);
+      },
+    };
+    final i = await showMiuixMenu(
+      context: App.globalContext!,
+      anchorBounds: Rect.fromLTWH(location.dx, location.dy, 0, 0),
+      items: actions.keys.toList(),
+    );
+    if (i != null) actions.values.elementAt(i)();
   }
 
   void _showDesktopMenu(String folder, Offset location) {
@@ -865,9 +838,7 @@ mixin class _LocalFavoritesManager {
   }
 
   void rename(String folder) async {
-    await showDialog(
-        context: App.globalContext!,
-        builder: (context) => RenameFolderDialog(folder));
+    await RenameFolderDialog.show(App.globalContext!, folder);
     StateController.find<FavoritesPageController>().update();
   }
 

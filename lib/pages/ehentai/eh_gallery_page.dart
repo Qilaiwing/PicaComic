@@ -68,25 +68,21 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
         await EhNetwork().getGalleryInfo(link, appdata.settings[47] == "1");
     if (res.error && res.errorMessage == "Content Warning") {
       bool shouldIgnore = false;
-      await showDialog(
+      await showMiuixDialog<void>(
           context: App.globalContext!,
-          builder: (context) => AlertDialog(
-                title: Text("警告".tl),
-                content: Text("此画廊存在令人不适的内容\n在设置中可以禁用此警告".tl),
-                actions: [
-                  TextButton(
-                      onPressed: () {
-                        App.globalBack();
-                      },
-                      child: Text("返回".tl)),
-                  TextButton(
-                      onPressed: () {
-                        shouldIgnore = true;
-                        App.globalBack();
-                      },
-                      child: Text("忽略".tl))
-                ],
-              ));
+          title: "警告".tl,
+          summary: "此画廊存在令人不适的内容\n在设置中可以禁用此警告".tl,
+          actionsBuilder: (context, close) => [
+                MiuixTextButton("返回".tl, onPressed: () => close()),
+                MiuixTextButton(
+                  "忽略".tl,
+                  colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                  onPressed: () {
+                    shouldIgnore = true;
+                    close();
+                  },
+                ),
+              ]);
       if (shouldIgnore) {
         return await EhNetwork().getGalleryInfo(link, true);
       } else if (context.mounted) {
@@ -206,14 +202,12 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
       showToast(message: "未登录".tl);
       return;
     }
-    showDialog(
+    showMiuixDialog<void>(
         context: context,
-        builder: (dialogContext) => StateBuilder<RatingLogic>(
+        title: "评分",
+        contentBuilder: (dialogContext, close) => StateBuilder<RatingLogic>(
             init: RatingLogic(),
-            builder: (logic) => SimpleDialog(
-                  title: const Text("评分"),
-                  alignment: Alignment.center,
-                  children: [
+            builder: (logic) =>
                     SizedBox(
                       height: 100,
                       child: Center(
@@ -258,8 +252,7 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
                         ),
                       ),
                     )
-                  ],
-                )));
+            ));
   }
 
   @override
@@ -322,10 +315,10 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
     ArchiveDownloadInfo? info;
     bool cancelUnlock = false;
 
-    showDialog(
+    showMiuixDialog<void>(
         context: App.globalContext!,
-        builder: (dialogContext) => Dialog(
-              child: StatefulBuilder(
+        title: "下载".tl,
+        contentBuilder: (dialogContext, close) => StatefulBuilder(
                 builder: (context, setState) {
                   void load() async {
                     if (data?.auth?["archiveDownload"] == null) {
@@ -355,22 +348,16 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
                     load();
                   }
 
-                  return Container(
-                    width: 350,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  return Material(
+                    type: MaterialType.transparency,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text("下载".tl, style: const TextStyle(fontSize: 20))
-                            .paddingLeft(16),
-                        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
-                        RadioListTile(
-                            value: 0,
-                            groupValue: current,
-                            onChanged: (value) =>
-                                setState(() => current = value as int),
-                            title: Text("普通下载".tl)),
+                        MiuixRadioButtonPreference(
+                            title: "普通下载".tl,
+                            selected: current == 0,
+                            onClick: () => setState(() => current = 0)),
                         ExpansionTile(
                           title: Text("归档下载".tl),
                           shape: Border.all(color: Colors.transparent),
@@ -383,54 +370,52 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
                               Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  RadioListTile(
-                                    value: 1,
-                                    groupValue: current,
-                                    onChanged: (value) =>
-                                        setState(() => current = value as int),
-                                    title: Text("Original".tl),
-                                    subtitle: Text(
-                                        "${info!.originCost} ${info!.originSize}"),
+                                  MiuixRadioButtonPreference(
+                                    title: "Original".tl,
+                                    summary:
+                                        "${info!.originCost} ${info!.originSize}",
+                                    selected: current == 1,
+                                    onClick: () => setState(() => current = 1),
                                   ),
-                                  RadioListTile(
-                                    value: 2,
-                                    groupValue: current,
-                                    onChanged: (value) =>
-                                        setState(() => current = value as int),
-                                    title: Text("Resample".tl),
-                                    subtitle: Text(
-                                        "${info!.resampleCost} ${info!.resampleSize}"),
+                                  MiuixRadioButtonPreference(
+                                    title: "Resample".tl,
+                                    summary:
+                                        "${info!.resampleCost} ${info!.resampleSize}",
+                                    selected: current == 2,
+                                    onClick: () => setState(() => current = 2),
                                   ),
                                   if (info!.cancelUnlockUrl != null)
-                                    ListTile(
-                                      leading: const Icon(Icons.lock_open),
-                                      title: Text("取消解锁".tl),
-                                      subtitle: Text("长按执行此操作".tl),
+                                    GestureDetector(
                                       onLongPress: () {
                                         setState(() {
                                           cancelUnlock = true;
                                           loading = true;
                                         });
                                       },
-                                    ).paddingLeft(6),
+                                      child: MiuixBasicComponent(
+                                        startAction: const Icon(Icons.lock_open),
+                                        title: "取消解锁".tl,
+                                        summary: "长按执行此操作".tl,
+                                      ),
+                                    ),
                                 ],
                               )
                           ],
                         ),
+                        const SizedBox(height: 12),
                         MiuixButton(
                           colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                           onPressed: () {
                             startDownload(current);
-                            context.pop();
+                            close();
                           },
                           child: Text("确认".tl),
-                        ).toCenter()
+                        ),
                       ],
                     ),
                   );
                 },
-              ),
-            ));
+              ));
   }
 
   void startDownload(int type) {

@@ -292,103 +292,85 @@ class _SearchResultPageState extends State<_SearchResultPage> {
     );
   }
 
-  void more() {
-    showMenu(
+  void more() async {
+    final value = await showMiuixMenu(
       context: context,
-      elevation: 2,
-      color: context.colorScheme.surface,
-      position: RelativeRect.fromLTRB(
-        MediaQuery.of(context).size.width - 48,
-        56,
-        0,
-        0,
-      ),
-      items: [
-        PopupMenuItem(
-          value: 0,
-          child: Text("切换源".tl),
-        ),
-        PopupMenuItem(
-          value: 1,
-          child: Text("搜索选项".tl),
-        ),
-      ],
-    ).then((value) {
-      if (value == 0) {
-        changeSource();
-      } else if (value == 1) {
-        showSearchOptions();
-      }
-    });
+      anchorBounds: Rect.fromLTWH(MediaQuery.of(context).size.width - 48, 56, 0, 0),
+      alignment: MiuixPopupAlign.end,
+      items: ["切换源".tl, "搜索选项".tl],
+    );
+    if (value == 0) {
+      changeSource();
+    } else if (value == 1) {
+      showSearchOptions();
+    }
   }
 
-  void changeSource() {
+  void changeSource() async {
     var sources = ComicSource.sources.where((e) => e.searchPageData != null);
     String? sourceKey = this.sourceKey;
-    showDialog(
-      useSafeArea: false,
+    final confirmed = await showMiuixDialog<bool>(
       context: context,
-      builder: (context) {
+      title: "切换源".tl,
+      contentBuilder: (context, close) {
         return StatefulBuilder(builder: (context, setState) {
-          return ContentDialog(
-            title: "切换源".tl,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var source in sources)
-                  RadioListTile<String>(
-                    title: Text(source.name),
-                    value: source.key,
-                    groupValue: sourceKey,
-                    onChanged: (value) {
-                      setState(() {
-                        sourceKey = value;
-                      });
-                    },
-                  )
-              ],
-            ),
-            actions: [
-              Button.filled(
-                child: Text("确认".tl),
-                onPressed: () {
-                  if (sourceKey != null) {
-                    context.pop();
-                    var searchData =
-                        ComicSource.find(sourceKey!)!.searchPageData!;
-                    options = (searchData.searchOptions ?? [])
-                        .map((e) => e.defaultValue)
-                        .toList();
-                    if (searchData.overrideSearchResultBuilder != null) {
-                      this.context.off(() {
-                        return SearchResultPage(
-                          keyword: keyword,
-                          options: options,
-                          sourceKey: sourceKey!,
-                        );
-                      });
-                    } else {
-                      this.setState(() {
-                        this.sourceKey = sourceKey!;
-                      });
-                    }
-                  }
-                },
-              )
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var source in sources)
+                MiuixRadioButtonPreference(
+                  title: source.name,
+                  selected: sourceKey == source.key,
+                  onClick: () {
+                    setState(() {
+                      sourceKey = source.key;
+                    });
+                  },
+                )
             ],
           );
         });
       },
+      actionsBuilder: (context, close) => [
+        MiuixButton(
+          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+          child: Text("确认".tl),
+          onPressed: () {
+            if (sourceKey != null) {
+              close(true);
+            }
+          },
+        )
+      ],
     );
+    // 导航在弹窗关闭后执行
+    if (confirmed != true || sourceKey == null || !mounted) return;
+    var searchData = ComicSource.find(sourceKey!)!.searchPageData!;
+    options =
+        (searchData.searchOptions ?? []).map((e) => e.defaultValue).toList();
+    if (searchData.overrideSearchResultBuilder != null) {
+      context.off(() {
+        return SearchResultPage(
+          keyword: keyword,
+          options: options,
+          sourceKey: sourceKey!,
+        );
+      });
+    } else {
+      setState(() {
+        this.sourceKey = sourceKey!;
+      });
+    }
   }
 
   void showSearchOptions() {
-    showDialog(
+    showMiuixDialog(
       context: context,
-      useSafeArea: false,
-      builder: (context) => _SearchOptions(
+      title: "搜索选项".tl,
+      contentBuilder: (context, close) => _SearchOptions(
         current: options,
         sourceKey: sourceKey,
+        close: () => close(),
         onChanged: (options) {
           setState(() {
             this.options = options;
@@ -650,6 +632,7 @@ class _SearchOptions extends StatefulWidget {
     required this.current,
     required this.sourceKey,
     required this.onChanged,
+    required this.close,
   });
 
   final List<String> current;
@@ -657,6 +640,9 @@ class _SearchOptions extends StatefulWidget {
   final String sourceKey;
 
   final void Function(List<String>) onChanged;
+
+  /// 关闭外层 showMiuixDialog
+  final void Function() close;
 
   @override
   State<_SearchOptions> createState() => _SearchOptionsState();
@@ -680,16 +666,21 @@ class _SearchOptionsState extends State<_SearchOptions> {
 
   @override
   Widget build(BuildContext context) {
-    return ContentDialog(
-      title: "搜索选项".tl,
-      content: buildSearchOptions(context),
-      actions: [
-        Button.filled(
-          child: Text("确认".tl),
-          onPressed: () {
-            context.pop();
-            widget.onChanged(options);
-          },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        buildSearchOptions(context),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: MiuixButton(
+            colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+            child: Text("确认".tl),
+            onPressed: () {
+              widget.close();
+              widget.onChanged(options);
+            },
+          ),
         )
       ],
     );

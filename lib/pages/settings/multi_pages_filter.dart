@@ -126,19 +126,17 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
         canAdd[key] = value;
       }
     });
-    showDialog(
+    showMiuixDialog(
         context: context,
-        builder: (context) {
-          return SimpleDialog(
-            shape: const MiuixSquircleBorder(cornerRadius: 28),
-            title: Text("添加".tl,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: "添加".tl,
+        contentBuilder: (context, close) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: canAdd.entries
-                .map((e) => InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      child: ListTile(title: Text(e.value), key: Key(e.key)),
-                      onTap: () {
+                .map((e) => MiuixBasicComponent(
+                      key: Key(e.key),
+                      title: e.value,
+                      onClick: () {
                         App.back(context);
                         setState(() {
                           keys.add(e.key);

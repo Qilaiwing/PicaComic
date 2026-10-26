@@ -96,9 +96,10 @@ class UpdateFavoritesInfoDialog extends StatefulWidget {
   final String folder;
 
   static show(List<FavoriteItem> comics, String folder) {
-    showDialog(
+    showMiuixDialog(
       context: App.globalContext!,
-      builder: (context) =>
+      title: "更新漫画信息".tl,
+      contentBuilder: (context, close) =>
           UpdateFavoritesInfoDialog(comics: comics, folder: folder),
     );
   }
@@ -147,22 +148,22 @@ class _UpdateFavoritesInfoDialogState extends State<UpdateFavoritesInfoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return ContentDialog(
-      title: "更新漫画信息".tl,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          MiuixLinearProgressIndicator(
-            progress: finished / total,
-          ),
-          const SizedBox(
-            height: 8,
-          ),
-          Text("$finished/$total").toAlign(Alignment.centerRight),
-        ],
-      ).paddingHorizontal(24).paddingVertical(12),
-      actions: [
-        Button.filled(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        MiuixLinearProgressIndicator(
+          progress: finished / total,
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        Text("$finished/$total").toAlign(Alignment.centerRight),
+        const SizedBox(
+          height: 16,
+        ),
+        MiuixButton(
+          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -174,23 +175,86 @@ class _UpdateFavoritesInfoDialogState extends State<UpdateFavoritesInfoDialog> {
 }
 
 class CreateFolderDialog extends StatelessWidget {
-  const CreateFolderDialog({Key? key}) : super(key: key);
+  const CreateFolderDialog({Key? key, this.asContent = false})
+      : super(key: key);
+
+  /// true 时只构建正文（供 [show] 放进 Miuix 对话框）；
+  /// false 时保留旧的 SimpleDialog 外壳，兼容仍在用 showDialog 的调用方。
+  final bool asContent;
+
+  static Future<void> show(BuildContext context) {
+    return showMiuixDialog<void>(
+      context: context,
+      title: "创建收藏夹".tl,
+      contentBuilder: (context, close) =>
+          const CreateFolderDialog(asContent: true),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = TextEditingController();
     final FocusNode focusNode = FocusNode();
     focusNode.requestFocus();
-    return SimpleDialog(
-      shape: const MiuixSquircleBorder(cornerRadius: 20),
-      title: Text("创建收藏夹".tl),
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: TextField(
-            focusNode: focusNode,
-            controller: controller,
-            onEditingComplete: () {
+        MiuixTextField(
+          focusNode: focusNode,
+          controller: controller,
+          label: "名称".tl,
+          singleLine: true,
+          onSubmitted: (_) {
+            try {
+              LocalFavoritesManager().createFolder(controller.text);
+              App.globalBack();
+            } catch (e) {
+              showToast(message: e.toString());
+            }
+          },
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        Row(
+          children: [
+            const Spacer(),
+            MiuixTextButton(
+              "从文件导入".tl,
+              onPressed: () async {
+                context.pop();
+                var data = await getDataFromUserSelectedFile(["json"]);
+                if (data == null) {
+                  return;
+                }
+                var (error, message) =
+                    LocalFavoritesManager().loadFolderData(data);
+                if (error) {
+                  showToast(message: message);
+                } else {
+                  StateController.find(tag: "me page").update();
+                }
+              },
+            ),
+            const Spacer(),
+            MiuixTextButton(
+              "从网络导入".tl,
+              onPressed: () async {
+                App.globalBack();
+                await Future.delayed(const Duration(milliseconds: 200));
+                networkToLocal();
+              },
+            ),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(
+          height: 8,
+        ),
+        MiuixButton(
+            colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+            onPressed: () {
               try {
                 LocalFavoritesManager().createFolder(controller.text);
                 App.globalBack();
@@ -198,67 +262,15 @@ class CreateFolderDialog extends StatelessWidget {
                 showToast(message: e.toString());
               }
             },
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              labelText: "名称".tl,
-            ),
-          ),
-        ),
-        const SizedBox(
-          height: 8,
-        ),
-        SizedBox(
-          width: 260,
-          child: Row(
-            children: [
-              const Spacer(),
-              MiuixTextButton(
-                "从文件导入".tl,
-                onPressed: () async {
-                  context.pop();
-                  var data = await getDataFromUserSelectedFile(["json"]);
-                  if (data == null) {
-                    return;
-                  }
-                  var (error, message) =
-                      LocalFavoritesManager().loadFolderData(data);
-                  if (error) {
-                    showToast(message: message);
-                  } else {
-                    StateController.find(tag: "me page").update();
-                  }
-                },
-              ),
-              const Spacer(),
-              MiuixTextButton(
-                "从网络导入".tl,
-                onPressed: () async {
-                  App.globalBack();
-                  await Future.delayed(const Duration(milliseconds: 200));
-                  networkToLocal();
-                },
-              ),
-              const Spacer(),
-            ],
-          ),
-        ),
-        const SizedBox(
-          height: 8,
-        ),
-        SizedBox(
-            height: 35,
-            child: Center(
-              child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
-                  onPressed: () {
-                    try {
-                      LocalFavoritesManager().createFolder(controller.text);
-                      App.globalBack();
-                    } catch (e) {
-                      showToast(message: e.toString());
-                    }
-                  },
-                  child: Text("提交".tl)),
-            ))
+            child: Text("提交".tl)),
+      ],
+    );
+    if (asContent) return content;
+    return SimpleDialog(
+      shape: const MiuixSquircleBorder(cornerRadius: 20),
+      title: Text("创建收藏夹".tl),
+      children: [
+        SizedBox(width: 300, child: content.paddingHorizontal(20)),
       ],
     );
   }
@@ -269,6 +281,15 @@ class RenameFolderDialog extends StatelessWidget {
 
   final String before;
 
+  /// 以 Miuix 对话框弹出，返回值与原 showDialog 一致（无返回值）
+  static Future<void> show(BuildContext context, String before) {
+    return showMiuixDialog<void>(
+      context: context,
+      title: "重命名".tl,
+      contentBuilder: (context, close) => RenameFolderDialog(before),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = TextEditingController(
@@ -276,15 +297,30 @@ class RenameFolderDialog extends StatelessWidget {
     );
     final FocusNode focusNode = FocusNode();
     focusNode.requestFocus();
-    return SimpleDialog(
-      title: Text("重命名".tl),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            onEditingComplete: () {
+        MiuixTextField(
+          controller: controller,
+          focusNode: focusNode,
+          label: "名称".tl,
+          singleLine: true,
+          onSubmitted: (_) {
+            try {
+              LocalFavoritesManager().rename(before, controller.text);
+              context.pop();
+            } catch (e) {
+              showToast(message: e.toString());
+            }
+          },
+        ),
+        const SizedBox(
+          height: 16,
+        ),
+        MiuixButton(
+            colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+            onPressed: () {
               try {
                 LocalFavoritesManager().rename(before, controller.text);
                 context.pop();
@@ -292,30 +328,7 @@ class RenameFolderDialog extends StatelessWidget {
                 showToast(message: e.toString());
               }
             },
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              labelText: "名称".tl,
-            ),
-          ),
-        ),
-        const SizedBox(
-          width: 200,
-          height: 10,
-        ),
-        SizedBox(
-            height: 35,
-            child: Center(
-              child: MiuixTextButton(
-                  onPressed: () {
-                    try {
-                      LocalFavoritesManager().rename(before, controller.text);
-                      context.pop();
-                    } catch (e) {
-                      showToast(message: e.toString());
-                    }
-                  },
-                  "提交".tl),
-            ))
+            child: Text("提交".tl)),
       ],
     );
   }
@@ -531,17 +544,14 @@ class LocalFavoriteTile extends ComicTile {
   }
 
   void showMenu() {
-    showDialog(
+    showMiuixDialog(
         context: App.globalContext!,
-        builder: (context) => Dialog(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
+        contentBuilder: (context, close) => Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
                       child: SelectableText(
                         title.replaceAll("\n", ""),
                         style: const TextStyle(fontSize: 22),
@@ -610,9 +620,7 @@ class LocalFavoriteTile extends ComicTile {
                       height: 16,
                     ),
                   ],
-                ),
-              ),
-            ));
+                ));
   }
 
   void readComic() async {
@@ -784,43 +792,37 @@ class LocalFavoriteTile extends ComicTile {
 
   void copyTo() {
     String? folder;
-    showDialog(
+    showMiuixDialog(
         context: App.globalContext!,
-        builder: (context) => SimpleDialog(
-              title: Text("复制到".tl),
+        title: "复制到".tl,
+        contentBuilder: (context, close) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  width: 280,
-                  height: 132,
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: Text("收藏夹".tl),
-                        trailing: Select(
-                          outline: true,
-                          width: 156,
-                          values: LocalFavoritesManager().folderNames,
-                          initialValue: null,
-                          onChange: (i) =>
-                              folder = LocalFavoritesManager().folderNames[i],
-                        ),
-                      ),
-                      const Spacer(),
-                      Center(
-                        child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
-                          child: Text("确认".tl),
-                          onPressed: () {
-                            LocalFavoritesManager().addComic(folder!, comic);
-                            App.globalBack();
-                          },
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                    ],
-                  ),
-                )
+                MiuixBasicComponent(
+                  title: "收藏夹".tl,
+                  endActions: [
+                    Select(
+                      outline: true,
+                      width: 156,
+                      values: LocalFavoritesManager().folderNames,
+                      initialValue: null,
+                      onChange: (i) =>
+                          folder = LocalFavoritesManager().folderNames[i],
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                MiuixButton(
+                  colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                  child: Text("确认".tl),
+                  onPressed: () {
+                    LocalFavoritesManager().addComic(folder!, comic);
+                    close();
+                  },
+                ),
               ],
             ));
   }
@@ -846,19 +848,16 @@ class LocalFavoriteTile extends ComicTile {
   String get comicID => comic.target;
 
   void editTags() {
-    showDialog(
+    showMiuixDialog(
         context: App.globalContext!,
-        builder: (context) {
+        title: "编辑标签".tl,
+        contentBuilder: (context, close) {
           var tags = comic.tags;
           var controller = TextEditingController();
-          return SimpleDialog(
-            elevation: 1,
-            title: Text("编辑标签".tl),
-            children: [
-              StatefulBuilder(
-                  builder: (context, setState) => SizedBox(
-                        width: 400,
-                        child: Column(
+          return StatefulBuilder(
+                  builder: (context, setState) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Wrap(
                               children: tags
@@ -899,104 +898,90 @@ class LocalFavoriteTile extends ComicTile {
                             const SizedBox(
                               height: 8,
                             ),
-                            SizedBox(
-                              height: 56,
-                              child: TextField(
-                                controller: controller,
-                                decoration: InputDecoration(
-                                  border: const UnderlineInputBorder(),
-                                  suffix: IconButton(
-                                    icon: const Icon(Icons.add),
-                                    onPressed: () {
-                                      var value = controller.text;
-                                      if (value.isNotEmpty) {
-                                        controller.clear();
-                                        tags.add(value);
-                                        setState(() {});
-                                      }
-                                    },
-                                  ).paddingTop(8),
-                                ),
-                                onSubmitted: (value) {
+                            MiuixTextField(
+                              controller: controller,
+                              singleLine: true,
+                              trailingIcon: IconButton(
+                                icon: const Icon(Icons.add),
+                                onPressed: () {
+                                  var value = controller.text;
                                   if (value.isNotEmpty) {
-                                    tags.add(value);
                                     controller.clear();
+                                    tags.add(value);
                                     setState(() {});
                                   }
                                 },
                               ),
-                            ).paddingHorizontal(36),
+                              onSubmitted: (value) {
+                                if (value.isNotEmpty) {
+                                  tags.add(value);
+                                  controller.clear();
+                                  setState(() {});
+                                }
+                              },
+                            ),
                             const SizedBox(
                               height: 16,
                             ),
-                            Center(
-                              child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
-                                  onPressed: () {
-                                    LocalFavoritesManager().editTags(
-                                        comic.target, folderName, tags);
-                                    App.globalBack();
-                                    StateController.findOrNull<
-                                            FavoritesPageController>()
-                                        ?.update();
-                                    StateController.findOrNull(
-                                            tag: "local_search_page")
-                                        ?.update();
-                                  },
-                                  child: Text("提交".tl)),
-                            )
+                            MiuixButton(
+                                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                                onPressed: () {
+                                  LocalFavoritesManager().editTags(
+                                      comic.target, folderName, tags);
+                                  close();
+                                  StateController.findOrNull<
+                                          FavoritesPageController>()
+                                      ?.update();
+                                  StateController.findOrNull(
+                                          tag: "local_search_page")
+                                      ?.update();
+                                },
+                                child: Text("提交".tl)),
                           ],
                         ),
-                      ))
-            ],
-          );
+                      );
         });
   }
 }
 
 void copyAllTo(String source, List<FavoriteItem> comics) {
   String? folder;
-  showDialog(
+  showMiuixDialog(
       context: App.globalContext!,
-      builder: (context) => SimpleDialog(
-            title: Text("复制到".tl),
+      title: "复制到".tl,
+      contentBuilder: (context, close) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                width: 280,
-                height: 132,
-                child: Column(
-                  children: [
-                    ListTile(
-                      title: Text("收藏夹".tl),
-                      trailing: Select(
-                        outline: true,
-                        width: 156,
-                        values: LocalFavoritesManager().folderNames,
-                        initialValue: null,
-                        onChange: (i) =>
-                            folder = LocalFavoritesManager().folderNames[i],
-                      ),
-                    ),
-                    const Spacer(),
-                    Center(
-                      child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
-                        child: Text("确认".tl),
-                        onPressed: () {
-                          for (var comic in comics) {
-                            LocalFavoritesManager().addComic(
-                                folder!,
-                                LocalFavoritesManager().getComic(
-                                    source, comic.target, comic.type));
-                          }
-                          App.globalBack();
-                        },
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                  ],
-                ),
-              )
+              MiuixBasicComponent(
+                title: "收藏夹".tl,
+                endActions: [
+                  Select(
+                    outline: true,
+                    width: 156,
+                    values: LocalFavoritesManager().folderNames,
+                    initialValue: null,
+                    onChange: (i) =>
+                        folder = LocalFavoritesManager().folderNames[i],
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 16,
+              ),
+              MiuixButton(
+                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                child: Text("确认".tl),
+                onPressed: () {
+                  for (var comic in comics) {
+                    LocalFavoritesManager().addComic(
+                        folder!,
+                        LocalFavoritesManager().getComic(
+                            source, comic.target, comic.type));
+                  }
+                  close();
+                },
+              ),
             ],
           ));
 }
@@ -1167,11 +1152,10 @@ Future<void> checkFolder(String name) async {
     }
   }
 
-  await showDialog(
+  await showMiuixDialog(
       context: App.globalContext!,
-      builder: (context) {
-        return Dialog(
-          child: StreamBuilder(
+      contentBuilder: (context, close) {
+        return StreamBuilder(
               stream: check(),
               builder: (context, snapshot) {
                 if (checked == comics.length) {
@@ -1213,7 +1197,6 @@ Future<void> checkFolder(String name) async {
                     ),
                   ),
                 );
-              }),
-        );
+              });
       });
 }

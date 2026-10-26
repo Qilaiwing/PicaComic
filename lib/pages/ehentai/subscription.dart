@@ -20,18 +20,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       appBar: Appbar(title: Text("EH订阅".tl), actions: [
         Tooltip(
           message: "更多".tl,
-          child: IconButton(
-            icon: const Icon(Icons.more_horiz),
+          child: MiuixIconButton(
+            child: const Icon(Icons.more_horiz),
             onPressed: (){
-              Future.microtask(() => showDialog(context: App.globalContext!, builder: (context){
-                return AlertDialog(
-                  title: Text("订阅".tl),
-                  content: Text("请在网页端管理订阅".tl),
-                  actions: [
-                    TextButton(onPressed: ()=>App.globalBack(), child: Text("返回".tl)),
-                  ],
-                );
-              }));
+              Future.microtask(() => showMiuixDialog<void>(
+                context: App.globalContext!,
+                title: "订阅".tl,
+                summary: "请在网页端管理订阅".tl,
+                actionsBuilder: (context, close) => [
+                  MiuixTextButton("返回".tl, onPressed: () => close()),
+                ],
+              ));
             },
           ),
         )

@@ -20,53 +20,44 @@ class BlockingKeywordPage extends StatelessWidget {
       child: IconButton(
         icon: const Icon(Icons.add),
         onPressed: () {
-          showDialog(
+          showMiuixDialog(
             context: context,
-            builder: (dialogContext) => StateBuilder<BlockingKeywordPageLogic>(
-              builder: (logic) => SimpleDialog(
-                shape: const MiuixSquircleBorder(cornerRadius: 28),
-                title: Text("添加屏蔽关键词".tl,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w600)),
+            title: "添加屏蔽关键词".tl,
+            contentBuilder: (dialogContext, close) =>
+                StateBuilder<BlockingKeywordPageLogic>(
+              builder: (logic) => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(
-                    width: 300,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    child: TextField(
-                      controller: logic.controller,
-                      decoration: InputDecoration(
-                          border: const OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(16))),
-                          hintText: "添加关键词".tl),
-                      onEditingComplete: () {
-                        if (logic.controller.text == "") return;
-                        appdata.blockingKeyword.add(logic.controller.text);
-                        logic.update();
-                        App.globalBack();
-                        logic.controller.text = "";
-                        appdata.writeData();
-                      },
-                    ),
+                  MiuixTextField(
+                    controller: logic.controller,
+                    label: "添加关键词".tl,
+                    useLabelAsPlaceholder: true,
+                    singleLine: true,
+                    onSubmitted: (_) {
+                      if (logic.controller.text == "") return;
+                      appdata.blockingKeyword.add(logic.controller.text);
+                      logic.update();
+                      close();
+                      logic.controller.text = "";
+                      appdata.writeData();
+                    },
                   ),
                   const SizedBox(
-                    height: 8,
+                    height: 16,
                   ),
-                  Center(
-                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), child: Text("提交".tl,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      onPressed: () {
-                        if (logic.controller.text == "") return;
-                        appdata.blockingKeyword.add(logic.controller.text);
-                        logic.update();
-                        App.globalBack();
-                        logic.controller.text = "";
-                        appdata.writeData();
-                      },
-                    ),
+                  MiuixButton(
+                    colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                    child: Text("提交".tl,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    onPressed: () {
+                      if (logic.controller.text == "") return;
+                      appdata.blockingKeyword.add(logic.controller.text);
+                      logic.update();
+                      close();
+                      logic.controller.text = "";
+                      appdata.writeData();
+                    },
                   )
                 ],
               ),
