@@ -21,23 +21,9 @@ class _CookieManagementViewState extends State<CookieManagementView> {
       title: const Text("cookies"),
       shape: const RoundedRectangleBorder(),
       children: [
-        ListTile(
-          title: const Text("ipb_member_id"),
-          subtitle: Text(EhNetwork().id),
-          onTap: () => setClipboard(EhNetwork().id),
-        ),
-        ListTile(
-          title: const Text("ipb_pass_hash"),
-          subtitle: Text(EhNetwork().hash),
-          onTap: () => setClipboard(EhNetwork().hash),
-        ),
-        ListTile(
-          title: const Text("igneous"),
-          subtitle: Text(EhNetwork().igneous),
-          onTap: () => setClipboard(EhNetwork().igneous),
-          trailing: IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
+        MiuixBasicComponent(title: "ipb_member_id", summary: EhNetwork().id, onClick: () => setClipboard(EhNetwork().id),),
+        MiuixBasicComponent(title: "ipb_pass_hash", summary: EhNetwork().hash, onClick: () => setClipboard(EhNetwork().hash),),
+        MiuixBasicComponent(title: "igneous", summary: EhNetwork().igneous, onClick: () => setClipboard(EhNetwork().igneous), endActions: [MiuixIconButton(child: const Icon(Icons.edit_outlined), onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) {
@@ -70,9 +56,7 @@ class _CookieManagementViewState extends State<CookieManagementView> {
                   );
                 },
               );
-            },
-          ),
-        ),
+            },)],),
       ],
     );
   }

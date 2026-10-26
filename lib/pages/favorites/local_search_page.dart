@@ -92,11 +92,18 @@ class _LocalSearchPageState extends StateWithController<LocalSearchPage> {
                   ),
                 ),
                 Expanded(
-                  child: TextField(
+                  child: MiuixTextField(
                     focusNode: _focusNode,
                     controller: controller,
-                    decoration: const InputDecoration(
-                        border: InputBorder.none, hintText: "Search"),
+                    label: "Search",
+                    useLabelAsPlaceholder: true,
+                    singleLine: true,
+                    insideMargin: EdgeInsets.zero,
+                    colors: MiuixTextFieldColors(
+                      backgroundColor: Colors.transparent,
+                      labelColor: Theme.of(context).hintColor,
+                      borderColor: Colors.transparent,
+                    ),
                     onSubmitted: (s) => search(),
                     onChanged: (s) => setState(() {
                       keyword = s;

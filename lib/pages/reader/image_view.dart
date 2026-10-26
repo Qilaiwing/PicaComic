@@ -160,9 +160,10 @@ extension ImageExt on ComicReadingPage {
           child: SizedBox(
             width: 20.0,
             height: 20.0,
-            child: CircularProgressIndicator(
-              backgroundColor: context.colorScheme.surfaceContainerHigh,
-              value: event == null || event.expectedTotalBytes == null
+            child: MiuixCircularProgressIndicator(
+              size: 20.0,
+              strokeWidth: 2,
+              progress: event == null || event.expectedTotalBytes == null
                   ? null
                   : event.cumulativeBytesLoaded / event.expectedTotalBytes!,
             ),

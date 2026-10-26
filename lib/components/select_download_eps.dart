@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_miuix/miuix.dart';
 import 'package:pica_comic/tools/translations.dart';
 
 class SelectDownloadChapter extends StatefulWidget {
@@ -98,7 +99,7 @@ class _SelectDownloadChapterState extends State<SelectDownloadChapter> {
                   width: 16,
                 ),
                 Expanded(
-                  child: FilledButton.tonal(
+                  child: MiuixButton(
                       onPressed: () {
                         var res = <int>[];
                         for (int i = 0; i < widget.eps.length; i++) {
@@ -114,7 +115,7 @@ class _SelectDownloadChapterState extends State<SelectDownloadChapter> {
                   width: 16,
                 ),
                 Expanded(
-                  child: FilledButton.tonal(
+                  child: MiuixButton(
                       onPressed: () {
                         widget.finishSelect(selected);
                       },

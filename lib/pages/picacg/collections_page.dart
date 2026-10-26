@@ -52,7 +52,7 @@ class CollectionsPage extends StatelessWidget {
           return Scaffold(
             appBar: Appbar(title: Text("推荐".tl)),
             body: const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixInfiniteProgressIndicator(),
             ),
           );
         } else if (logic.status) {

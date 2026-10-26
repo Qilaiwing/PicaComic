@@ -190,12 +190,10 @@ class _ButtonState extends State<Button> {
             fontSize: 16,
           ),
           child: isLoading
-              ? CircularProgressIndicator(
-                  color: widget.type == ButtonType.filled
-                      ? context.colorScheme.inversePrimary
-                      : context.colorScheme.primary,
+              ? const MiuixCircularProgressIndicator(
                   strokeWidth: 1.8,
-                ).fixWidth(18).fixHeight(18)
+                  size: 18,
+                )
               : widget.child,
         ));
     if (width != null || height != null) {
@@ -325,9 +323,10 @@ class _IconButtonState extends State<_IconButton> {
       child: widget.icon,
     );
     if (widget.isLoading) {
-      icon = const CircularProgressIndicator(
+      icon = MiuixCircularProgressIndicator(
         strokeWidth: 1.5,
-      ).paddingAll(2).fixWidth(iconSize).fixHeight(iconSize);
+        size: iconSize - 4,
+      ).paddingAll(2);
     }
     return MouseRegion(
       onEnter: (_) => setState(() => isHover = true),
@@ -383,7 +382,7 @@ class _StatefulSwitchState extends State<StatefulSwitch> {
 
   @override
   Widget build(BuildContext context) {
-    return Switch(
+    return MiuixSwitch(
         value: value,
         onChanged: (b) {
           setState(() {

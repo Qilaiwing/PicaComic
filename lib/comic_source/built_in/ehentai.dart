@@ -441,9 +441,7 @@ class _SearchOptionsState extends State<_SearchOptions> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text("高级选项".tl),
-        ),
+        MiuixBasicComponent(title: "高级选项".tl),
         if(!isInDialog)
           LayoutBuilder(
             builder: (context, constrains) => Wrap(

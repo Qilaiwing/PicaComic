@@ -385,9 +385,7 @@ extension ToolBar on ComicReadingPage {
       yield Positioned(
         left: 4,
         top: 4 + MediaQuery.of(context).padding.top,
-        child: IconButton(
-          iconSize: 24,
-          icon: const Icon(Icons.close),
+        child: MiuixIconButton(child: const Icon(Icons.close, size: 24),
           onPressed: () => App.globalBack(),
         ),
       );

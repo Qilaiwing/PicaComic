@@ -21,31 +21,28 @@ class _LogsPageState extends State<LogsPage> {
           SliverAppbar(
             title: const Text("Logs"),
             actions: [
-              IconButton(onPressed: ()=>setState(() {
-                final RelativeRect position = RelativeRect.fromLTRB(
-                  MediaQuery.of(context).size.width,
-                  MediaQuery.of(context).padding.top + kToolbarHeight,
-                  0.0,
-                  0.0,
-                );
-                showMenu(context: context, position: position, items: [
-                  PopupMenuItem(
-                    child: Text("清空".tl),
-                    onTap: () => setState(()=>LogManager.clear()),
-                  ),
-                  PopupMenuItem(
-                    child: Text("禁用长度限制".tl),
-                    onTap: (){
+              Builder(builder: (buttonContext) => MiuixIconButton(
+                onPressed: () async {
+                  // 菜单锚定在按钮本身，不再用 padding.top + kToolbarHeight 估算顶栏位置。
+                  final index = await showMiuixMenu(
+                    context: context,
+                    anchorBounds: miuixAnchorRectOf(buttonContext),
+                    alignment: MiuixPopupAlign.end,
+                    items: ["清空".tl, "禁用长度限制".tl, "导出".tl],
+                  );
+                  switch (index) {
+                    case 0:
+                      setState(()=>LogManager.clear());
+                    case 1:
+                      
                       LogManager.ignoreLimitation = true;
                       showToast(message: "仅在本次运行时有效".tl);
-                    },
-                  ),
-                  PopupMenuItem(
-                    child: Text("导出".tl),
-                    onTap: () => saveLog(LogManager().toString()),
-                  ),
-                ]);
-              }), icon: const Icon(Icons.more_horiz))
+                    
+                    case 2:
+                      saveLog(LogManager().toString());
+                  }
+                },
+                child: const Icon(Icons.more_horiz)))
             ],
           ),
           SliverList(
@@ -91,10 +88,10 @@ class _LogsPageState extends State<LogsPage> {
                         ),
                         Text(LogManager.logs[index].content),
                         Text(LogManager.logs[index].time.toString().replaceAll(RegExp(r"\.\w+"), "")),
-                        TextButton(onPressed: (){
+                        MiuixTextButton("复制".tl, onPressed: (){
                           Clipboard.setData(ClipboardData(text: LogManager.logs[index].content));
-                        }, child: Text("复制".tl)),
-                        const Divider(),
+                        }),
+                        const MiuixHorizontalDivider(),
                       ],
                     ),
                   ),

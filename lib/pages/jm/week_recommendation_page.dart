@@ -69,9 +69,7 @@ class JmWeekRecommendationPage extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_drop_down_sharp),
-                    iconSize: 16,
+                  MiuixIconButton(child: const Icon(Icons.arrow_drop_down_sharp, size: 16),
                     onPressed: () {
                       if (logic.rec == null) return;
                       var renderObject =
@@ -118,7 +116,7 @@ class JmWeekRecommendationPage extends StatelessWidget {
                 if (logic.loading) {
                   logic.get();
                   return const Center(
-                    child: CircularProgressIndicator(),
+                    child: MiuixInfiniteProgressIndicator(),
                   );
                 } else if (logic.message != null) {
                   return NetworkError(
@@ -207,7 +205,7 @@ class WeekRecommendationList extends StatelessWidget {
     if (logic.loading[index]) {
       logic.get(index, id);
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (logic.comics[index].isEmpty) {
       return NetworkError(

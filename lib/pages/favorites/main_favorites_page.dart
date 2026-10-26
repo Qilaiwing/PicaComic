@@ -393,7 +393,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Divider(height: 1, thickness: 0.6),
+                child: MiuixHorizontalDivider(thickness: 0.6),
               ),
             ),
           ],
@@ -974,6 +974,27 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
     });
   }
 
+  bool _isPullRefreshing = false;
+
+  /// Miuix pull-to-refresh, enabled only when folder sync exists.
+  Widget _wrapPullToRefresh(Widget child) {
+    if (folderSync() == null) {
+      return child;
+    }
+    return MiuixPullToRefresh(
+      isRefreshing: _isPullRefreshing,
+      onRefresh: () {
+        setState(() => _isPullRefreshing = true);
+        onRefresh(context).whenComplete(() {
+          if (mounted) {
+            setState(() => _isPullRefreshing = false);
+          }
+        });
+      },
+      child: child,
+    );
+  }
+
   Future<void> onRefresh(context) async {
     return startFolderSync(context, folderSync()!);
   }
@@ -989,12 +1010,7 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
         key: Key(folder),
         removeTop: true,
         context: context,
-        child: RefreshIndicator(
-          notificationPredicate: (notify) {
-            return folderSync() != null;
-          },
-          onRefresh: () => onRefresh(context),
-          child: Stack(
+        child: _wrapPullToRefresh(Stack(
             children: [
               ScrollConfiguration(
                 behavior: const ScrollBehavior().copyWith(scrollbars: false),

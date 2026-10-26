@@ -179,7 +179,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                 removeSliver(header) ?? const SizedBox(),
                 const Expanded(
                   child: Center(
-                    child: CircularProgressIndicator(),
+                    child: MiuixCircularProgressIndicator(),
                   ),
                 )
               ],
@@ -393,8 +393,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                 const SizedBox(
                   width: 16,
                 ),
-                FilledButton.tonal(
-                    onPressed: () => prevPage(logic), child: Text("上一页".tl)),
+                MiuixButton(onPressed: () => prevPage(logic), child: Text("上一页".tl)),
                 const Spacer(),
                 ActionChip(
                   label: Text(
@@ -406,8 +405,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                   side: BorderSide.none,
                 ),
                 const Spacer(),
-                FilledButton.tonal(
-                    onPressed: () => nextPage(logic), child: Text("下一页".tl)),
+                MiuixButton(onPressed: () => nextPage(logic), child: Text("下一页".tl)),
                 const SizedBox(
                   width: 16,
                 ),
@@ -451,9 +449,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const Divider(
-                    height: 1,
-                  ),
+                  const MiuixHorizontalDivider(),
                   Expanded(
                       child: InkWell(
                     onTap: () {
@@ -466,9 +462,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       ),
                     ),
                   )),
-                  const Divider(
-                    height: 1,
-                  ),
+                  const MiuixHorizontalDivider(),
                   Expanded(
                     child: InkWell(
                       borderRadius: const BorderRadius.only(
@@ -511,44 +505,30 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
 
   void selectPage(ComicsPageLogic logic) async {
     String res = "";
-    await showDialog(
+    var controller = TextEditingController();
+    await showMiuixDialog<void>(
         context: App.globalContext!,
-        builder: (dialogContext) {
-          var controller = TextEditingController();
-          return SimpleDialog(
-            title: const Text("切换页面"),
-            children: [
-              const SizedBox(
-                width: 300,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
-                child: TextField(
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: "页码".tl,
-                    suffixText:
-                        "${"输入范围: ".tl}1-${logic.maxPage?.toString() ?? "?"}",
-                  ),
-                  controller: controller,
-                  onSubmitted: (s) {
-                    res = s;
-                    App.globalBack();
-                  },
-                ),
-              ),
-              Center(
-                child: FilledButton(
-                  child: Text("提交".tl),
-                  onPressed: () {
-                    res = controller.text;
-                    App.globalBack();
-                  },
-                ),
+        title: "切换页面",
+        summary: "${"输入范围: ".tl}1-${logic.maxPage?.toString() ?? "?"}",
+        contentBuilder: (dialogContext, close) => MiuixTextField(
+              label: "页码".tl,
+              controller: controller,
+              singleLine: true,
+              onSubmitted: (s) {
+                res = s;
+                close();
+              },
+            ),
+        actionsBuilder: (dialogContext, close) => [
+              MiuixButton(
+                colors: MiuixButtonDefaults.buttonColorsPrimary(dialogContext),
+                child: Text("提交".tl),
+                onPressed: () {
+                  res = controller.text;
+                  close();
+                },
               )
-            ],
-          );
-        });
+            ]);
     if (res.isNum) {
       int i = int.parse(res);
       if (logic.maxPage == null || (i > 0 && i <= logic.maxPage!)) {

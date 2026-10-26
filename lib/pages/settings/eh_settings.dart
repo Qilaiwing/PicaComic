@@ -115,7 +115,7 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
       ),
       body: loading
           ? const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixCircularProgressIndicator(),
             )
           : error != null
               ? Center(child: Text(error!))

@@ -93,7 +93,7 @@ class HitomiHomePageComics extends StatelessWidget {
           if (logic.loading) {
             logic.get(url);
             return const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixInfiniteProgressIndicator(),
             );
           } else if (logic.message != null) {
             return NetworkError(
@@ -194,7 +194,7 @@ class _HitomiHomePageState extends State<HitomiHomePage> {
             ),
           ),
         ),
-        const Divider(),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
         Expanded(
           child: HitomiHomePageComics(
             url,

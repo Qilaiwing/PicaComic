@@ -49,35 +49,28 @@ class _SelectState extends State<Select> {
           if (widget.values.isEmpty) {
             return;
           }
-          final renderBox = context.findRenderObject() as RenderBox;
-          var offset = renderBox.localToGlobal(Offset.zero);
-          var size = MediaQuery.of(context).size;
-          showMenu<int>(
-              context: App.globalContext!,
-              initialValue: value,
-              position: RelativeRect.fromLTRB(offset.dx, offset.dy,
-                  offset.dx + widget.width, size.height - offset.dy),
-              constraints: BoxConstraints(
-                maxWidth: widget.width,
-                minWidth: widget.width,
-              ),
-              shape: const MiuixSquircleBorder(cornerRadius: 16),
-              color: context.colorScheme.surfaceContainerLowest,
-              items: [
-                for (int i = 0; i < widget.values.length; i++)
-                  if (!widget.disabledValues.contains(i))
-                    PopupMenuItem(
-                      value: i,
-                      height: App.isDesktop ? 38 : 42,
-                      onTap: () {
-                        setState(() {
-                          value = i;
-                          widget.onChange(i);
-                        });
-                      },
-                      child: Text(widget.values[i]),
-                    )
-              ]);
+          final items = <String>[];
+          final indexMap = <int>[];
+          for (int i = 0; i < widget.values.length; i++) {
+            if (!widget.disabledValues.contains(i)) {
+              items.add(widget.values[i]);
+              indexMap.add(i);
+            }
+          }
+          showMiuixMenu(
+            context: App.globalContext!,
+            anchorBounds: miuixAnchorRectOf(context),
+            items: items,
+            selectedIndex: value == null ? null : indexMap.indexOf(value!),
+            minWidth: widget.width,
+          ).then((index) {
+            if (index == null || !mounted) return;
+            final i = indexMap[index];
+            setState(() {
+              value = i;
+              widget.onChange(i);
+            });
+          });
         },
         child: AnimatedContainer(
           duration: _fastAnimationDuration,

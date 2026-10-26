@@ -59,7 +59,7 @@ Future<List<T>> getFavorites<T extends Object>(BuildContext context,
                 width: 400,
               ),
               const Center(
-                child: CircularProgressIndicator(),
+                child: MiuixCircularProgressIndicator(),
               ),
               StreamBuilder<(int, int?)>(
                   stream: load(),
@@ -87,12 +87,9 @@ Future<List<T>> getFavorites<T extends Object>(BuildContext context,
                     );
                   }),
               Center(
-                child: TextButton(
-                  child: Text("取消".tl),
-                  onPressed: () {
+                child: MiuixTextButton("取消".tl, onPressed: () {
                     App.back(context);
-                  },
-                ),
+                  }),
               )
             ],
           ));

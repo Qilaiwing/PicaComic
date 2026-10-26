@@ -707,9 +707,9 @@ class _SearchOptionsState extends State<_SearchOptions> {
       final searchOptions = data.searchOptions ?? <SearchOptions>[];
       for (int i = 0; i < searchOptions.length; i++) {
         final option = searchOptions[i];
-        children.add(ListTile(
-          title: Text(option.label),
-        ));
+        children.add(MiuixBasicComponent(
+                       title: option.label,
+                     ));
         children.add(Wrap(
           runSpacing: 8,
           spacing: 8,

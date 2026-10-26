@@ -330,13 +330,16 @@ class _DownloadingTileState extends State<_DownloadingTile> {
                   const SizedBox(height: 5),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: value,
-                      minHeight: 5,
-                      backgroundColor: isDark
+                    child: MiuixLinearProgressIndicator(
+                      progress: value,
+                      height: 5,
+                      colors: MiuixProgressIndicatorColors(
+                        foregroundColor: primary,
+                        disabledForegroundColor: primary,
+                        backgroundColor: isDark
                           ? const Color(0x22FFFFFF)
                           : const Color(0x18000000),
-                      valueColor: AlwaysStoppedAnimation<Color>(primary),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),

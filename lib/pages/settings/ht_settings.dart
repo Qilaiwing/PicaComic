@@ -74,12 +74,7 @@ class _HtSettingsState extends State<HtSettings> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(12))),
-                ),
-                onPressed: onFinished,
+              MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), onPressed: onFinished,
                 child: Text("完成".tl,
                     style: const TextStyle(fontWeight: FontWeight.w600)),
               ),

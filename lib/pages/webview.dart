@@ -75,30 +75,25 @@ class _AppWebviewState extends State<AppWebview> {
     final actions = [
       Tooltip(
         message: "More",
-        child: IconButton(
-          icon: const Icon(Icons.more_horiz),
-          onPressed: (){
-            showMenu(context: context, position: RelativeRect.fromLTRB(
-                MediaQuery.of(context).size.width,
-                0,
-                MediaQuery.of(context).size.width,
-                0
-            ), items: [
-              PopupMenuItem(
-                child: Text("在浏览器中打开".tl),
-                onTap: () async => launchUrlString((await controller?.getUrl())!.path),
-              ),
-              PopupMenuItem(
-                child: Text("复制链接".tl),
-                onTap: () async => Clipboard.setData(ClipboardData(text: (await controller?.getUrl())!.path)),
-              ),
-              PopupMenuItem(
-                child: Text("重新加载".tl),
-                onTap: () => controller?.reload(),
-              ),
-            ]);
+        child: Builder(builder: (buttonContext) => MiuixIconButton(
+          child: const Icon(Icons.more_horiz),
+          onPressed: () async {
+            final index = await showMiuixMenu(
+              context: context,
+              anchorBounds: miuixAnchorRectOf(buttonContext),
+              alignment: MiuixPopupAlign.end,
+              items: ["在浏览器中打开".tl, "复制链接".tl, "重新加载".tl],
+            );
+            switch (index) {
+              case 0:
+                (() async => launchUrlString((await controller?.getUrl())!.path))();
+              case 1:
+                (() async => Clipboard.setData(ClipboardData(text: (await controller?.getUrl())!.path)))();
+              case 2:
+                controller?.reload();
+            }
           },
-        ),
+        )),
       )
     ];
 
@@ -138,7 +133,7 @@ class _AppWebviewState extends State<AppWebview> {
         Positioned.fill(child: body),
         if(_progress < 1.0)
           const Positioned.fill(child: Center(
-              child: CircularProgressIndicator()))
+              child: MiuixCircularProgressIndicator()))
       ],
     );
 

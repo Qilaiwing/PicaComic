@@ -231,7 +231,7 @@ class DownloadPage extends StatelessWidget {
             });
             return const Scaffold(
               body: Center(
-                child: CircularProgressIndicator(),
+                child: MiuixCircularProgressIndicator(),
               ),
             );
           } else {
@@ -464,7 +464,7 @@ class DownloadPage extends StatelessWidget {
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    const CircularProgressIndicator(),
+                                    const MiuixCircularProgressIndicator(),
                                     const SizedBox(
                                       height: 9,
                                     ),
@@ -926,7 +926,7 @@ class DownloadPage extends StatelessWidget {
                         SizedBox(
                           height: 10,
                         ),
-                        CircularProgressIndicator(),
+                        MiuixCircularProgressIndicator(),
                         SizedBox(
                           height: 9,
                         ),
@@ -969,7 +969,7 @@ class DownloadPage extends StatelessWidget {
                       ),
                       const Spacer(),
                       Center(
-                        child: FilledButton(
+                        child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                           child: Text("确认".tl),
                           onPressed: () {
                             if (folder == null) {

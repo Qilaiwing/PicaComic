@@ -53,7 +53,7 @@ extension _WidgetExt on Widget {
     return Column(
       children: [
         this,
-        const Divider(),
+        const MiuixHorizontalDivider(),
       ],
     );
   }
@@ -221,15 +221,13 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
           ),
           leading: const Icon(Icons.dashboard_customize),
         ),
-        TextField(
-                decoration: InputDecoration(
-                    hintText: "URL",
-                    border: const UnderlineInputBorder(),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12),
-                    suffix: IconButton(
-                        onPressed: () => handleAddSource(url),
-                        icon: const Icon(Icons.check))),
+        MiuixTextField(
+                label: "URL",
+                useLabelAsPlaceholder: true,
+                singleLine: true,
+                trailingIcon: IconButton(
+                    onPressed: () => handleAddSource(url),
+                    icon: const Icon(Icons.check)),
                 onChanged: (value) {
                   url = value;
                 },
@@ -239,15 +237,15 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
         Row(
           children: [
             const Spacer(),
-            TextButton(onPressed: chooseFile, child: Text("选择文件".tl))
+            MiuixTextButton(onPressed: chooseFile, "选择文件".tl)
                 .paddingLeft(8),
             const Spacer(),
-            TextButton(
+            MiuixTextButton(
                 onPressed: () {
                   showPopUpWidget(
                       context, _ComicSourceList(handleAddSource));
                 },
-                child: Text("浏览列表".tl)),
+                "浏览列表".tl),
             const Spacer(),
           ],
         ),
@@ -353,7 +351,7 @@ class _ComicSourceListState extends State<_ComicSourceList> {
   Widget buildBody() {
     if (loading) {
       load();
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: MiuixCircularProgressIndicator());
     } else {
       var currentKey = ComicSource.sources.map((e) => e.key).toList();
       return ListView.builder(
@@ -374,11 +372,11 @@ class _ComicSourceListState extends State<_ComicSourceList> {
                   ),
                 );
 
-          return ListTile(
-            title: Text(json![index]["name"]),
-            subtitle: Text(json![index]["version"]),
-            trailing: action,
-          );
+          return MiuixBasicComponent(
+                   title: json![index]["name"],
+                   summary: json![index]["version"],
+                   endActions: [action],
+                 );
         },
       );
     }

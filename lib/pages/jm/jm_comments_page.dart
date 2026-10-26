@@ -82,7 +82,7 @@ class JmCommentsPage extends StatelessWidget {
           if (logic.loading) {
             logic.get(id, mode);
             return const Center(
-              child: CircularProgressIndicator(),
+              child: MiuixInfiniteProgressIndicator(),
             );
           } else if (logic.comments == null) {
             return NetworkError(message: logic.message!, retry: logic.retry);
@@ -221,7 +221,7 @@ void showReply(BuildContext context, List<Comment> comments, Comment replyTo) {
               content: replyTo.content,
               time: replyTo.time,
             ),
-            const Divider(),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
             for (int index = 0; index < comments.length; index++)
               CommentTile(
                 avatarUrl: comments[index].avatar,

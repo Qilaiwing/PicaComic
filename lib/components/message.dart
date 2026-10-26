@@ -110,58 +110,37 @@ class _OverlayWidgetState extends State<OverlayWidget> {
 }
 
 void showDialogMessage(BuildContext context, String title, String message) {
-  showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-            shape: const MiuixSquircleBorder(cornerRadius: 28),
-            title: Text(title,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w600)),
-            content: Text(message, style: const TextStyle(fontSize: 15)),
-            actions: [
-              FilledButton(
-                  style: FilledButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () => App.back(context),
-                  child: Text("了解".tl,
-                      style: const TextStyle(fontWeight: FontWeight.w600)))
-            ],
-          ));
+  showMiuixDialog<void>(
+    context: context,
+    title: title,
+    summary: message,
+    actionsBuilder: (context, close) => [
+      MiuixButton(
+        colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+        onPressed: () => close(),
+        child: Text("了解".tl),
+      ),
+    ],
+  );
 }
 
 void showConfirmDialog(BuildContext context, String title, String content,
     void Function() onConfirm) {
-  showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-            shape: const MiuixSquircleBorder(cornerRadius: 28),
-            title: Text(title,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w600)),
-            content: Text(content, style: const TextStyle(fontSize: 15)),
-            actions: [
-              TextButton(
-                  style: TextButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () => App.back(context),
-                  child: Text("取消".tl)),
-              FilledButton(
-                  style: FilledButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () {
-                    App.back(context);
-                    onConfirm();
-                  },
-                  child: Text("确认".tl,
-                      style: const TextStyle(fontWeight: FontWeight.w600))),
-            ],
-          ));
+  showMiuixDialog<bool>(
+    context: context,
+    title: title,
+    summary: content,
+    actionsBuilder: (context, close) => [
+      MiuixTextButton("取消".tl, onPressed: () => close(false)),
+      MiuixButton(
+        colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+        onPressed: () => close(true),
+        child: Text("确认".tl),
+      ),
+    ],
+  ).then((confirmed) {
+    if (confirmed == true) onConfirm();
+  });
 }
 
 class LoadingDialogController {
@@ -204,7 +183,7 @@ LoadingDialogController showLoadingDialog(BuildContext context,
                 const SizedBox(
                   width: 30,
                   height: 30,
-                  child: CircularProgressIndicator(),
+                  child: MiuixCircularProgressIndicator(),
                 ),
                 const SizedBox(
                   width: 16,
@@ -215,12 +194,11 @@ LoadingDialogController showLoadingDialog(BuildContext context,
                 ),
                 const Spacer(),
                 if (allowCancel)
-                  TextButton(
+                  MiuixTextButton(cancelButtonText.tl,
                       onPressed: () {
                         controller.close();
                         onCancel?.call();
-                      },
-                      child: Text(cancelButtonText.tl))
+                      })
               ],
             ),
           ),
@@ -296,4 +274,242 @@ class ContentDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// 命令式 Miuix 浮层辅助函数
+//
+// flutter_miuix 的 MiuixOverlayDialog / MiuixOverlayBottomSheet /
+// MiuixOverlayListPopup 都是靠 `show` 状态驱动的声明式组件。下面这几个函数
+// 推一个透明路由，在路由里放一个独立的 MiuixPopupScope + MiuixPopupHost，
+// 再把对应的 Miuix 浮层以 show=true 挂上去；关闭时先播放退出动画，
+// 在 onDismissFinished 里 pop 路由并带回结果，用法和 showDialog 一样返回 Future。
+// ---------------------------------------------------------------------------
+
+/// 关闭当前 Miuix 浮层并（可选）带回结果。
+typedef MiuixCloseCallback<T> = void Function([T? result]);
+
+/// 浮层内容构建器：`close([result])` 会播放退出动画后关闭并返回 result。
+typedef MiuixOverlayContentBuilder<T> = Widget Function(
+    BuildContext context, MiuixCloseCallback<T> close);
+
+Future<T?> _pushMiuixOverlayRoute<T>(
+  BuildContext context,
+  Widget Function(BuildContext context, bool show, MiuixCloseCallback<T> close,
+          VoidCallback onDismissFinished)
+      builder, {
+  bool useRootNavigator = true,
+}) {
+  final completer = Completer<T?>();
+  Navigator.of(context, rootNavigator: useRootNavigator)
+      .push<T>(
+    PageRouteBuilder<T>(
+      opaque: false,
+      barrierDismissible: false,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+      pageBuilder: (context, _, __) => _MiuixOverlayRouteHost<T>(
+          builder: builder, completer: completer),
+    ),
+  )
+      .then((value) {
+    if (!completer.isCompleted) completer.complete(value);
+  });
+  return completer.future;
+}
+
+class _MiuixOverlayRouteHost<T> extends StatefulWidget {
+  const _MiuixOverlayRouteHost(
+      {super.key, required this.builder, required this.completer});
+
+  final Completer<T?> completer;
+
+  final Widget Function(BuildContext context, bool show,
+      MiuixCloseCallback<T> close, VoidCallback onDismissFinished) builder;
+
+  @override
+  State<_MiuixOverlayRouteHost<T>> createState() =>
+      _MiuixOverlayRouteHostState<T>();
+}
+
+class _MiuixOverlayRouteHostState<T> extends State<_MiuixOverlayRouteHost<T>> {
+  bool _show = false;
+  bool _closing = false;
+  bool _popped = false;
+  T? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // 先以 show=false 挂上，下一帧再置 true，保证播放进入动画。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_closing) setState(() => _show = true);
+    });
+  }
+
+  void _close([T? result]) {
+    if (_closing) return;
+    _closing = true;
+    _result = result;
+    if (!_show) {
+      _finish();
+      return;
+    }
+    setState(() => _show = false);
+  }
+
+  void _finish() {
+    if (_popped || !mounted) return;
+    _popped = true;
+    if (!widget.completer.isCompleted) widget.completer.complete(_result);
+    final navigator = Navigator.of(context);
+    final route = ModalRoute.of(context);
+    if (route == null || route.isCurrent) {
+      navigator.pop<T>(_result);
+    } else {
+      // 关闭动画期间上面又推了新页面时，只移除自己，不误伤新页面。
+      navigator.removeRoute(route);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _close();
+      },
+      child: MiuixPopupScope(
+        establishRoot: true,
+        child: MiuixPopupHost(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Builder(
+                builder: (context) =>
+                    widget.builder(context, _show, _close, _finish),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 弹出 Miuix 风格对话框（[MiuixOverlayDialog]）。
+///
+/// [contentBuilder] 构建正文；[actionsBuilder] 返回的按钮会等宽横排在底部
+/// （HyperOS 对话框样式）。两者都会拿到 `close([result])`。
+/// 点击遮罩 / 返回键在 [dismissible] 为 true 时以 null 关闭。
+Future<T?> showMiuixDialog<T>({
+  required BuildContext context,
+  String? title,
+  String? summary,
+  MiuixOverlayContentBuilder<T>? contentBuilder,
+  List<Widget> Function(BuildContext context, MiuixCloseCallback<T> close)?
+      actionsBuilder,
+  bool dismissible = true,
+  bool useRootNavigator = true,
+}) {
+  return _pushMiuixOverlayRoute<T>(context, (context, show, close, finished) {
+    final actions = actionsBuilder?.call(context, close) ?? const <Widget>[];
+    return MiuixOverlayDialog(
+      show: show,
+      title: title,
+      summary: summary,
+      onDismissRequest: dismissible ? () => close() : null,
+      onDismissFinished: finished,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (contentBuilder != null) contentBuilder(context, close),
+          if (contentBuilder != null && actions.isNotEmpty)
+            const SizedBox(height: 16),
+          if (actions.isNotEmpty)
+            Row(
+              children: [
+                for (int i = 0; i < actions.length; i++) ...[
+                  if (i != 0) const SizedBox(width: 12),
+                  Expanded(child: actions[i]),
+                ]
+              ],
+            ),
+        ],
+      ),
+    );
+  }, useRootNavigator: useRootNavigator);
+}
+
+/// 弹出 Miuix 风格底部抽屉（[MiuixOverlayBottomSheet]）。
+Future<T?> showMiuixBottomSheet<T>({
+  required BuildContext context,
+  required MiuixOverlayContentBuilder<T> builder,
+  String? title,
+  Widget? startAction,
+  Widget? endAction,
+  bool allowDismiss = true,
+  bool useRootNavigator = true,
+}) {
+  return _pushMiuixOverlayRoute<T>(context, (context, show, close, finished) {
+    return MiuixOverlayBottomSheet(
+      show: show,
+      title: title,
+      startAction: startAction,
+      endAction: endAction,
+      allowDismiss: allowDismiss,
+      onDismissRequest: () => close(),
+      onDismissFinished: finished,
+      content: builder(context, close),
+    );
+  }, useRootNavigator: useRootNavigator);
+}
+
+/// 取某个 widget 在屏幕上的全局矩形，作为 [showMiuixMenu] 的锚点。
+Rect miuixAnchorRectOf(BuildContext context) {
+  final box = context.findRenderObject() as RenderBox;
+  final offset = box.localToGlobal(Offset.zero);
+  return offset & box.size;
+}
+
+/// 在 [anchorBounds] 附近弹出 Miuix 列表菜单（[MiuixOverlayListPopup] +
+/// [MiuixDropdownImpl]），返回被点选项的下标，取消返回 null。
+///
+/// [disabledIndexes] 中的项显示为禁用；[selectedIndex] 会带勾号。
+Future<int?> showMiuixMenu({
+  required BuildContext context,
+  required Rect anchorBounds,
+  required List<String> items,
+  int? selectedIndex,
+  Set<int> disabledIndexes = const {},
+  MiuixPopupAlign alignment = MiuixPopupAlign.start,
+  double? minWidth,
+  double? maxHeight,
+  bool useRootNavigator = true,
+}) {
+  return _pushMiuixOverlayRoute<int>(context, (context, show, close, finished) {
+    return MiuixOverlayListPopup(
+      show: show,
+      anchorBounds: anchorBounds,
+      alignment: alignment,
+      minWidth: minWidth ?? MiuixListPopupDefaults.minWidth,
+      maxHeight: maxHeight,
+      onDismissRequest: () => close(),
+      onDismissFinished: finished,
+      content: MiuixListPopupColumn(
+        children: [
+          for (int i = 0; i < items.length; i++)
+            MiuixDropdownImpl.text(
+              text: items[i],
+              optionSize: items.length,
+              isSelected: i == selectedIndex,
+              index: i,
+              enabled: !disabledIndexes.contains(i),
+              onSelectedIndexChange: (index) => close(index),
+            ),
+        ],
+      ),
+    );
+  }, useRootNavigator: useRootNavigator);
 }

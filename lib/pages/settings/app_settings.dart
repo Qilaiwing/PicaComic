@@ -17,17 +17,17 @@ void findUpdate(BuildContext context) {
                   title: Text("有可用更新".tl),
                   content: Text(s),
                   actions: [
-                    TextButton(
+                    MiuixTextButton(
                         onPressed: () => App.globalBack(),
-                        child: Text("取消".tl)),
-                    TextButton(
+                        "取消".tl),
+                    MiuixTextButton(
                         onPressed: () {
                           getDownloadUrl().then((s) {
                             launchUrlString(s,
                                 mode: LaunchMode.externalApplication);
                           });
                         },
-                        child: Text("下载".tl))
+                        "下载".tl)
                   ],
                 );
               });
@@ -65,7 +65,7 @@ void setProxy(BuildContext context) {
                   ),
                   ListTile(
                     title: Text("使用系统代理".tl),
-                    trailing: Switch(
+                    trailing: MiuixSwitch(
                       value: controller.value,
                       onChanged: (value) {
                         if (value == true) {
@@ -105,15 +105,7 @@ void setProxy(BuildContext context) {
                       ),
                     ),
                   Center(
-                    child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(12))),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 12),
-                        ),
-                        onPressed: () {
+                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), onPressed: () {
                           if (controller.value) {
                             appdata.settings[8] = "0";
                             appdata.writeData();
@@ -201,12 +193,12 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: CheckboxListTile(
+                  child: MiuixCheckboxPreference(
                     value: transform,
                     onChanged: (b) => setState(() {
-                      transform = b!;
+                      transform = b;
                     }),
-                    title: Text("转移数据".tl),
+                    title: "转移数据".tl,
                   ),
                 ),
                 Padding(
@@ -230,7 +222,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                   ),
                 ),
                 Center(
-                  child: FilledButton(
+                  child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                     onPressed: () async {
                       if (controller.text == appdata.settings[22]) return;
                       var directory = Directory(controller.text);
@@ -307,12 +299,12 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: CheckboxListTile(
+                  child: MiuixCheckboxPreference(
                     value: transform,
                     onChanged: (b) => setState(() {
-                      transform = b!;
+                      transform = b;
                     }),
-                    title: Text("转移数据".tl),
+                    title: "转移数据".tl,
                   ),
                 ),
                 Padding(
@@ -338,7 +330,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                 SizedBox(
                   height: 60,
                   child: Center(
-                    child: FilledButton(
+                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                       child: Text("确认".tl),
                       onPressed: () async {
                         if (appdata.settings[22] != current) {
@@ -572,28 +564,13 @@ void exportDataSetting(BuildContext context) {
             title: Text("导出用户数据".tl),
             content: Text("将导出设置, 账号, 历史记录, 下载内容, 本地收藏等数据".tl),
             actions: [
-              TextButton(
-                  style: TextButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              TextButton(
-                  style: TextButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () {
+              MiuixTextButton(onPressed: () => App.globalBack(), "取消".tl),
+              MiuixTextButton(onPressed: () {
                     App.globalBack();
                     export(false);
                   },
-                  child: Text("导出不含下载的数据".tl)),
-              FilledButton(
-                  style: FilledButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () {
+                  "导出不含下载的数据".tl),
+              MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), onPressed: () {
                     App.globalBack();
                     export(true);
                   },
@@ -610,18 +587,8 @@ void importDataSetting(BuildContext context) {
             content: Text("${"将导入设置, 账号, 历史记录, 下载内容, 本地收藏等数据, 现在的所有数据将会被覆盖".tl}"
                 "\n${"如果导入的数据中包含下载数据, 则当前的下载数据也将被覆盖".tl}"),
             actions: [
-              TextButton(
-                  style: TextButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              FilledButton(
-                  style: FilledButton.styleFrom(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  onPressed: () {
+              MiuixTextButton(onPressed: () => App.globalBack(), "取消".tl),
+              MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), onPressed: () {
                     App.globalBack();
                     var dialog = showLoadingDialog(context, allowCancel: false);
                     importData().then((v) {
@@ -717,7 +684,7 @@ void syncDataSettings(BuildContext context) {
             height: 8,
           ),
           Center(
-            child: FilledButton(
+            child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
               child: Text("提交".tl),
               onPressed: () async {
                 if (url.isEmpty) {

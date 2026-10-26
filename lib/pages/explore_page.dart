@@ -244,7 +244,7 @@ class _SingleExplorePageState extends StateWithController<_SingleExplorePage> {
     if (loading) {
       load();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixCircularProgressIndicator(),
       );
     } else if (message != null) {
       return NetworkError(
@@ -338,11 +338,11 @@ class _MixedExplorePageState
             comics: (cache),
             sourceKey: widget.sourceKey,
           );
-          yield const SliverToBoxAdapter(child: Divider());
+          yield const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()));
           cache.clear();
         }
         yield* _buildExplorePagePart(part, widget.sourceKey);
-        yield const SliverToBoxAdapter(child: Divider());
+        yield const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()));
       } else {
         cache.addAll(part as List<BaseComic>);
       }

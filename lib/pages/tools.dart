@@ -81,60 +81,16 @@ void openTool() {
     );
   }
 
-  showModalBottomSheet(
+  showMiuixBottomSheet<void>(
     context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (context) => SafeArea(
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-        decoration: ShapeDecoration(
-          shape: const MiuixSquircleBorder(cornerRadius: 24),
-          color: isDark ? const Color(0xFF202024) : Colors.white,
-          shadows: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
+    title: "工具".tl,
+    endAction: MiuixIconButton(
+      onPressed: () => App.globalBack(),
+      child: const Icon(Icons.close, size: 20),
+    ),
+    builder: (context, close) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 10),
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(2),
-                  color: isDark
-                      ? const Color(0x38FFFFFF)
-                      : const Color(0x28000000),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 12, 10),
-              child: Row(
-                children: [
-                  Text(
-                    "工具".tl,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
             buildToolItem(
               icon: Icons.subscriptions,
               title: "EH订阅".tl,
@@ -277,7 +233,7 @@ void openTool() {
                         },
                       ),
                       actions: [
-                        TextButton(onPressed: onFinish, child: Text("打开".tl)),
+                        MiuixTextButton("打开".tl, onPressed: onFinish),
                       ],
                     );
                   },
@@ -321,8 +277,7 @@ void openTool() {
                         ),
                       ),
                       actions: [
-                        TextButton(
-                            onPressed: () {
+                        MiuixTextButton("提交".tl, onPressed: () {
                               App.globalBack();
                               if (controller.text.isNum) {
                                 App.globalBack();
@@ -331,8 +286,7 @@ void openTool() {
                               } else {
                                 showToast(message: "输入的ID不是数字".tl);
                               }
-                            },
-                            child: Text("提交".tl))
+                            })
                       ],
                     );
                   },
@@ -342,7 +296,5 @@ void openTool() {
             const SizedBox(height: 12),
           ],
         ),
-      ),
-    ),
   );
 }

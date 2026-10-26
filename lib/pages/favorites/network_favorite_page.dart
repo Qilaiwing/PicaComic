@@ -102,7 +102,7 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
     if (_loading) {
       loadPage();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixCircularProgressIndicator(),
       );
     } else if (_errorMessage != null) {
       return NetworkError(message: _errorMessage!, withAppbar: false,);
@@ -313,9 +313,9 @@ class _FolderTile extends StatelessWidget {
             title: Text("确认删除".tl),
             content: Text("要删除这个收藏夹吗".tl),
             actions: [
-              TextButton(
-                  onPressed: () => App.globalBack(), child: Text("取消".tl)),
-              TextButton(
+              MiuixTextButton(
+                  onPressed: () => App.globalBack(), "取消".tl),
+              MiuixTextButton(
                   onPressed: () async {
                     context.pop();
                     showToast(message: "正在删除收藏夹".tl);
@@ -329,7 +329,7 @@ class _FolderTile extends StatelessWidget {
                           message: res.error ? res.errorMessage! : "删除失败".tl);
                     }
                   },
-                  child: Text("确认".tl)),
+                  "确认".tl),
             ],
           );
         });
@@ -377,14 +377,14 @@ class _CreateFolderDialogState extends State<_CreateFolderDialog> {
         if (loading)
           const SizedBox(
             child: Center(
-              child: CircularProgressIndicator(),
+              child: MiuixCircularProgressIndicator(),
             ),
           )
         else
           SizedBox(
               height: 35,
               child: Center(
-                child: TextButton(
+                child: MiuixTextButton(
                     onPressed: () {
                       setState(() {
                         loading = true;
@@ -402,7 +402,7 @@ class _CreateFolderDialogState extends State<_CreateFolderDialog> {
                         }
                       });
                     },
-                    child: Text("提交".tl)),
+                    "提交".tl),
               ))
       ],
     );

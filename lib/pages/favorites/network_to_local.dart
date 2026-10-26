@@ -109,9 +109,7 @@ class _ChooseNetworkFolderWidgetState
               ),
             ),
           ),
-          const Divider(
-            height: 1,
-          ),
+          const MiuixHorizontalDivider(),
           SizedBox(
             height: 56,
             child: Row(
@@ -119,7 +117,7 @@ class _ChooseNetworkFolderWidgetState
                 const SizedBox(
                   width: 8,
                 ),
-                Checkbox(
+                MiuixCheckbox(
                     value: agreeSync,
                     onChanged: (b) {
                       setState(() {
@@ -128,7 +126,7 @@ class _ChooseNetworkFolderWidgetState
                     }),
                 Text("支持下拉更新".tl),
                 const Spacer(),
-                FilledButton(onPressed: onConfirm, child: Text("继续".tl)),
+                MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), onPressed: onConfirm, child: Text("继续".tl)),
                 const SizedBox(
                   width: 24,
                 ),
@@ -145,9 +143,9 @@ class _ChooseNetworkFolderWidgetState
   ExpansionPanel buildItem(FavoriteData data) {
     return ExpansionPanel(
         headerBuilder: (context, expand) {
-          return ListTile(
-            title: Text(data.title),
-          );
+          return MiuixBasicComponent(
+                   title: data.title,
+                 );
         },
         isExpanded: isExpanded[_folders.indexOf(data)],
         body: buildBody(data),
@@ -155,13 +153,12 @@ class _ChooseNetworkFolderWidgetState
   }
 
   Widget buildTile(String key, String title) {
-    return RadioListTile<String?>(
-        title: Text(title),
-        value: key,
-        groupValue: selected,
-        onChanged: (newValue) {
+    return MiuixRadioButtonPreference(
+        title: title,
+        selected: selected == key,
+        onClick: () {
           setState(() {
-            selected = newValue;
+            selected = key;
           });
         });
   }
@@ -187,7 +184,7 @@ class _ChooseNetworkFolderWidgetState
             height: 56,
             width: double.infinity,
             child: Center(
-              child: CircularProgressIndicator(),
+              child: MiuixCircularProgressIndicator(),
             ),
           );
         } else {

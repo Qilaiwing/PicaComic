@@ -307,7 +307,7 @@ class _SideBarBody extends StatelessWidget {
               StateController.find<WindowFrameController>().openSideBar();
               toPage(() => const ImageFavoritesPage());
             }),
-        const Divider().paddingHorizontal(8),
+        const MiuixHorizontalDivider().paddingHorizontal(8),
         buildItem(
             icon: Icons.search,
             title: '搜索'.tl,
@@ -455,7 +455,7 @@ class _WindowButtonsState extends State<WindowButtons> with WindowListener {
                         content: StatefulBuilder(builder: (context, setState) {
                           return Row(
                             children: [
-                              Checkbox(
+                              MiuixCheckbox(
                                 value: isCheck,
                                 onChanged: (value) {
                                   setState(() {
@@ -468,22 +468,16 @@ class _WindowButtonsState extends State<WindowButtons> with WindowListener {
                           );
                         }),
                         actions: [
-                          TextButton(
-                            onPressed: () {
+                          MiuixTextButton('否'.tl, onPressed: () {
                               Navigator.of(context).pop();
-                            },
-                            child: Text('否'.tl),
-                          ),
-                          TextButton(
-                            onPressed: () {
+                            }),
+                          MiuixTextButton('是'.tl, onPressed: () {
                               if (isCheck) {
                                 appdata.implicitData[2] = '1';
                                 appdata.writeImplicitData();
                               }
                               windowManager.close();
-                            },
-                            child: Text('是'.tl),
-                          ),
+                            }),
                         ],
                       );
                     });

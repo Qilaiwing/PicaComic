@@ -336,12 +336,11 @@ class _CategoryGroupCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 if (onRefresh != null)
-                  IconButton(
+                  MiuixIconButton(
                     onPressed: onRefresh,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    constraints:
-                        const BoxConstraints(minWidth: 32, minHeight: 32),
-                    padding: EdgeInsets.zero,
+                    minWidth: 32,
+                    minHeight: 32,
+                    child: const Icon(Icons.refresh, size: 18),
                   ),
               ],
             ),

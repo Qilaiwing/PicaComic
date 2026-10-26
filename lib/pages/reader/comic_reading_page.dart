@@ -285,7 +285,7 @@ class ComicReadingPage extends StatelessWidget {
               history?.readEpisode.add(logic.order);
               loadInfo(logic);
               return const Center(
-                child: CircularProgressIndicator(),
+                child: MiuixInfiniteProgressIndicator(),
               );
             } else if (logic.urls.isNotEmpty) {
               if (logic.readingMethod ==
@@ -378,11 +378,9 @@ class ComicReadingPage extends StatelessWidget {
         Positioned(
           left: 8,
           top: 12,
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-            ),
+          child: MiuixIconButton(
             onPressed: () => App.globalBack(),
+            child: const Icon(Icons.arrow_back),
           ),
         ),
         Positioned(
@@ -420,7 +418,7 @@ class ComicReadingPage extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: FilledButton(
+                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                       onPressed: () {
                         logic.change();
                       },
@@ -431,7 +429,7 @@ class ComicReadingPage extends StatelessWidget {
                     width: 8,
                   ),
                   Expanded(
-                      child: FilledButton(
+                      child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                     onPressed: () {
                       if (!readingData.hasEp) {
                         showToast(message: "没有其它章节".tl);

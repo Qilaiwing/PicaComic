@@ -235,7 +235,7 @@ class _FlyoutTextButtonState extends State<FlyoutTextButton> {
         controller: _controller,
         flyoutBuilder: widget.flyoutBuilder,
         navigator: widget.navigator,
-        child: TextButton(
+        child: MiuixButton(
           onPressed: () {
             _controller.show();
           },
@@ -270,11 +270,11 @@ class _FlyoutIconButtonState extends State<FlyoutIconButton> {
         controller: _controller,
         flyoutBuilder: widget.flyoutBuilder,
         navigator: widget.navigator,
-        child: IconButton(
+        child: MiuixIconButton(
           onPressed: () {
             _controller.show();
           },
-          icon: widget.icon,
+          child: widget.icon,
         ));
   }
 }
@@ -305,7 +305,8 @@ class _FlyoutFilledButtonState extends State<FlyoutFilledButton> {
         controller: _controller,
         flyoutBuilder: widget.flyoutBuilder,
         navigator: widget.navigator,
-        child: ElevatedButton(
+        child: MiuixButton(
+          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
           onPressed: () {
             _controller.show();
           },

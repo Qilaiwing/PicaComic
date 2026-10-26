@@ -138,12 +138,12 @@ class _ReadingSettingsState extends State<ReadingSettings> {
   }
 
   Widget _buildDivider(bool isDark) {
-    return Divider(
-      height: 1,
-      thickness: 0.6,
-      indent: 52,
-      endIndent: 16,
-      color: isDark ? const Color(0x12FFFFFF) : const Color(0x0C000000),
+    return Padding(
+      padding: const EdgeInsets.only(left: 52, right: 16),
+      child: MiuixHorizontalDivider(
+        thickness: 0.6,
+        color: isDark ? const Color(0x12FFFFFF) : const Color(0x0C000000),
+      ),
     );
   }
 
@@ -198,13 +198,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
           _buildCard(
             isDark: isDark,
             children: [
-              ListTile(
-                leading: const Icon(Icons.chrome_reader_mode_outlined),
-                title: Text("阅读模式".tl),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
+              MiuixArrowPreference(startAction: const Icon(Icons.chrome_reader_mode_outlined), title: "阅读模式".tl, endActions: [Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: ShapeDecoration(
@@ -219,25 +213,12 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                           color: primary,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    MiuixIcon(
-                      vector: MiuixIcons.extended.byName('chevronForward') ??
-                          MiuixIcons.os4.more,
-                      size: 16,
-                    ),
-                  ],
-                ),
-                onTap: () => setState(() {
+                    )], onClick: () => setState(() {
                   i = 1;
-                }),
-              ),
+                }),),
               if (appdata.settings[9] == "5" || appdata.settings[9] == "6") ...[
                 _buildDivider(isDark),
-                ListTile(
-                  leading: const Icon(Icons.auto_awesome_motion_outlined),
-                  title: Text("首页显示单张图片".tl),
-                  trailing: MiuixSwitch(
+                MiuixSwitchPreference(startAction: const Icon(Icons.auto_awesome_motion_outlined), title: "首页显示单张图片".tl,
                     value: appdata.implicitData[1] == '1',
                     onChanged: (b) {
                       appdata.implicitData[1] = b ? '1' : '0';
@@ -246,7 +227,6 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                       logic.update();
                     },
                   ),
-                ),
               ],
             ],
           ),
@@ -256,10 +236,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
           _buildCard(
             isDark: isDark,
             children: [
-              ListTile(
-                leading: const Icon(Icons.touch_app_outlined),
-                title: Text("点按翻页".tl),
-                trailing: MiuixSwitch(
+              MiuixSwitchPreference(startAction: const Icon(Icons.touch_app_outlined), title: "点按翻页".tl,
                   value: pageChangeValue,
                   onChanged: (b) {
                     b ? appdata.settings[0] = "1" : appdata.settings[0] = "0";
@@ -269,7 +246,6 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     appdata.writeData();
                   },
                 ),
-              ),
               if (appdata.settings[0] == "1") ...[
                 _buildDivider(isDark),
                 MiuixSliderPreference(
@@ -289,23 +265,16 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                   },
                 ),
                 _buildDivider(isDark),
-                ListTile(
-                  leading: const Icon(Icons.swap_horiz),
-                  title: Text("反转点按翻页".tl),
-                  trailing: MiuixSwitch(
+                MiuixSwitchPreference(startAction: const Icon(Icons.swap_horiz), title: "反转点按翻页".tl,
                     value: appdata.settings[70] == "1",
                     onChanged: (b) => setState(() {
                       appdata.settings[70] = b ? "1" : "0";
                       appdata.updateSettings();
                     }),
                   ),
-                ),
               ],
               _buildDivider(isDark),
-              ListTile(
-                leading: const Icon(Icons.volume_mute_outlined),
-                title: Text("使用音量键翻页".tl),
-                trailing: MiuixSwitch(
+              MiuixSwitchPreference(startAction: const Icon(Icons.volume_mute_outlined), title: "使用音量键翻页".tl,
                   value: useVolumeKeyChangePage,
                   onChanged: (b) {
                     b ? appdata.settings[7] = "1" : appdata.settings[7] = "0";
@@ -316,7 +285,6 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     logic.update();
                   },
                 ),
-              ),
               _buildDivider(isDark),
               MiuixSliderPreference(
                 startAction: const Icon(Icons.timer_outlined),
@@ -344,10 +312,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             isDark: isDark,
             children: [
               if (App.isAndroid) ...[
-                ListTile(
-                  leading: const Icon(Icons.screenshot_outlined),
-                  title: Text("保持屏幕常亮".tl),
-                  trailing: MiuixSwitch(
+                MiuixSwitchPreference(startAction: const Icon(Icons.screenshot_outlined), title: "保持屏幕常亮".tl,
                     value: keepScreenOn,
                     onChanged: (b) {
                       b ? setKeepScreenOn() : cancelKeepScreenOn();
@@ -360,13 +325,9 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                       appdata.writeData();
                     },
                   ),
-                ),
                 _buildDivider(isDark),
               ],
-              ListTile(
-                leading: const Icon(Icons.brightness_4_outlined),
-                title: Text("深色模式下降低图片亮度".tl),
-                trailing: MiuixSwitch(
+              MiuixSwitchPreference(startAction: const Icon(Icons.brightness_4_outlined), title: "深色模式下降低图片亮度".tl,
                   value: lowBrightness,
                   onChanged: (b) {
                     b ? appdata.settings[18] = "1" : appdata.settings[18] = "0";
@@ -377,20 +338,13 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     logic.update();
                   },
                 ),
-              ),
               if (App.isAndroid) ...[
                 _buildDivider(isDark),
-                ListTile(
-                  leading: const Icon(Icons.screen_lock_rotation_outlined),
-                  title: Text("固定屏幕方向".tl),
-                  trailing: Select(
-                    initialValue: int.parse(appdata.settings[76]),
-                    values: [
+                MiuixWindowDropdownPreference(startAction: const Icon(Icons.screen_lock_rotation_outlined), title: "固定屏幕方向".tl, items: [
                       "禁用".tl,
                       "横屏".tl,
                       "竖屏".tl,
-                    ],
-                    onChange: (int i) {
+                    ], selectedIndex: int.parse(appdata.settings[76]), onSelectedIndexChange: (int i) {
                       appdata.settings[76] = i.toString();
                       logic.update();
                       appdata.updateSettings();
@@ -406,8 +360,8 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                         ]);
                       }
                       setState(() {});
-                    },
-                  ),
+                      setState(() {});
+                  },
                 ),
               ],
             ],
@@ -420,13 +374,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             children: [
               if (logic.readingMethod !=
                   ReadingMethod.topToBottomContinuously) ...[
-                ListTile(
-                  leading: const Icon(Icons.fit_screen_outlined),
-                  title: Text("图片缩放".tl),
-                  trailing: Select(
-                    initialValue: int.parse(appdata.settings[41]),
-                    values: ["容纳".tl, "适应宽度".tl, "适应高度".tl],
-                    onChange: (int i) {
+                MiuixWindowDropdownPreference(startAction: const Icon(Icons.fit_screen_outlined), title: "图片缩放".tl, items: ["容纳".tl, "适应宽度".tl, "适应高度".tl], selectedIndex: int.parse(appdata.settings[41]), onSelectedIndexChange: (int i) {
                       appdata.settings[41] = i.toString();
                       appdata.updateSettings();
                       logic.photoViewController.resetWithNewBoxFit(switch (i) {
@@ -435,15 +383,12 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                         2 => BoxFit.fitHeight,
                         _ => BoxFit.contain,
                       });
-                    },
-                  ),
+                      setState(() {});
+                  },
                 ),
                 _buildDivider(isDark),
               ],
-              ListTile(
-                leading: const Icon(Icons.zoom_out_map_outlined),
-                title: Text("双击缩放".tl),
-                trailing: MiuixSwitch(
+              MiuixSwitchPreference(startAction: const Icon(Icons.zoom_out_map_outlined), title: "双击缩放".tl,
                   value: appdata.settings[49] == "1",
                   onChanged: (value) {
                     appdata.settings[49] = value ? "1" : "0";
@@ -452,14 +397,10 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     setState(() {});
                   },
                 ),
-              ),
               if (logic.readingMethod ==
                   ReadingMethod.topToBottomContinuously) ...[
                 _buildDivider(isDark),
-                ListTile(
-                  leading: const Icon(Icons.width_normal_sharp),
-                  title: Text("限制图片最大显示宽度".tl),
-                  trailing: MiuixSwitch(
+                MiuixSwitchPreference(startAction: const Icon(Icons.width_normal_sharp), title: "限制图片最大显示宽度".tl,
                     value: appdata.settings[43] == "1",
                     onChanged: (b) => setState(() {
                       appdata.settings[43] = b ? "1" : "0";
@@ -467,13 +408,9 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                       Future.microtask(() => logic.update());
                     }),
                   ),
-                ),
               ],
               _buildDivider(isDark),
-              ListTile(
-                leading: const Icon(Icons.zoom_in_outlined),
-                title: Text("长按缩放".tl),
-                trailing: MiuixSwitch(
+              MiuixSwitchPreference(startAction: const Icon(Icons.zoom_in_outlined), title: "长按缩放".tl,
                   value: appdata.settings[55] == "1",
                   onChanged: (b) => setState(() {
                     appdata.settings[55] = b ? "1" : "0";
@@ -481,12 +418,8 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     Future.microtask(() => logic.update());
                   }),
                 ),
-              ),
               _buildDivider(isDark),
-              ListTile(
-                leading: const Icon(Icons.insert_drive_file_outlined),
-                title: Text("显示页面信息".tl),
-                trailing: MiuixSwitch(
+              MiuixSwitchPreference(startAction: const Icon(Icons.insert_drive_file_outlined), title: "显示页面信息".tl,
                   value: appdata.settings[57] == "1",
                   onChanged: (b) => setState(() {
                     appdata.settings[57] = b ? "1" : "0";
@@ -494,7 +427,6 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     Future.microtask(() => logic.update());
                   }),
                 ),
-              ),
             ],
           ),
 
@@ -506,18 +438,9 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             _buildCard(
               isDark: isDark,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.alt_route_outlined),
-                  title: Text("设置分流".tl),
-                  trailing: MiuixIcon(
-                    vector: MiuixIcons.extended.byName('chevronForward') ??
-                        MiuixIcons.os4.more,
-                    size: 16,
-                  ),
-                  onTap: () => setState(() {
+                MiuixArrowPreference(startAction: const Icon(Icons.alt_route_outlined), title: "设置分流".tl, onClick: () => setState(() {
                     i = 2;
-                  }),
-                ),
+                  }),),
               ],
             ),
           ],
@@ -626,23 +549,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ListTile(
-                    title: Text(
-                      options[index],
-                      style: TextStyle(
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                    ),
-                    trailing: MiuixRadioButton(
-                      selected: isSelected,
-                      onChanged: (b) => setValue(index + 1),
-                    ),
-                    onTap: () => setValue(index + 1),
-                  ),
+                  MiuixRadioButtonPreference(title: options[index], selected: isSelected, radioButtonLocation: MiuixRadioButtonLocation.end, onClick: () => setValue(index + 1),),
                   if (index != options.length - 1) _buildDivider(isDark),
                 ],
               );
@@ -698,13 +605,11 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      minimumSize: const Size.fromHeight(46),
-                    ),
+                  MiuixButton(
+                    colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                    cornerRadius: 14,
+                    minHeight: 46,
+                    minWidth: double.infinity,
                     onPressed: () {
                       App.globalBack();
                       logic.refresh_();

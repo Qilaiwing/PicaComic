@@ -127,9 +127,9 @@ class Avatar extends StatelessWidget {
 }
 
 void showUserInfo(BuildContext context, String? avatarUrl, String? frameUrl, String name, String? slogan, int level){
-  showDialog(context: context, builder: (dialogContext){
-    return SimpleDialog(
-      contentPadding: const EdgeInsets.all(20),
+  showMiuixDialog<void>(context: context, contentBuilder: (dialogContext, close){
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Align(
           alignment: Alignment.center,

@@ -364,7 +364,7 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
                       children: [
                         Text("下载".tl, style: const TextStyle(fontSize: 20))
                             .paddingLeft(16),
-                        const Divider(),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
                         RadioListTile(
                             value: 0,
                             groupValue: current,
@@ -376,7 +376,7 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
                           shape: Border.all(color: Colors.transparent),
                           children: [
                             if (loading)
-                              const CircularProgressIndicator()
+                              const MiuixInfiniteProgressIndicator()
                                   .paddingVertical(8)
                                   .toCenter()
                             else
@@ -417,7 +417,8 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
                               )
                           ],
                         ),
-                        FilledButton(
+                        MiuixButton(
+                          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                           onPressed: () {
                             startDownload(current);
                             context.pop();

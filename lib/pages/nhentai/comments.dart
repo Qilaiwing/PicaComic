@@ -24,7 +24,7 @@ class _NhentaiCommentsPageState extends State<NhentaiCommentsPage> {
     if (loading) {
       get();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (message != null) {
       return NetworkError(

@@ -213,7 +213,7 @@ class CommentsPage extends StatelessWidget {
         if (logic.isLoading) {
           logic.get(url);
           return const Center(
-            child: CircularProgressIndicator(),
+            child: MiuixInfiniteProgressIndicator(),
           );
         } else if (logic.message != null) {
           return NetworkError(
@@ -302,7 +302,7 @@ class CommentsPage extends StatelessWidget {
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: MiuixInfiniteProgressIndicator(size: 20),
                     ),
                   )
                 : MiuixIconButton(

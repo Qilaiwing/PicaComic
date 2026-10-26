@@ -32,22 +32,19 @@ void checkClipboard() async {
       return;
     }
     _haveClipboardDialog = true;
-    await showDialog(
+    final open = await showMiuixDialog<bool>(
       context: App.globalContext!,
-      builder: (context) => ContentDialog(
-        title: "发现剪切板中的链接".tl,
-        content: Text(data.text!),
-        actions: [
-          TextButton(
-            onPressed: () {
-              App.globalContext!.pop();
-              handleAppLinks(Uri.parse(data.text!));
-            },
-            child: Text("打开".tl),
-          ),
-        ],
-      ),
+      title: "发现剪切板中的链接".tl,
+      summary: data.text!,
+      actionsBuilder: (dialogContext, close) => [
+        MiuixTextButton("打开".tl, onPressed: () {
+          close(true);
+        }),
+      ],
     );
+    if (open == true) {
+      handleAppLinks(Uri.parse(data.text!));
+    }
     _haveClipboardDialog = false;
   }
 }
@@ -165,31 +162,19 @@ class MainPageState extends State<MainPage> {
     if (res != true) return;
     var info = await getUpdatesInfo();
     if (info == null) return;
-    showDialog(
-        context: App.globalContext!,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: Text("有可用更新".tl),
-            content: Text(info),
-            actions: [
-              TextButton(
-                  onPressed: () {
-                    dialogContext.pop();
+    showMiuixDialog(context: App.globalContext!, title: "有可用更新".tl, summary: info, actionsBuilder: (dialogContext, close) => [
+              MiuixTextButton("关闭更新检查", onPressed: () {
+                    close();
                     appdata.settings[2] = "0";
                     appdata.writeData();
-                  },
-                  child: const Text("关闭更新检查")),
-              TextButton(onPressed: dialogContext.pop, child: Text("取消".tl)),
-              TextButton(
-                  onPressed: () {
+                  }),
+              MiuixTextButton("取消".tl, onPressed: () => close()),
+              MiuixTextButton("下载".tl, onPressed: () {
                     getDownloadUrl().then((s) {
                       launchUrlString(s, mode: LaunchMode.externalApplication);
                     });
-                  },
-                  child: Text("下载".tl))
-            ],
-          );
-        });
+                  })
+            ]);
 
     // if (appdata.settings[80] == "1") {
     //   ComicSourceSettings.checkCustomComicSourceUpdate();
@@ -200,24 +185,13 @@ class MainPageState extends State<MainPage> {
     if (downloadManager.downloading.isNotEmpty) {
       Future.delayed(const Duration(microseconds: 500), () {
         if (mounted) {
-          showDialog(
-            context: context,
-            builder: (dialogContext) {
-              return AlertDialog(
-                title: Text("下载管理器".tl),
-                content: Text("继续未完成的下载?".tl),
-                actions: [
-                  TextButton(onPressed: dialogContext.pop, child: Text("否".tl)),
-                  TextButton(
-                      onPressed: () {
+          showMiuixDialog(context: context, title: "下载管理器".tl, summary: "继续未完成的下载?".tl, actionsBuilder: (dialogContext, close) => [
+                  MiuixTextButton("否".tl, onPressed: () => close()),
+                  MiuixTextButton("是".tl, onPressed: () {
                         downloadManager.start();
-                        dialogContext.pop();
-                      },
-                      child: Text("是".tl))
-                ],
-              );
-            },
-          );
+                        close();
+                      })
+                ]);
         }
       });
     }

@@ -67,9 +67,7 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
               vector: MiuixIcons.extended.byName('chevronBackward') ??
                   MiuixIcons.os4.back,
               size: 20,
-              tint: isDark
-                  ? const Color(0xEEFFFFFF)
-                  : const Color(0xDD000000),
+              tint: isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
             ),
           ),
         ),
@@ -86,9 +84,8 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
               controller: widget.controller,
               style: TextStyle(
                 fontSize: 15,
-                color: isDark
-                    ? const Color(0xEEFFFFFF)
-                    : const Color(0xDD000000),
+                color:
+                    isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
               ),
               onChanged: (s) {
                 if (s.length <= 1) {
@@ -127,9 +124,8 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: ShapeDecoration(
                 shape: const CircleBorder(),
-                color: isDark
-                    ? const Color(0x22FFFFFF)
-                    : const Color(0x14000000),
+                color:
+                    isDark ? const Color(0x22FFFFFF) : const Color(0x14000000),
               ),
               child: Center(
                 child: MiuixIcon(
@@ -386,9 +382,9 @@ class PreSearchPage extends StatelessWidget {
             child: CustomScrollView(
           slivers: [
             if (showSideBar)
-              ListTile(
-                leading: const Icon(Icons.select_all),
-                title: Text("搜索选项".tl),
+              MiuixBasicComponent(
+                startAction: const Icon(Icons.select_all),
+                title: "搜索选项".tl,
               ).toSliver(),
             buildTargetSelector(context).toSliver(),
             SliverAnimatedPaintExtent(
@@ -475,16 +471,11 @@ class PreSearchPage extends StatelessWidget {
           bool showTranslation = App.locale.languageCode == "zh";
           Widget buildItem(Pair<String, TranslationType> value) {
             if (value.left == "**URL**") {
-              return ListTile(
-                leading: const Icon(Icons.link),
-                title: Text("打开链接".tl),
-                subtitle: Text(
-                  controller.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                ),
-                trailing: const Icon(Icons.arrow_right),
-                onTap: () {
+              return MiuixArrowPreference(
+                startAction: const Icon(Icons.link),
+                title: "打开链接".tl,
+                summary: controller.text,
+                onClick: () {
                   handleAppLinks(Uri.parse(controller.text));
                 },
               );
@@ -496,16 +487,11 @@ class PreSearchPage extends StatelessWidget {
               if (comicSource == null) {
                 return const SizedBox();
               }
-              return ListTile(
-                leading: const Icon(Icons.link),
-                title: Text("${"打开漫画".tl}: ${comicSource.name}"),
-                subtitle: Text(
-                  controller.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                ),
-                trailing: const Icon(Icons.arrow_right),
-                onTap: () {
+              return MiuixArrowPreference(
+                startAction: const Icon(Icons.link),
+                title: "${"打开漫画".tl}: ${comicSource.name}",
+                summary: controller.text,
+                onClick: () {
                   context.to(
                     () => ComicPage(
                       sourceKey: key,
@@ -666,7 +652,8 @@ class PreSearchPage extends StatelessWidget {
             shape: MiuixSquircleBorder(
               cornerRadius: 18,
               side: BorderSide(
-                color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
                 width: 0.6,
               ),
             ),
@@ -791,7 +778,8 @@ class PreSearchPage extends StatelessWidget {
             shape: MiuixSquircleBorder(
               cornerRadius: 18,
               side: BorderSide(
-                color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
                 width: 0.6,
               ),
             ),
@@ -815,12 +803,18 @@ class PreSearchPage extends StatelessWidget {
         return FlyoutContent(
           title: "要删除此项目吗?".tl,
           actions: [
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.error,
-                ),
-              ),
+            MiuixButton(
+              colors: MiuixButtonColors(
+                  color: Theme.of(context).colorScheme.error,
+                  disabledColor: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.5),
+                  contentColor: Theme.of(context).colorScheme.onError,
+                  disabledContentColor: Theme.of(context)
+                      .colorScheme
+                      .onError
+                      .withValues(alpha: 0.5)),
               onPressed: () {
                 appdata.searchHistory.remove(history);
                 logic.update(["history"]);
@@ -860,12 +854,18 @@ class PreSearchPage extends StatelessWidget {
         return FlyoutContent(
           title: "要删除此项目吗?".tl,
           actions: [
-            FilledButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.error,
-                ),
-              ),
+            MiuixButton(
+              colors: MiuixButtonColors(
+                  color: Theme.of(context).colorScheme.error,
+                  disabledColor: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.5),
+                  contentColor: Theme.of(context).colorScheme.onError,
+                  disabledContentColor: Theme.of(context)
+                      .colorScheme
+                      .onError
+                      .withValues(alpha: 0.5)),
               onPressed: () {
                 appdata.favoriteTags.remove(tag);
                 searchController.update();
@@ -877,10 +877,10 @@ class PreSearchPage extends StatelessWidget {
           ],
         );
       },
-      child: ListTile(
-        title: Text(tag.substring(tag.indexOf(':') + 1)),
-        subtitle: Text(tag.split(':').first),
-        onTap: () {
+      child: MiuixBasicComponent(
+        title: tag.substring(tag.indexOf(':') + 1),
+        summary: tag.split(':').first,
+        onClick: () {
           String type = switch (tag.split(':').first) {
             "Picacg" => 'picacg',
             "EHentai" => 'ehentai',
@@ -918,7 +918,8 @@ class PreSearchPage extends StatelessWidget {
         child: MiuixIcon(
           vector: MiuixIcons.extended.byName('delete') ?? MiuixIcons.os4.close,
           size: 17,
-          tint: Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
+          tint:
+              Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
         ),
       ),
     );
@@ -945,7 +946,8 @@ class PreSearchPage extends StatelessWidget {
         child: MiuixIcon(
           vector: MiuixIcons.extended.byName('delete') ?? MiuixIcons.os4.close,
           size: 17,
-          tint: Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
+          tint:
+              Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
         ),
       ),
     );
@@ -960,10 +962,10 @@ class PreSearchPage extends StatelessWidget {
           itemCount: appdata.searchHistory.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
-              return ListTile(
-                leading: const Icon(Icons.history_rounded),
-                title: Text("历史搜索".tl),
-                trailing: buildClearHistoryButton(logic),
+              return MiuixBasicComponent(
+                startAction: const Icon(Icons.history_rounded),
+                title: "历史搜索".tl,
+                endActions: [buildClearHistoryButton(logic)],
               );
             } else {
               var history =
@@ -983,10 +985,10 @@ class PreSearchPage extends StatelessWidget {
         itemCount: appdata.favoriteTags.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
-            return ListTile(
-              leading: const Icon(Icons.favorite_rounded),
-              title: Text("收藏".tl),
-              trailing: buildClearFavoriteButton(logic),
+            return MiuixBasicComponent(
+              startAction: const Icon(Icons.favorite_rounded),
+              title: "收藏".tl,
+              endActions: [buildClearFavoriteButton(logic)],
             );
           } else {
             final s = appdata.favoriteTags.elementAt(index - 1);
@@ -1020,7 +1022,9 @@ class PreSearchPage extends StatelessWidget {
               shape: MiuixSquircleBorder(
                 cornerRadius: 18,
                 side: BorderSide(
-                  color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0A000000),
                   width: 0.6,
                 ),
               ),
@@ -1058,7 +1062,9 @@ class PreSearchPage extends StatelessWidget {
                       "暂无搜索历史".tl,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? const Color(0x66FFFFFF) : const Color(0x66000000),
+                        color: isDark
+                            ? const Color(0x66FFFFFF)
+                            : const Color(0x66000000),
                       ),
                     ),
                   )
@@ -1079,7 +1085,8 @@ class PreSearchPage extends StatelessWidget {
                               child: InkWell(
                                 onTap: () => search(history),
                                 child: Container(
-                                  padding: const EdgeInsets.fromLTRB(13, 6, 8, 6),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(13, 6, 8, 6),
                                   decoration: ShapeDecoration(
                                     shape: const StadiumBorder(),
                                     color: isDark
@@ -1185,7 +1192,9 @@ class PreSearchPage extends StatelessWidget {
               shape: MiuixSquircleBorder(
                 cornerRadius: 18,
                 side: BorderSide(
-                  color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0A000000),
                   width: 0.6,
                 ),
               ),
@@ -1222,7 +1231,9 @@ class PreSearchPage extends StatelessWidget {
                       "暂无收藏标签".tl,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? const Color(0x66FFFFFF) : const Color(0x66000000),
+                        color: isDark
+                            ? const Color(0x66FFFFFF)
+                            : const Color(0x66000000),
                       ),
                     ),
                   )
@@ -1254,7 +1265,8 @@ class PreSearchPage extends StatelessWidget {
                                   search(keyword, type);
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.fromLTRB(6, 4, 8, 4),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(6, 4, 8, 4),
                                   decoration: ShapeDecoration(
                                     shape: const StadiumBorder(),
                                     color: isDark

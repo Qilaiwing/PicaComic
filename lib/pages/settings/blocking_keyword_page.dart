@@ -56,15 +56,7 @@ class BlockingKeywordPage extends StatelessWidget {
                     height: 8,
                   ),
                   Center(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        shape: const RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(12))),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
-                      ),
-                      child: Text("提交".tl,
+                    child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), child: Text("提交".tl,
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       onPressed: () {
                         if (logic.controller.text == "") return;

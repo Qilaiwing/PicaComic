@@ -73,58 +73,58 @@ abstract class ComicTile extends StatelessWidget {
                         style: const TextStyle(fontSize: 22),
                       ),
                     ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.article),
-                      title: Text("查看详情".tl),
-                      onTap: () {
+                    const MiuixHorizontalDivider(),
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.article),
+                      title: "查看详情".tl,
+                      onClick: () {
                         context.pop();
                         onTap_();
                       },
                     ),
                     if (favoriteItem != null)
-                      ListTile(
-                        leading: const Icon(Icons.bookmark_rounded),
-                        title: Text("本地收藏".tl),
-                        onTap: () {
+                      MiuixBasicComponent(
+                        startAction: const Icon(Icons.bookmark_rounded),
+                        title: "本地收藏".tl,
+                        onClick: () {
                           setState(() {
                             favorite = true;
                           });
                         },
                       ),
                     if (read != null)
-                      ListTile(
-                        leading: const Icon(Icons.chrome_reader_mode),
-                        title: Text("阅读".tl),
-                        onTap: () {
+                      MiuixBasicComponent(
+                        startAction: const Icon(Icons.chrome_reader_mode),
+                        title: "阅读".tl,
+                        onClick: () {
                           context.pop();
                           read!();
                         },
                       ),
-                    ListTile(
-                      leading: const Icon(Icons.search),
-                      title: Text("搜索".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.search),
+                      title: "搜索".tl,
+                      onClick: () {
                         context.pop();
                         context.to(() => PreSearchPage(
                               initialValue: title,
                             ));
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.block),
-                      title: Text("屏蔽".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.block),
+                      title: "屏蔽".tl,
+                      onClick: () {
                         context.pop();
                         showBlockPane();
                       },
                     ),
                     if (addonMenuOptions != null)
                       for (var option in addonMenuOptions!)
-                        ListTile(
-                          leading: Icon(option.icon),
-                          title: Text(option.title),
-                          onTap: () => option.onTap(comicID),
+                        MiuixBasicComponent(
+                          startAction: Icon(option.icon),
+                          title: option.title,
+                          onClick: () => option.onTap(comicID),
                         ),
                     const SizedBox(
                       height: 16,
@@ -156,21 +156,22 @@ abstract class ComicTile extends StatelessWidget {
     return SimpleDialog(
       title: Text("添加收藏".tl),
       children: [
-        ListTile(
-          title: Text("收藏夹".tl),
-          trailing: Select(
+        MiuixBasicComponent(
+          title: "收藏夹".tl,
+          endActions: [Select(
             outline: true,
             width: 156,
             values: LocalFavoritesManager().folderNames,
             initialValue: initialFolderIndex,
             onChange: (i) => folder = LocalFavoritesManager().folderNames[i],
-          ),
+          )],
         ),
         const SizedBox(
           height: 16,
         ),
         Center(
-          child: FilledButton(
+          child: MiuixButton(
+            colors: MiuixButtonDefaults.buttonColorsPrimary(context),
             child: const Text("确认"),
             onPressed: () {
               LocalFavoritesManager().addComic(folder!, favoriteItem!);
@@ -1009,16 +1010,12 @@ class _BlockingPaneState extends State<_BlockingPane> {
             children: buildTags().toList(),
           ).paddingVertical(8),
         ).paddingHorizontal(16),
-        SizedBox(
-          height: 42,
-          child: TextField(
-            controller: controller,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: "屏蔽关键词".tl,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            ),
-          ),
+        MiuixTextField(
+          controller: controller,
+          onChanged: (_) => setState(() {}),
+          label: "屏蔽关键词".tl,
+          useLabelAsPlaceholder: true,
+          singleLine: true,
         ).paddingHorizontal(16),
         const SizedBox(height: 16),
         Button.filled(onPressed: onSubmit, child: Text("提交".tl)),

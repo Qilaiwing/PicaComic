@@ -379,7 +379,7 @@ class _CommentsPageState extends State<_CommentsPage> {
     if (_loading) {
       firstLoad();
       return const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (_error != null) {
       return NetworkError(
@@ -512,7 +512,7 @@ class _CommentsPageState extends State<_CommentsPage> {
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: MiuixInfiniteProgressIndicator(size: 20),
                     ),
                   )
                 : MiuixIconButton(
@@ -867,7 +867,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                 width: double.infinity,
                 child: buildComicInfo(_logic, context, false),
               ),
-              const Divider(),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
               SizedBox(
                 width: 100,
                 child: Row(
@@ -1621,7 +1621,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(),
+          const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
           SizedBox(
               width: 100,
               child: Row(
@@ -1689,7 +1689,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (eps == null) return;
 
     yield const SliverToBoxAdapter(
-      child: Divider(),
+      child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
     );
 
     yield SliverToBoxAdapter(
@@ -1778,11 +1778,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       yield SliverToBoxAdapter(
         child: Align(
           alignment: Alignment.center,
-          child: FilledButton.tonal(
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all(
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            ),
+          child: MiuixButton(
+            cornerRadius: 12,
             onPressed: () {
               _logic.showFullEps = true;
               _logic.update();
@@ -1800,7 +1797,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return [
       const SliverPadding(padding: EdgeInsets.all(5)),
       const SliverToBoxAdapter(
-        child: Divider(),
+        child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1850,7 +1847,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     return [
       const SliverPadding(padding: EdgeInsets.all(5)),
       const SliverToBoxAdapter(
-        child: Divider(),
+        child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -1961,7 +1958,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (recommendation == null) return [];
     return [
       const SliverToBoxAdapter(
-        child: Divider(),
+        child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
       ),
       SliverToBoxAdapter(
         child: SizedBox(
@@ -2253,7 +2250,7 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
         }
       });
       platform = const Center(
-        child: CircularProgressIndicator(),
+        child: MiuixInfiniteProgressIndicator(),
       );
     } else if (page == 0 &&
         selected.length == 1 &&

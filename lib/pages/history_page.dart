@@ -196,30 +196,18 @@ class _HistoryPageState extends State<HistoryPage> {
           key: Key(comics_[i].target),
           sourceKey: comics_[i].type.comicSource?.key,
           onLongTap: () {
-            showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text("删除".tl),
-                    content: Text("要删除这条历史记录吗".tl),
-                    actions: [
-                      TextButton(
-                          onPressed: () => App.globalBack(),
-                          child: Text("取消".tl)),
-                      TextButton(
-                          onPressed: () {
+            showMiuixDialog(context: context, title: "删除".tl, summary: "要删除这条历史记录吗".tl, actionsBuilder: (context, close) => [
+                      MiuixTextButton("取消".tl, onPressed: () => close()),
+                      MiuixTextButton("删除".tl, onPressed: () {
                             appdata.history.remove(comics_[i].target);
                             setState(() {
                               isModified = true;
                               comics.removeWhere((element) =>
                                   element.target == comics_[i].target);
                             });
-                            App.globalBack();
-                          },
-                          child: Text("删除".tl)),
-                    ],
-                  );
-                });
+                            close();
+                          }),
+                    ]);
           },
           description_: timeToString(comics_[i].time),
           coverPath: comic.path,

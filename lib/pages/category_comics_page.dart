@@ -110,7 +110,7 @@ class _CategoryComicsPageState extends State<CategoryComicsPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [...children, const Divider()],
+        children: [...children, const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider())],
       ).paddingLeft(8).paddingRight(8),
     );
   }

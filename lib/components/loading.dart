@@ -39,12 +39,16 @@ class NetworkError extends StatelessWidget {
             ),
           if (retry != null)
             if (cfe != null)
-              FilledButton(
+              MiuixButton(
+                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
                 onPressed: () => passCloudflare(CloudflareException.fromString(message)!, retry!),
                 child: Text('继续'.tl),
               )
             else
-              FilledButton(onPressed: retry, child: Text('重试'.tl))
+              MiuixButton(
+                  colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                  onPressed: retry,
+                  child: Text('重试'.tl))
         ],
       ),
     );
@@ -95,9 +99,10 @@ abstract class LoadingState<T extends StatefulWidget, S extends Object>
 
   Widget buildLoading() {
     return Center(
-      child: const CircularProgressIndicator(
+      child: const MiuixCircularProgressIndicator(
         strokeWidth: 2,
-      ).fixWidth(32).fixHeight(32),
+        size: 32,
+      ),
     );
   }
 
@@ -272,9 +277,10 @@ abstract class MultiPageLoadingState<T extends StatefulWidget, S extends Object>
 
   Widget buildLoading(BuildContext context) {
     return Center(
-      child: const CircularProgressIndicator(
+      child: const MiuixCircularProgressIndicator(
         strokeWidth: 2,
-      ).fixWidth(32).fixHeight(32),
+        size: 32,
+      ),
     );
   }
 

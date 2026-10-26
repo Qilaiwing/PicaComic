@@ -152,8 +152,8 @@ class _UpdateFavoritesInfoDialogState extends State<UpdateFavoritesInfoDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          LinearProgressIndicator(
-            value: finished / total,
+          MiuixLinearProgressIndicator(
+            progress: finished / total,
           ),
           const SizedBox(
             height: 8,
@@ -212,8 +212,8 @@ class CreateFolderDialog extends StatelessWidget {
           child: Row(
             children: [
               const Spacer(),
-              TextButton(
-                child: Text("从文件导入".tl),
+              MiuixTextButton(
+                "从文件导入".tl,
                 onPressed: () async {
                   context.pop();
                   var data = await getDataFromUserSelectedFile(["json"]);
@@ -230,8 +230,8 @@ class CreateFolderDialog extends StatelessWidget {
                 },
               ),
               const Spacer(),
-              TextButton(
-                child: Text("从网络导入".tl),
+              MiuixTextButton(
+                "从网络导入".tl,
                 onPressed: () async {
                   App.globalBack();
                   await Future.delayed(const Duration(milliseconds: 200));
@@ -248,7 +248,7 @@ class CreateFolderDialog extends StatelessWidget {
         SizedBox(
             height: 35,
             child: Center(
-              child: FilledButton(
+              child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                   onPressed: () {
                     try {
                       LocalFavoritesManager().createFolder(controller.text);
@@ -305,7 +305,7 @@ class RenameFolderDialog extends StatelessWidget {
         SizedBox(
             height: 35,
             child: Center(
-              child: TextButton(
+              child: MiuixTextButton(
                   onPressed: () {
                     try {
                       LocalFavoritesManager().rename(before, controller.text);
@@ -314,7 +314,7 @@ class RenameFolderDialog extends StatelessWidget {
                       showToast(message: e.toString());
                     }
                   },
-                  child: Text("提交".tl)),
+                  "提交".tl),
             ))
       ],
     );
@@ -547,61 +547,61 @@ class LocalFavoriteTile extends ComicTile {
                         style: const TextStyle(fontSize: 22),
                       ),
                     ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.article),
-                      title: Text("查看详情".tl),
-                      onTap: () {
+                    const MiuixHorizontalDivider(),
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.article),
+                      title: "查看详情".tl,
+                      onClick: () {
                         App.back(context);
                         showInfo();
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.bookmark_remove),
-                      title: Text("取消收藏".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.bookmark_remove),
+                      title: "取消收藏".tl,
+                      onClick: () {
                         App.globalBack();
                         LocalFavoritesManager().deleteComic(folderName, comic);
                         onDelete();
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.chrome_reader_mode_rounded),
-                      title: Text("阅读".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.chrome_reader_mode_rounded),
+                      title: "阅读".tl,
+                      onClick: () {
                         App.globalBack();
                         read();
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.copy),
-                      title: Text("复制到".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.copy),
+                      title: "复制到".tl,
+                      onClick: () {
                         App.globalBack();
                         copyTo();
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.edit_note),
-                      title: Text("编辑标签".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.edit_note),
+                      title: "编辑标签".tl,
+                      onClick: () {
                         App.globalBack();
                         editTags();
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.download),
-                      title: Text("下载".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.download),
+                      title: "下载".tl,
+                      onClick: () {
                         App.globalBack();
                         comic.addDownload();
                         showToast(message: "已添加下载任务".tl);
                       },
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.update),
-                      title: Text("更新漫画信息".tl),
-                      onTap: () {
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.update),
+                      title: "更新漫画信息".tl,
+                      onClick: () {
                         App.globalBack();
                         UpdateFavoritesInfoDialog.show([comic], folderName);
                       },
@@ -807,7 +807,7 @@ class LocalFavoriteTile extends ComicTile {
                       ),
                       const Spacer(),
                       Center(
-                        child: FilledButton(
+                        child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                           child: Text("确认".tl),
                           onPressed: () {
                             LocalFavoritesManager().addComic(folder!, comic);
@@ -930,7 +930,7 @@ class LocalFavoriteTile extends ComicTile {
                               height: 16,
                             ),
                             Center(
-                              child: FilledButton(
+                              child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                                   onPressed: () {
                                     LocalFavoritesManager().editTags(
                                         comic.target, folderName, tags);
@@ -978,7 +978,7 @@ void copyAllTo(String source, List<FavoriteItem> comics) {
                     ),
                     const Spacer(),
                     Center(
-                      child: FilledButton(
+                      child: MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context), 
                         child: Text("确认".tl),
                         onPressed: () {
                           for (var comic in comics) {
@@ -1204,7 +1204,7 @@ Future<void> checkFolder(String name) async {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const CircularProgressIndicator(),
+                        const MiuixCircularProgressIndicator(),
                         const SizedBox(
                           height: 12,
                         ),

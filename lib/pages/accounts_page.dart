@@ -122,7 +122,7 @@ class AccountsPage extends StatelessWidget {
               startAction: loading
                   ? const SizedBox.square(
                       dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: MiuixCircularProgressIndicator(strokeWidth: 2, size: 20),
                     )
                   : const Icon(Icons.refresh),
               title: "重新登录".tl,

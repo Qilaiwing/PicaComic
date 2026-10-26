@@ -385,8 +385,8 @@ class _MePageState extends State<MePage> {
           onTap: () => context.to(() => const HistoryPage()),
           child: Column(
             children: [
-              ListTile(
-                leading: Container(
+              MiuixBasicComponent(
+                startAction: Container(
                   width: 38,
                   height: 38,
                   decoration: ShapeDecoration(
@@ -395,11 +395,8 @@ class _MePageState extends State<MePage> {
                   ),
                   child: Icon(Icons.history, color: primary, size: 20),
                 ),
-                title: Text(
-                  "历史记录".tl,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                trailing: const Icon(Icons.chevron_right, size: 20),
+                title: "历史记录".tl,
+                endActions: const [Icon(Icons.chevron_right, size: 20)],
               ),
               if (history.isNotEmpty)
                 LayoutBuilder(
@@ -592,8 +589,8 @@ class _MePageCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ListTile(
-                leading: Container(
+              MiuixBasicComponent(
+                startAction: Container(
                   width: 38,
                   height: 38,
                   decoration: ShapeDecoration(
@@ -605,11 +602,8 @@ class _MePageCard extends StatelessWidget {
                     child: icon,
                   ),
                 ),
-                title: Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-                trailing: const Icon(Icons.chevron_right, size: 20),
+                title: title,
+                endActions: const [Icon(Icons.chevron_right, size: 20)],
               ),
               Text(
                 description,

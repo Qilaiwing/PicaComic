@@ -37,7 +37,7 @@ class CommentsPage extends StatelessWidget {
             logic.change();
           });
           return const Center(
-            child: CircularProgressIndicator(),
+            child: MiuixInfiniteProgressIndicator(),
           );
         } else if (logic.comments.loaded == 0) {
           return NetworkError(
@@ -150,7 +150,7 @@ class CommentsPage extends StatelessWidget {
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: MiuixInfiniteProgressIndicator(size: 20),
                                 ),
                               )
                             : MiuixIconButton(
@@ -253,7 +253,7 @@ class ReplyPage extends StatelessWidget {
             commentsPageLogic.change();
           });
           return const Center(
-            child: CircularProgressIndicator(),
+            child: MiuixInfiniteProgressIndicator(),
           );
         } else if (commentsPageLogic.comments.loaded == 0) {
           return NetworkError(
@@ -282,7 +282,7 @@ class ReplyPage extends StatelessWidget {
                   const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 15),
-                      child: Divider(),
+                      child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()),
                     ),
                   ),
                   SliverList(
@@ -381,7 +381,7 @@ class ReplyPage extends StatelessWidget {
                               child: SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: MiuixInfiniteProgressIndicator(size: 20),
                               ),
                             )
                           : MiuixIconButton(
