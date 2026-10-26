@@ -58,41 +58,15 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
         ),
         const SizedBox(width: 4),
         Expanded(
-          // 外部 controller 仍是唯一数据源；MiuixInputField 在 query 变化时同步
-          child: ListenableBuilder(
-            listenable: widget.controller,
-            builder: (context, _) => MiuixInputField(
-              query: widget.controller.text,
-              label: widget.supportingText,
-              expanded: true,
-              onExpandedChange: (_) {},
-              focusNode: widget.focusNode,
-              onQueryChange: (s) {
-                widget.controller.text = s;
-                if (s.length <= 1) {
-                  setState(() {});
-                }
-                widget.onChanged?.call(s);
-              },
-              onSearch: widget.onFinish,
-              leadingIcon: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: MiuixIcon(vector: MiuixIcons.os4.search, size: 18),
-              ),
-              trailingIcon: widget.controller.text.isNotEmpty
-                  ? MiuixIconButton(
-                      minWidth: 32,
-                      minHeight: 32,
-                      onPressed: () {
-                        setState(() {
-                          widget.controller.text = "";
-                        });
-                        widget.onChanged?.call("");
-                      },
-                      child: MiuixIcon(vector: MiuixIcons.os4.close, size: 14),
-                    )
-                  : null,
-            ),
+          // 直接把外部 controller 交给 TextField（唯一数据源），不再在 build 中
+          // 把文本同步进 MiuixInputField 的内部 controller——那会在构建期间触发
+          // EditableText/选区 Overlay 的 markNeedsBuild。
+          child: AppSearchField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            hint: widget.supportingText,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onFinish,
           ),
         ),
         const SizedBox(width: 6),

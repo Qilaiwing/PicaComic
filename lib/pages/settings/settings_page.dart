@@ -655,7 +655,6 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
     if (currentPage != -1) {
       final isDark = Theme.of(context).brightness == Brightness.dark;
       return MiuixScaffold(
-        containerColor: Theme.of(context).scaffoldBackgroundColor,
         topBar: MiuixTopAppBar(color: MiuixTheme.of(context).colors.background, 
           title: categories[currentPage].tl,
           scrollBehavior: _rightBehavior,

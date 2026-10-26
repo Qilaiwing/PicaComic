@@ -508,8 +508,6 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
     return math.max(widget.height, 53);
   }
 
-  /// MiuixInputField 的展开状态，聚焦后为 true；不主动收起，避免清空输入。
-  bool _expanded = false;
 
   @override
   void initState() {
@@ -563,21 +561,12 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
         Expanded(
           child: SizedBox(
             height: 46,
-            child: MiuixInputField(
-              query: widget.controller.text,
-              label: "Search",
-              expanded: _expanded,
-              onExpandedChange: (v) {
-                if (v != _expanded) setState(() => _expanded = v);
-              },
-              onQueryChange: (s) {
-                widget.controller.value = TextEditingValue(
-                  text: s,
-                  selection: TextSelection.collapsed(offset: s.length),
-                );
-                widget.onChanged?.call(s);
-              },
-              onSearch: widget.onSearch,
+            child: AppSearchField(
+              controller: widget.controller,
+              hint: "Search",
+              autofocus: false,
+              onChanged: widget.onChanged,
+              onSubmitted: widget.onSearch,
             ),
           ),
         ),
@@ -586,6 +575,8 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
     );
   }
 }
+
+
 
 class FilledTabBar extends StatefulWidget {
   const FilledTabBar({super.key, this.controller, required this.tabs});
