@@ -179,7 +179,7 @@ class CreateFolderDialog extends StatelessWidget {
       : super(key: key);
 
   /// true 时只构建正文（供 [show] 放进 Miuix 对话框）；
-  /// false 时保留旧的 SimpleDialog 外壳，兼容仍在用 showDialog 的调用方。
+  /// false 时用 Miuix 外壳包裹，兼容直接嵌入的旧调用方。
   final bool asContent;
 
   static Future<void> show(BuildContext context) {
@@ -266,12 +266,36 @@ class CreateFolderDialog extends StatelessWidget {
       ],
     );
     if (asContent) return content;
-    return SimpleDialog(
-      shape: const MiuixSquircleBorder(cornerRadius: 20),
-      title: Text("创建收藏夹".tl),
-      children: [
-        SizedBox(width: 300, child: content.paddingHorizontal(20)),
-      ],
+    // 兼容旧的直接嵌入用法：用 Miuix 表面渲染对话框外壳（新代码请用 [show]）。
+    return Center(
+      child: Material(
+        type: MaterialType.transparency,
+        child: SizedBox(
+          width: 300,
+          child: MiuixSurface(
+            color: Theme.of(context).colorScheme.surface,
+            cornerRadius: 20,
+            shadowElevation: 3,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    "创建收藏夹".tl,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 19, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 16),
+                  content,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -292,9 +316,7 @@ class RenameFolderDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = TextEditingController(
-      text: before
-    );
+    final controller = TextEditingController(text: before);
     final FocusNode focusNode = FocusNode();
     focusNode.requestFocus();
     return Column(
@@ -547,80 +569,80 @@ class LocalFavoriteTile extends ComicTile {
     showMiuixDialog(
         context: App.globalContext!,
         contentBuilder: (context, close) => Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-                      child: SelectableText(
-                        title.replaceAll("\n", ""),
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                    ),
-                    const MiuixHorizontalDivider(),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.article),
-                      title: "查看详情".tl,
-                      onClick: () {
-                        App.back(context);
-                        showInfo();
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.bookmark_remove),
-                      title: "取消收藏".tl,
-                      onClick: () {
-                        App.globalBack();
-                        LocalFavoritesManager().deleteComic(folderName, comic);
-                        onDelete();
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.chrome_reader_mode_rounded),
-                      title: "阅读".tl,
-                      onClick: () {
-                        App.globalBack();
-                        read();
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.copy),
-                      title: "复制到".tl,
-                      onClick: () {
-                        App.globalBack();
-                        copyTo();
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.edit_note),
-                      title: "编辑标签".tl,
-                      onClick: () {
-                        App.globalBack();
-                        editTags();
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.download),
-                      title: "下载".tl,
-                      onClick: () {
-                        App.globalBack();
-                        comic.addDownload();
-                        showToast(message: "已添加下载任务".tl);
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.update),
-                      title: "更新漫画信息".tl,
-                      onClick: () {
-                        App.globalBack();
-                        UpdateFavoritesInfoDialog.show([comic], folderName);
-                      },
-                    ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                  ],
-                ));
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                  child: SelectableText(
+                    title.replaceAll("\n", ""),
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                ),
+                const MiuixHorizontalDivider(),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.article),
+                  title: "查看详情".tl,
+                  onClick: () {
+                    App.back(context);
+                    showInfo();
+                  },
+                ),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.bookmark_remove),
+                  title: "取消收藏".tl,
+                  onClick: () {
+                    App.globalBack();
+                    LocalFavoritesManager().deleteComic(folderName, comic);
+                    onDelete();
+                  },
+                ),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.chrome_reader_mode_rounded),
+                  title: "阅读".tl,
+                  onClick: () {
+                    App.globalBack();
+                    read();
+                  },
+                ),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.copy),
+                  title: "复制到".tl,
+                  onClick: () {
+                    App.globalBack();
+                    copyTo();
+                  },
+                ),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.edit_note),
+                  title: "编辑标签".tl,
+                  onClick: () {
+                    App.globalBack();
+                    editTags();
+                  },
+                ),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.download),
+                  title: "下载".tl,
+                  onClick: () {
+                    App.globalBack();
+                    comic.addDownload();
+                    showToast(message: "已添加下载任务".tl);
+                  },
+                ),
+                MiuixBasicComponent(
+                  startAction: const Icon(Icons.update),
+                  title: "更新漫画信息".tl,
+                  onClick: () {
+                    App.globalBack();
+                    UpdateFavoritesInfoDialog.show([comic], folderName);
+                  },
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+              ],
+            ));
   }
 
   void readComic() async {
@@ -855,87 +877,87 @@ class LocalFavoriteTile extends ComicTile {
           var tags = comic.tags;
           var controller = TextEditingController();
           return StatefulBuilder(
-                  builder: (context, setState) => Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Wrap(
-                              children: tags
-                                  .map((e) => Container(
-                                        margin: const EdgeInsets.all(4),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 6),
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondaryContainer,
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(e),
-                                            const SizedBox(
-                                              width: 4,
-                                            ),
-                                            MiuixPressable(
- onPressed: () {
-                                                tags.remove(e);
-                                                setState(() {});
-                                              },
- feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(10),
- child: const Icon(
-                                                Icons.close,
-                                                size: 20,
-                                              ),
-)
-                                          ],
-                                        ),
-                                      ))
-                                  .toList(),
-                            ),
-                            const SizedBox(
-                              height: 8,
-                            ),
-                            MiuixTextField(
-                              controller: controller,
-                              singleLine: true,
-                              trailingIcon: MiuixIconButton(onPressed: () {
-                                  var value = controller.text;
-                                  if (value.isNotEmpty) {
-                                    controller.clear();
-                                    tags.add(value);
+            builder: (context, setState) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Wrap(
+                  children: tags
+                      .map((e) => Container(
+                            margin: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(e),
+                                const SizedBox(
+                                  width: 4,
+                                ),
+                                MiuixPressable(
+                                  onPressed: () {
+                                    tags.remove(e);
                                     setState(() {});
-                                  }
-                                }, child: const Icon(Icons.add)),
-                              onSubmitted: (value) {
-                                if (value.isNotEmpty) {
-                                  tags.add(value);
-                                  controller.clear();
-                                  setState(() {});
-                                }
-                              },
+                                  },
+                                  feedbackType: MiuixPressFeedbackType.sink,
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 20,
+                                  ),
+                                )
+                              ],
                             ),
-                            const SizedBox(
-                              height: 16,
-                            ),
-                            MiuixButton(
-                                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
-                                onPressed: () {
-                                  LocalFavoritesManager().editTags(
-                                      comic.target, folderName, tags);
-                                  close();
-                                  StateController.findOrNull<
-                                          FavoritesPageController>()
-                                      ?.update();
-                                  StateController.findOrNull(
-                                          tag: "local_search_page")
-                                      ?.update();
-                                },
-                                child: Text("提交".tl)),
-                          ],
-                        ),
-                      );
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(
+                  height: 8,
+                ),
+                MiuixTextField(
+                  controller: controller,
+                  singleLine: true,
+                  trailingIcon: MiuixIconButton(
+                      onPressed: () {
+                        var value = controller.text;
+                        if (value.isNotEmpty) {
+                          controller.clear();
+                          tags.add(value);
+                          setState(() {});
+                        }
+                      },
+                      child: const Icon(Icons.add)),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      tags.add(value);
+                      controller.clear();
+                      setState(() {});
+                    }
+                  },
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                MiuixButton(
+                    colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                    onPressed: () {
+                      LocalFavoritesManager()
+                          .editTags(comic.target, folderName, tags);
+                      close();
+                      StateController.findOrNull<FavoritesPageController>()
+                          ?.update();
+                      StateController.findOrNull(tag: "local_search_page")
+                          ?.update();
+                    },
+                    child: Text("提交".tl)),
+              ],
+            ),
+          );
         });
   }
 }
@@ -972,8 +994,8 @@ void copyAllTo(String source, List<FavoriteItem> comics) {
                   for (var comic in comics) {
                     LocalFavoritesManager().addComic(
                         folder!,
-                        LocalFavoritesManager().getComic(
-                            source, comic.target, comic.type));
+                        LocalFavoritesManager()
+                            .getComic(source, comic.target, comic.type));
                   }
                   close();
                 },
@@ -1039,46 +1061,50 @@ class _LocalFavoritesFolderState extends State<LocalFavoritesFolder> {
               key: Key(comics[index].target),
             ));
     return MiuixScaffold(
- topBar: MiuixSmallTopAppBar(
- title: widget.name,
- navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
-),
- content: (padding) => Padding(
- padding: padding,
- child: Column(
-        children: [
-          Expanded(
-            child: ReorderableBuilder(
-              key: reorderWidgetKey,
-              scrollController: _scrollController,
-              longPressDelay: App.isDesktop
-                  ? const Duration(milliseconds: 100)
-                  : const Duration(milliseconds: 500),
-              onReorder: (reorderFunc) {
-                changed = true;
-                setState(() {
-                  comics = reorderFunc(comics) as List<FavoriteItem>;
-                });
-              },
-              dragChildBoxDecoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: lightenColor(
-                      Theme.of(context).splashColor.withOpacity(1), 0.2)),
-              builder: (children) {
-                return GridView(
-                  key: _key,
-                  controller: _scrollController,
-                  gridDelegate: SliverGridDelegateWithComics(),
-                  children: children,
-                );
-              },
-              children: tiles,
-            ),
-          )
-        ],
+      topBar: MiuixSmallTopAppBar(
+        title: widget.name,
+        navigationIcon: Navigator.of(context).canPop()
+            ? MiuixIconButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: const Icon(Icons.arrow_back))
+            : null,
       ),
- ),
-);
+      content: (padding) => Padding(
+        padding: padding,
+        child: Column(
+          children: [
+            Expanded(
+              child: ReorderableBuilder(
+                key: reorderWidgetKey,
+                scrollController: _scrollController,
+                longPressDelay: App.isDesktop
+                    ? const Duration(milliseconds: 100)
+                    : const Duration(milliseconds: 500),
+                onReorder: (reorderFunc) {
+                  changed = true;
+                  setState(() {
+                    comics = reorderFunc(comics) as List<FavoriteItem>;
+                  });
+                },
+                dragChildBoxDecoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: lightenColor(
+                        Theme.of(context).splashColor.withOpacity(1), 0.2)),
+                builder: (children) {
+                  return GridView(
+                    key: _key,
+                    controller: _scrollController,
+                    gridDelegate: SliverGridDelegateWithComics(),
+                    children: children,
+                  );
+                },
+                children: tiles,
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1158,31 +1184,9 @@ Future<void> checkFolder(String name) async {
       context: App.globalContext!,
       contentBuilder: (context, close) {
         return StreamBuilder(
-              stream: check(),
-              builder: (context, snapshot) {
-                if (checked == comics.length) {
-                  return SizedBox(
-                    height: 200,
-                    width: 200,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 54,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          Text("Unavailable: $unavailableNum"),
-                          Text("Network Error: $networkError"),
-                        ],
-                      ),
-                    ),
-                  );
-                }
+            stream: check(),
+            builder: (context, snapshot) {
+              if (checked == comics.length) {
                 return SizedBox(
                   height: 200,
                   width: 200,
@@ -1190,15 +1194,37 @@ Future<void> checkFolder(String name) async {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const MiuixCircularProgressIndicator(),
+                        Icon(
+                          Icons.check_circle,
+                          size: 54,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         const SizedBox(
                           height: 12,
                         ),
-                        Text("$checked/${comics.length}")
+                        Text("Unavailable: $unavailableNum"),
+                        Text("Network Error: $networkError"),
                       ],
                     ),
                   ),
                 );
-              });
+              }
+              return SizedBox(
+                height: 200,
+                width: 200,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const MiuixCircularProgressIndicator(),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Text("$checked/${comics.length}")
+                    ],
+                  ),
+                ),
+              );
+            });
       });
 }

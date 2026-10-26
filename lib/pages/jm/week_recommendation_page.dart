@@ -41,8 +41,8 @@ class JmWeekRecommendationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var key = GlobalKey();
     const titleLength = 190;
-    return Scaffold(
-      appBar: Appbar(
+    return MiuixScaffold(
+      topBar: Appbar(
         title: Text("每周必看".tl),
         actions: [
           StateBuilder<JWRPLogic>(
@@ -69,14 +69,17 @@ class JmWeekRecommendationPage extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  MiuixIconButton(child: const Icon(Icons.arrow_drop_down_sharp, size: 16),
+                  MiuixIconButton(
+                    child: const Icon(Icons.arrow_drop_down_sharp, size: 16),
                     onPressed: () {
                       if (logic.rec == null) return;
                       showMiuixMenu(
                         context: context,
                         anchorBounds: miuixAnchorRectOf(key.currentContext!),
                         maxHeight: 300,
-                        items: [for (var item in logic.rec!.entries) item.value],
+                        items: [
+                          for (var item in logic.rec!.entries) item.value
+                        ],
                       ).then((i) {
                         if (i == null) return;
                         var item = logic.rec!.entries.elementAt(i);
@@ -92,8 +95,9 @@ class JmWeekRecommendationPage extends StatelessWidget {
           )
         ],
       ),
-      body: Column(
+      content: (padding) => Column(
         children: [
+          SizedBox(height: padding.top),
           Expanded(
             child: StateBuilder<JWRPLogic>(
               builder: (logic) {
