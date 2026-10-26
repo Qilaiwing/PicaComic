@@ -262,12 +262,11 @@ class _SearchResultPageState extends State<_SearchResultPage> {
           sourceKey: sourceKey,
           key: Key(keyword + options.toString() + sourceKey),
           header: SliverPersistentHeader(
-            pinned: _showFab && SmoothScrollProvider.isMouseScroll,
-            floating: !SmoothScrollProvider.isMouseScroll,
+            pinned: true,
             delegate: _SliverAppBarDelegate(
               minHeight: 60,
               maxHeight: 60,
-              child: FloatingSearchBar(
+              child: FrostedBackground(child: FloatingSearchBar(
                 onSearch: (s) {
                   suggestionsController.suggestions.clear();
                   suggestionsController.remove();
@@ -279,7 +278,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
                 controller: controller,
                 onChanged: onChanged,
                 trailing: trailing,
-              ),
+              )),
             ),
           ),
           options: options,

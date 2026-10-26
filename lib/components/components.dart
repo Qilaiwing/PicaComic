@@ -39,8 +39,10 @@ import 'miuix_scaffold.dart';
 export 'miuix_scaffold.dart';
 
 import '../base.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import '../foundation/ui_mode.dart';
 
+part 'sticky_header.dart';
 part 'animated_image.dart';
 part 'appbar.dart';
 part 'expandable.dart';

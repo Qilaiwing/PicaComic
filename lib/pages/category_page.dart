@@ -2,6 +2,7 @@ import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:flutter/material.dart';
+import "package:sliver_tools/sliver_tools.dart";
 import 'package:pica_comic/pages/ranking_page.dart';
 import 'package:pica_comic/pages/search_result_page.dart';
 import 'package:pica_comic/tools/tags_translation.dart';
@@ -102,9 +103,9 @@ class CategoryPage extends StatelessWidget {
     var children = <Widget>[];
     if (data.enableRankingPage || data.buttons.isNotEmpty) {
       children.add(
-        _CategoryGroupCard(
-          title: "热门推荐".tl,
-          child: Padding(
+        _categorySection(
+          "热门推荐".tl,
+           Padding(
             padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
             child: Wrap(
               children: [
@@ -125,12 +126,18 @@ class CategoryPage extends StatelessWidget {
     for (var part in data.categories) {
       if (part.enableRandom) {
         children.add(StatefulBuilder(builder: (context, updater) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildTitleWithRefresh(part.title, () => updater(() {})),
-              buildTagsWithParams(
+          return MultiSliver(pushPinnedChildren: true, children: [
+            StickySectionHeader(
+              title: part.title.tl,
+              trailing: MiuixIconButton(
+                onPressed: () => updater(() {}),
+                minWidth: 32,
+                minHeight: 32,
+                child: const Icon(Icons.refresh, size: 18),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: buildTagsWithParams(
                 part.categories,
                 part.categoryParams,
                 part.title,
@@ -141,15 +148,15 @@ class CategoryPage extends StatelessWidget {
                   part.title,
                   category,
                 ),
-              )
-            ],
-          );
+              ),
+            ),
+          ]);
         }));
       } else {
         children.add(
-          _CategoryGroupCard(
-            title: part.title,
-            child: buildTagsWithParams(
+          _categorySection(
+            part.title,
+             buildTagsWithParams(
               part.categories,
               part.categoryParams,
               part.title,
@@ -165,12 +172,13 @@ class CategoryPage extends StatelessWidget {
         );
       }
     }
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(0, 10, 0, 110),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+    // 每个分组标题吸顶（毛玻璃），下一组的标题会把它顶走。
+    return CustomScrollView(
+      slivers: [
+        const SliverToBoxAdapter(child: SizedBox(height: 4)),
+        ...children,
+        const SliverToBoxAdapter(child: SizedBox(height: 110)),
+      ],
     );
   }
 
@@ -278,12 +286,25 @@ class CategoryPage extends StatelessWidget {
   bool get enableTranslation => App.locale.languageCode == 'zh';
 }
 
+/// Sticky frosted header + the group's card body.
+Widget _categorySection(String title, Widget body) {
+  return MultiSliver(pushPinnedChildren: true, children: [
+    StickySectionHeader(title: title.tl),
+    SliverToBoxAdapter(
+      child: _CategoryGroupCard(title: title, showTitle: false, child: body),
+    ),
+  ]);
+}
+
 class _CategoryGroupCard extends StatelessWidget {
   const _CategoryGroupCard({
     required this.title,
     required this.child,
     this.onRefresh,
+    this.showTitle = true,
   });
+
+  final bool showTitle;
 
   final String title;
   final Widget child;
@@ -315,6 +336,7 @@ class _CategoryGroupCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (showTitle)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 12, 6),
             child: Row(

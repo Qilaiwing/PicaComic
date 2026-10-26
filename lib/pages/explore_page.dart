@@ -1,4 +1,3 @@
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:pica_comic/base.dart';
@@ -390,12 +389,9 @@ Iterable<Widget> _buildExplorePagePart(
   Widget buildTitle(ExplorePagePart part) {
     // 分区标题吸顶：滚动到该分区时固定在内容顶部（顶栏下方），被下一分区标题推走。
     return SliverPinnedHeader(
-      child: Builder(builder: (context) => ClipRect(child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-      child: ColoredBox(
-      color: MiuixTheme.of(context).colors.background.withValues(alpha: 0.82),
+      child: Builder(builder: (context) => FrostedBackground(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 14, 8),
+        padding: const EdgeInsets.fromLTRB(20, 10, 12, 6),
         child: Row(
           children: [
             Text(
@@ -405,10 +401,9 @@ Iterable<Widget> _buildExplorePagePart(
                       .replaceAll("→右滑看更多→", "")
                       .replaceAll("->右滑看更多->", "")
                       .trim(),
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
+              style: MiuixTheme.of(context).textStyles.title4.copyWith(
+                fontWeight: FontWeight.w600,
+                color: MiuixTheme.of(context).colors.onBackground,
               ),
             ),
             const Spacer(),
@@ -476,7 +471,7 @@ Iterable<Widget> _buildExplorePagePart(
           ],
         ),
       ),
-      )))),
+      )),
     );
   }
 

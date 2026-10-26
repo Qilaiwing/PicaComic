@@ -2,6 +2,7 @@ import "dart:async";
 
 import "package:collection/collection.dart";
 import "package:flutter/material.dart";
+import "package:sliver_tools/sliver_tools.dart";
 import "package:flutter_reorderable_grid_view/widgets/reorderable_builder.dart";
 import "package:pica_comic/base.dart";
 import "package:pica_comic/comic_source/comic_source.dart";
@@ -367,21 +368,22 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
 
     return SmoothCustomScrollView(
         slivers: [
-          if (hasNetwork) ...[
-            buildTitle("网络".tl)
-                .sliverPadding(const EdgeInsets.fromLTRB(14, 8, 14, 2)),
-            buildNetwork().sliverPaddingHorizontal(14),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: MiuixHorizontalDivider(thickness: 0.6),
+          if (hasNetwork)
+            MultiSliver(pushPinnedChildren: true, children: [
+              StickySectionHeader(title: "网络".tl),
+              buildNetwork().sliverPaddingHorizontal(14),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: MiuixHorizontalDivider(thickness: 0.6),
+                ),
               ),
-            ),
-          ],
-          buildTitle("本地".tl)
-              .sliverPadding(const EdgeInsets.fromLTRB(14, 8, 14, 4)),
-          buildUtils(context),
-          buildLocal().sliverPaddingHorizontal(14),
+            ]),
+          MultiSliver(pushPinnedChildren: true, children: [
+            StickySectionHeader(title: "本地".tl),
+            buildUtils(context),
+            buildLocal().sliverPaddingHorizontal(14),
+          ]),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       );
