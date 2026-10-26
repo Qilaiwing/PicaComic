@@ -140,7 +140,7 @@ class _MePageState extends State<MePage> {
     final accounts = findAccounts().length;
     final historyCount = HistoryManager().count();
 
-    final name = logged ? profile.name : "点击登录 PicaCG".tl;
+    final name = logged ? profile.name : "请登录您的PicACG".tl;
     final slogan = logged ? (profile.slogan ?? '') : "登录后即可展示你的个人信息".tl;
     final avatarUrl = logged ? profile.avatarUrl : null;
 
@@ -236,7 +236,15 @@ class _MePageState extends State<MePage> {
       );
     }
 
-    return Container(
+    // 个人信息卡：Miuix 按压倾斜反馈，点按打开账号页。
+    return MiuixPressable(
+      feedbackType: MiuixPressFeedbackType.tilt,
+      shape: const MiuixSquircleBorder(cornerRadius: 18),
+      onPressed: () async {
+        await showPopUpWidget(context, const AccountsPage());
+        if (mounted) setState(() {});
+      },
+      child: Container(
       decoration: ShapeDecoration(
         shape: MiuixSquircleBorder(
           cornerRadius: 18,
@@ -346,6 +354,7 @@ class _MePageState extends State<MePage> {
           ),
         ),
       ),
+    ),
     );
   }
 

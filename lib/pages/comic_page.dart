@@ -31,6 +31,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import 'dart:math' as math;
 
+const double _kActionHeight = 48;
+const double _kActionRadius = 16;
+
 class ComicPage extends StatelessWidget {
   const ComicPage({
     super.key,
@@ -1251,57 +1254,40 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     Widget buildItem(String title, dynamic icon, VoidCallback onTap,
         [VoidCallback? onLongPress]) {
       final primary = Theme.of(context).colorScheme.primary;
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      // Miuix 次级按钮：与下方「下载/开始阅读」同高同圆角。
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2),
-        child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 14), onPressed: onTap,
-            onLongPress: onLongPress,
-            child: Container(
-              height: 52,
-              decoration: ShapeDecoration(
-                shape: MiuixSquircleBorder(
-                  cornerRadius: 14,
-                  side: BorderSide(
-                    color: isDark
-                        ? const Color(0x24FFFFFF)
-                        : const Color(0x1E000000),
-                    width: 0.7,
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          child: MiuixButton(
+            cornerRadius: _kActionRadius,
+            minWidth: 0,
+            minHeight: _kActionHeight,
+            insideMargin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            onPressed: onTap,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon is MiuixVectorIcon)
+                  MiuixIcon(vector: icon, size: 18, tint: primary)
+                else
+                  Icon(icon as IconData, size: 18, color: primary),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                    height: 1.1,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                color:
-                    isDark ? const Color(0xFF242428) : const Color(0xFFE8E8EE),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon is MiuixVectorIcon)
-                    MiuixIcon(
-                      vector: icon,
-                      size: 19,
-                      tint: primary,
-                    )
-                  else
-                    Icon(
-                      icon as IconData,
-                      size: 19,
-                      color: primary,
-                    ),
-                  const SizedBox(height: 2.5),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      letterSpacing: -0.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                ],
-              ),
+              ],
             ),
           ),
+        ),
       );
     }
 
@@ -1352,10 +1338,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       if (searchSimilar != null)
         buildItem("相似".tl, MiuixIcons.os4.search, searchSimilar!),
       if (downloadManager.isExists(downloadedId))
-        MiuixPressable(
-          feedbackType: MiuixPressFeedbackType.sink,
-          borderRadius: BorderRadius.circular(10),
-          onPressed: () => showMiuixDialog<void>(
+        buildItem("删除".tl, MiuixIcons.os4.delete, () {
+          showMiuixDialog<void>(
             context: context,
             title: "从本地下载中删除?".tl,
             actionsBuilder: (context, close) => [
@@ -1371,30 +1355,8 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                 },
               ),
             ],
-          ),
-          child: SizedBox(
-            height: 52,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                MiuixIcon(
-                  vector: MiuixIcons.os4.delete,
-                  size: 20,
-                  tint: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 3.5),
-                Text(
-                  "删除".tl,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.2,
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
+          );
+        }),
     ];
 
     Widget buildRowOrScroll() {
@@ -1438,103 +1400,51 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
           if (width < 500)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: SizedBox(
-                height: 48,
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 16), onPressed: download,
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: ShapeDecoration(
-                              shape: MiuixSquircleBorder(
-                                cornerRadius: 16,
-                                side: BorderSide(
-                                  color: isDark
-                                      ? const Color(0x18FFFFFF)
-                                      : const Color(0x0C000000),
-                                  width: 0.6,
-                                ),
-                              ),
-                              color: isDark
-                                  ? const Color(0x1CFFFFFF)
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.1),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                MiuixIcon(
-                                  vector:
-                                      MiuixIcons.extended.byName('download') ??
-                                          MiuixIcons.os4.download,
-                                  size: 17,
-                                  tint: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "下载".tl,
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: MiuixButton(
+                      cornerRadius: _kActionRadius,
+                      minHeight: _kActionHeight,
+                      onPressed: download,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          MiuixIcon(
+                            vector: MiuixIcons.extended.byName('download') ??
+                                MiuixIcons.os4.download,
+                            size: 18,
+                            tint: Theme.of(context).colorScheme.primary,
                           ),
-                        ),
+                          const SizedBox(width: 6),
+                          Text("下载".tl),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      flex: 6,
-                      child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 16), onPressed: () => openReadingWithChapterSelect(
-                              context, _logic.history),
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: ShapeDecoration(
-                              shape:
-                                  const MiuixSquircleBorder(cornerRadius: 16),
-                              color: Theme.of(context).colorScheme.primary,
-                              shadows: [
-                                BoxShadow(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.35),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.menu_book_rounded,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "开始阅读".tl,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 6,
+                    child: MiuixButton(
+                      cornerRadius: _kActionRadius,
+                      minHeight: _kActionHeight,
+                      colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                      onPressed: () =>
+                          openReadingWithChapterSelect(context, _logic.history),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.menu_book_rounded,
+                              size: 18, color: Colors.white),
+                          const SizedBox(width: 6),
+                          Text("开始阅读".tl,
+                              style: const TextStyle(color: Colors.white)),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
         ],

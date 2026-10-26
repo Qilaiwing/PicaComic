@@ -120,7 +120,7 @@ class _NaviPaneState extends State<NaviPane>
   bool _isNavDragging = false;
   DateTime? _lastBackTime;
 
-  static const _kBottomBarHeight = 52.0;
+  static const _kBottomBarHeight = 62.0;
 
   static const _kFloatingBottomMargin = 22.0;
 
@@ -619,9 +619,9 @@ class _NaviPaneState extends State<NaviPane>
           color: Colors.transparent,
           child: Container(
             constraints: const BoxConstraints(maxWidth: 390),
-            height: 52,
+            height: _kBottomBarHeight,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(31),
             boxShadow: [
               BoxShadow(
                 color: isDark
@@ -633,12 +633,12 @@ class _NaviPaneState extends State<NaviPane>
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(31),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(31),
                   color: isDark
                       ? const Color(0xE61E1E22)
                       : const Color(0xF2FFFFFF),
@@ -743,7 +743,7 @@ class _NaviPaneState extends State<NaviPane>
                                 : Curves.easeOutCubic,
                             left: indicatorLeft,
                             width: tabWidth - 4 + (_isNavDragging ? 4 : 0),
-                            height: 44,
+                            height: 52,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               decoration: BoxDecoration(
@@ -752,7 +752,7 @@ class _NaviPaneState extends State<NaviPane>
                                       ? (_isNavDragging ? 0.28 : 0.22)
                                       : (_isNavDragging ? 0.16 : 0.12),
                                 ),
-                                borderRadius: BorderRadius.circular(22),
+                                borderRadius: BorderRadius.circular(26),
                               ),
                             ),
                           ),
@@ -761,7 +761,7 @@ class _NaviPaneState extends State<NaviPane>
                               for (int i = 0; i < widget.paneItems.length; i++)
                                 Expanded(
                                   child: SizedBox(
-                                    height: 52,
+                                    height: _kBottomBarHeight,
                                     child: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
@@ -772,9 +772,9 @@ class _NaviPaneState extends State<NaviPane>
                                           color: currentPage == i
                                               ? primaryColor
                                               : unselectedColor,
-                                          size: 20,
+                                          size: 22,
                                         ),
-                                        const SizedBox(height: 2.0),
+                                        const SizedBox(height: 3.0),
                                         Text(
                                           widget.paneItems[i].label,
                                           maxLines: 1,

@@ -184,6 +184,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
             logic.get(getComics);
             return Column(
               children: [
+                SizedBox(height: MainTopInset.of(context)),
                 if (title != null) const Appbar(title: Text("")),
                 if (pinnedHeader != null)
                   SizedBox(height: pinnedHeaderHeight, child: pinnedHeader),
@@ -198,6 +199,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
           } else if (logic.message != null) {
             return Column(
               children: [
+                SizedBox(height: MainTopInset.of(context)),
                 removeSliver(header) ?? const SizedBox(),
                 Expanded(
                     child: NetworkError(
@@ -222,6 +224,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               if (comics.isEmpty) {
                 return SmoothCustomScrollView(
                   slivers: [
+                    const TopInsetSliver(),
                     if (title != null)
                       SliverAppbar(
                         title: Text(title!),
@@ -239,6 +242,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               }
               return SmoothCustomScrollView(
                 slivers: [
+                  const TopInsetSliver(),
                   if (title != null)
                     SliverAppbar(
                       title: Text(title!),
@@ -284,6 +288,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               if (comics.isEmpty) {
                 return SmoothCustomScrollView(
                   slivers: [
+                    const TopInsetSliver(),
                     if (title != null)
                       SliverAppbar(
                         title: Text(title!),
@@ -301,6 +306,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               }
               Widget body = SmoothCustomScrollView(
                 slivers: [
+                  const TopInsetSliver(),
                   if (title != null)
                     SliverAppbar(
                       title: Text(title!),

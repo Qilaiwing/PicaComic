@@ -65,10 +65,14 @@ mixin _AppRouteTransitionMixin<T> on PageRoute<T> {
   Widget buildContent(BuildContext context);
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 380);
+  // 底栏切换用 pushAndRemoveUntil 替换根页面：根页面不做滑入动画，
+  // 否则 380ms 内旧页面仍在下面可见，看起来像闪了别的页面。
+  Duration get transitionDuration =>
+      isRootRoute ? Duration.zero : const Duration(milliseconds: 380);
 
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 320);
+  Duration get reverseTransitionDuration =>
+      isRootRoute ? Duration.zero : const Duration(milliseconds: 320);
 
   @override
   Color? get barrierColor => null;

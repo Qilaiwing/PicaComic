@@ -315,10 +315,8 @@ class _ComicList extends ComicsPage<BaseComic> {
   String? get title => null;
 
   @override
-  Widget? get header => MultiSliver(children: const [
-        TopInsetSliver(),
-        SliverToBoxAdapter(child: SizedBox(height: 12)),
-      ]);
+  // 顶栏占位由 ComicsPage 统一插入（滚动态用吸顶占位，加载/出错态用 SizedBox）。
+  Widget? get header => const SliverToBoxAdapter(child: SizedBox(height: 12));
 }
 
 class _MixedExplorePage extends StatefulWidget {

@@ -575,7 +575,7 @@
     "已登录": "已登入",
     "累计": "累計",
     "未登录": "未登入",
-    "点击登录 PicaCG": "點擊登入 PicaCG",
+    "请登录您的PicACG": "請登入您的PicACG",
     "登录后即可展示你的个人信息": "登入後即可展示你的個人資訊"
   },
   "en_US": {
@@ -1158,7 +1158,7 @@
     "已登录": "Logged in",
     "累计": "Total",
     "未登录": "Not logged in",
-    "点击登录 PicaCG": "Tap to log in to PicaCG",
+    "请登录您的PicACG": "Please log in to your PicACG",
     "登录后即可展示你的个人信息": "Your profile will be shown after logging in"
   }
 }
