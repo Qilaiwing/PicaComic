@@ -16,7 +16,7 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   Widget build(BuildContext context) {
-    return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "EH订阅".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop()), actions: [
+    return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "EH订阅".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop()), actions: [
         MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("更多".tl)), child: MiuixIconButton(
             child: const Icon(Icons.more_horiz),
             onPressed: (){

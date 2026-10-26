@@ -110,7 +110,7 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
       loadData();
     }
     return MiuixScaffold(
- topBar: MiuixSmallTopAppBar(
+ topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
  title: "Profile",
  navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
 ),

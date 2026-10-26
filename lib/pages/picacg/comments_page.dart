@@ -181,7 +181,7 @@ class CommentsPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }
@@ -388,7 +388,7 @@ class ReplyPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "回复".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "回复".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }

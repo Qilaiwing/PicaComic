@@ -49,7 +49,7 @@ class CollectionsPage extends StatelessWidget {
               logic.change();
             }
           });
-          return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: const Center(
+          return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: const Center(
               child: MiuixInfiniteProgressIndicator(),
             )),
           );
@@ -70,7 +70,7 @@ class CollectionsPage extends StatelessWidget {
             ),
           );
         } else {
-          return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: NetworkError(
+          return MiuixScaffold(topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: NetworkError(
               message: logic.message ?? "网络错误".tl,
               retry: () {
                 logic.status = true;

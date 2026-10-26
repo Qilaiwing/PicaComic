@@ -45,7 +45,7 @@ class _RankingPageState extends State<RankingPage> {
         key: ValueKey("RankingPage with $optionValue"),
         loader: data.rankingData!.load,
         optionValue: optionValue,
-        header: buildOptions(),
+        pinnedHeader: buildOptions(),
         sourceKey: widget.sourceKey,
       ),
     );
@@ -64,22 +64,23 @@ class _RankingPageState extends State<RankingPage> {
     );
   }
 
+  /// 排行选项行：作为顶栏的一部分固定显示（见 [SliverAppbar.bottom]）。
   Widget buildOptions() {
-    List<Widget> children = [];
-    children.add(Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (var option in options.entries)
-          buildOptionItem(option.value.tl, option.key, context)
-      ],
-    ));
-    return SliverToBoxAdapter(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [...children, const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider())],
-      ).paddingLeft(8).paddingRight(8),
+    return SizedBox(
+      height: kOptionRowHeight,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        children: [
+          for (var option in options.entries)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: buildOptionItem(option.value.tl, option.key, context),
+              ),
+            )
+        ],
+      ),
     );
   }
 }
@@ -89,7 +90,7 @@ class _CustomCategoryComicsList extends ComicsPage<BaseComic> {
     super.key,
     required this.loader,
     required this.optionValue,
-    required this.header,
+    required this.pinnedHeader,
     required this.sourceKey,
   });
 
@@ -101,7 +102,10 @@ class _CustomCategoryComicsList extends ComicsPage<BaseComic> {
   final String sourceKey;
 
   @override
-  final Widget header;
+  final Widget pinnedHeader;
+
+  @override
+  double get pinnedHeaderHeight => kOptionRowHeight;
 
   @override
   Future<Res<List<BaseComic>>> getComics(int i) async {

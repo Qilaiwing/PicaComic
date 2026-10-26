@@ -14,9 +14,17 @@ import android.net.Uri
 import android.os.Environment
 import android.Manifest
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import android.os.Bundle
 import com.google.android.gms.common.GoogleApiAvailability
 
 class MainActivity: FlutterFragmentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // 沉浸式：内容绘制到状态栏 / 导航栏之下，由 Flutter 侧按 MediaQuery.padding 自行避让。
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        super.onCreate(savedInstanceState)
+    }
+
     var volumeListen = VolumeListen()
     var listening = false
 

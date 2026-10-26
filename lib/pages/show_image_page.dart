@@ -8,7 +8,7 @@ import 'package:pica_comic/tools/translations.dart';
 
 MiuixSmallTopAppBar _buildImageTopBar(BuildContext context,
     {List<Widget>? actions}) {
-  return MiuixSmallTopAppBar(
+  return MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
     title: "图片".tl,
     navigationIcon: MiuixIconButton(
       child: MiuixIcon(

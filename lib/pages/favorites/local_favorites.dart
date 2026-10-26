@@ -1061,7 +1061,7 @@ class _LocalFavoritesFolderState extends State<LocalFavoritesFolder> {
               key: Key(comics[index].target),
             ));
     return MiuixScaffold(
-      topBar: MiuixSmallTopAppBar(
+      topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
         title: widget.name,
         navigationIcon: Navigator.of(context).canPop()
             ? MiuixIconButton(

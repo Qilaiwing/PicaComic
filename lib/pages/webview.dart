@@ -150,7 +150,7 @@ class _AppWebviewState extends State<AppWebview> {
     }
 
     return MiuixScaffold(
-      topBar: !useCustomAppBar ? MiuixSmallTopAppBar(
+      topBar: !useCustomAppBar ? MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
         title: title,
         navigationIcon: MiuixIconButton(
           child: MiuixIcon(

@@ -104,6 +104,9 @@ class ComicsPageLogic<T> extends StateController {
 /// 漫画列表页面
 ///
 /// T为漫画信息模型
+/// 顶栏内筛选 Chip 行的统一高度。
+const double kOptionRowHeight = 48;
+
 abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
   const ComicsPage({super.key});
 
@@ -129,6 +132,12 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
   Widget? get tailing => null;
 
   Widget? get header => null;
+
+  /// 固定在标题栏底部的筛选/Tab 行（随顶栏固定，不会被顶栏盖住）。
+  Widget? get pinnedHeader => null;
+
+  /// [pinnedHeader] 的高度。
+  double get pinnedHeaderHeight => 0;
 
   bool get showPageIndicator => true;
 
@@ -176,6 +185,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
             return Column(
               children: [
                 if (title != null) const Appbar(title: Text("")),
+                if (pinnedHeader != null)
+                  SizedBox(height: pinnedHeaderHeight, child: pinnedHeader),
                 removeSliver(header) ?? const SizedBox(),
                 const Expanded(
                   child: Center(
@@ -215,6 +226,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       SliverAppbar(
                         title: Text(title!),
                         actions: tailing != null ? [tailing!] : null,
+                        bottom: pinnedHeader,
+                        bottomHeight: pinnedHeaderHeight,
                       ),
                     if (header != null) header!,
                     SliverFillRemaining(
@@ -230,6 +243,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                     SliverAppbar(
                       title: Text(title!),
                       actions: tailing != null ? [tailing!] : null,
+                      bottom: pinnedHeader,
+                      bottomHeight: pinnedHeaderHeight,
                     ),
                   if (header != null) header!,
                   SliverGrid(
@@ -273,6 +288,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       SliverAppbar(
                         title: Text(title!),
                         actions: tailing != null ? [tailing!] : null,
+                        bottom: pinnedHeader,
+                        bottomHeight: pinnedHeaderHeight,
                       ),
                     if (header != null) header!,
                     SliverFillRemaining(
@@ -288,6 +305,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                     SliverAppbar(
                       title: Text(title!),
                       actions: tailing != null ? [tailing!] : null,
+                      bottom: pinnedHeader,
+                      bottomHeight: pinnedHeaderHeight,
                     ),
                   if (header != null) header!,
                   if (showPageIndicator &&

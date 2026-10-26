@@ -132,7 +132,7 @@ class _AppbarState extends State<Appbar> {
     if (widget.backgroundColor != Colors.transparent) {
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final baseColor =
-          widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
+          widget.backgroundColor ?? MiuixTheme.of(context).colors.background;
       final translucentColor = baseColor.withOpacity(isDark ? 0.45 : 0.52);
       return ClipRect(
         child: BackdropFilter(
@@ -160,6 +160,13 @@ class _AppbarState extends State<Appbar> {
   }
 }
 
+/// 统一的大标题 Sliver 顶栏（全项目子页面共用）。
+///
+/// - 背景延伸到状态栏下（沉浸式），颜色取 Miuix 页面底色，避免与页面割裂；
+/// - 大标题随滚动上移淡出，布局与 [MiuixTopAppBar] 一致：折叠带 52 + 标题行高
+///   + 6，标题行高按字体实测，不再写死 bottom 偏移，避免字形（如 g）被裁掉；
+/// - [bottom]（如筛选 Chip / Tab 行）作为顶栏的一部分固定显示，高度计入
+///   min/maxExtent，滚动时不会被顶栏盖住。
 class SliverAppbar extends StatelessWidget {
   const SliverAppbar({
     super.key,
@@ -170,6 +177,8 @@ class SliverAppbar extends StatelessWidget {
     this.actions,
     this.color,
     this.radius = 0,
+    this.bottom,
+    this.bottomHeight = 0,
   });
 
   final Widget? leading;
@@ -186,8 +195,15 @@ class SliverAppbar extends StatelessWidget {
 
   final double radius;
 
+  /// 固定在顶栏底部的附加内容（Tab / 筛选 Chip 行）。
+  final Widget? bottom;
+
+  /// [bottom] 的高度。
+  final double bottomHeight;
+
   @override
   Widget build(BuildContext context) {
+    final textScaler = MediaQuery.textScalerOf(context);
     return SliverPersistentHeader(
       pinned: true,
       delegate: _MySliverAppBarDelegate(
@@ -197,14 +213,25 @@ class SliverAppbar extends StatelessWidget {
         leftSmallTitle: leftSmallTitle,
         actions: actions,
         topPadding: MediaQuery.of(context).padding.top,
-        color: color,
+        color: color ?? MiuixTheme.of(context).colors.background,
         radius: radius,
+        bottom: bottom,
+        bottomHeight: bottom == null ? 0 : bottomHeight,
+        largeTitleLineHeight:
+            textScaler.scale(_kLargeTitleFontSize) * _kLargeTitleLineHeight,
       ),
     );
   }
 }
 
 const _kAppBarHeight = 52.0;
+
+/// 大标题字号 / 行高（与 [MiuixTopAppBar] 一致）。
+const _kLargeTitleFontSize = 25.0;
+const _kLargeTitleLineHeight = 1.3;
+
+/// 大标题与折叠带、底部之间的统一间距。
+const _kLargeTitleBottomPadding = 6.0;
 
 class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget? leading;
@@ -223,6 +250,12 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   final double radius;
 
+  final Widget? bottom;
+
+  final double bottomHeight;
+
+  final double largeTitleLineHeight;
+
   _MySliverAppBarDelegate({
     this.leading,
     required this.title,
@@ -232,20 +265,30 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     this.color,
     required this.topPadding,
     this.radius = 0,
+    this.bottom,
+    this.bottomHeight = 0,
+    required this.largeTitleLineHeight,
   });
+
+  double get _expansion => largeTitleLineHeight + _kLargeTitleBottomPadding;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final maxShrink = maxExtent - minExtent;
-    final progress =
-        maxShrink > 0 ? (shrinkOffset / maxShrink).clamp(0.0, 1.0) : 0.0;
+    final shrink = shrinkOffset.clamp(0.0, maxShrink);
+    final progress = maxShrink > 0 ? (shrink / maxShrink).clamp(0.0, 1.0) : 0.0;
     final largeTitleOpacity = (1.0 - progress * 2.2).clamp(0.0, 1.0);
     final smallTitleOpacity = ((progress - 0.45) / 0.55).clamp(0.0, 1.0);
 
-    final baseColor = color ?? Theme.of(context).scaffoldBackgroundColor;
-    final translucentColor = baseColor.withOpacity(isDark ? 0.45 : 0.52);
+    final baseColor = color ?? MiuixTheme.of(context).colors.background;
+    // 顶部未滚动时与页面同色，滚动后转为半透明毛玻璃。
+    final scrolled = overlapsContent || progress > 0.02;
+    final bgColor = scrolled
+        ? baseColor.withValues(alpha: isDark ? 0.72 : 0.78)
+        : baseColor;
+    final fg = isDark ? Colors.white : const Color(0xFF111111);
 
     return SizedBox.expand(
       child: ClipRect(
@@ -253,7 +296,7 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
           filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
           child: Container(
             decoration: BoxDecoration(
-              color: translucentColor,
+              color: bgColor,
               border: (overlapsContent || progress >= 0.9)
                   ? Border(
                       bottom: BorderSide(
@@ -267,6 +310,40 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
             ),
             child: Stack(
               children: [
+                // 大标题层：位于折叠带下方，随收缩上移并在折叠带下缘被裁掉。
+                Positioned(
+                  top: topPadding + _kAppBarHeight - 8,
+                  left: 0,
+                  right: 0,
+                  height: largeTitleLineHeight + 8,
+                  child: ClipRect(
+                    child: Stack(
+                      children: [
+                        if (largeTitleOpacity > 0.01)
+                          Positioned(
+                            left: 24,
+                            right: 24,
+                            top: 8 - shrink,
+                            child: Opacity(
+                              opacity: largeTitleOpacity,
+                              child: DefaultTextStyle(
+                                style: TextStyle(
+                                  fontSize: _kLargeTitleFontSize,
+                                  height: _kLargeTitleLineHeight,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.4,
+                                  color: fg,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                child: largeTitle ?? title,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
                 Positioned(
                   top: topPadding,
                   left: 0,
@@ -293,9 +370,7 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                                           fontWeight: FontWeight.w600,
                                           letterSpacing: -0.2,
                                           height: 1.2,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF111111),
+                                          color: fg,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -317,15 +392,13 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                                           10 * (1 - smallTitleOpacity) - 1.0),
                                       child: DefaultTextStyle(
                                         style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 17,
                                           fontWeight: FontWeight.w600,
                                           letterSpacing: -0.2,
                                           height: 1.2,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF111111),
+                                          color: fg,
                                         ),
-                                        maxLines: 2,
+                                        maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
                                         child: title,
@@ -348,9 +421,7 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                                                 .byName('chevronBackward') ??
                                             MiuixIcons.os4.back,
                                         size: 20,
-                                        tint: isDark
-                                            ? Colors.white
-                                            : const Color(0xFF111111),
+                                        tint: fg,
                                       ),
                                     ),
                                   )
@@ -367,26 +438,13 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                     ],
                   ),
                 ),
-                if (largeTitleOpacity > 0.01)
+                if (bottom != null)
                   Positioned(
-                    left: 24,
-                    right: 24,
-                    bottom: 18 + (1 - largeTitleOpacity) * 6,
-                    child: Opacity(
-                      opacity: largeTitleOpacity,
-                      child: DefaultTextStyle(
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: -0.4,
-                          color:
-                              isDark ? Colors.white : const Color(0xFF111111),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        child: largeTitle ?? title,
-                      ),
-                    ),
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: bottomHeight,
+                    child: bottom!,
                   ),
               ],
             ),
@@ -397,17 +455,23 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 88.0 + topPadding;
+  double get maxExtent =>
+      topPadding + _kAppBarHeight + _expansion + bottomHeight;
 
   @override
-  double get minExtent => _kAppBarHeight + topPadding;
+  double get minExtent => topPadding + _kAppBarHeight + bottomHeight;
 
   @override
   bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) {
     return oldDelegate is! _MySliverAppBarDelegate ||
         leading != oldDelegate.leading ||
         title != oldDelegate.title ||
-        actions != oldDelegate.actions;
+        actions != oldDelegate.actions ||
+        bottom != oldDelegate.bottom ||
+        bottomHeight != oldDelegate.bottomHeight ||
+        color != oldDelegate.color ||
+        topPadding != oldDelegate.topPadding ||
+        largeTitleLineHeight != oldDelegate.largeTitleLineHeight;
   }
 }
 

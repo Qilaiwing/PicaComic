@@ -1155,7 +1155,7 @@ class _FoldersReorderPageState extends State<_FoldersReorderPage> {
             ));
 
     return MiuixScaffold(
- topBar: MiuixSmallTopAppBar(
+ topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
  title: "排序".tl,
  navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
 ),

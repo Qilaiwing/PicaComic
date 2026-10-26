@@ -236,7 +236,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
   Widget buildLeft() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return MiuixScaffold(
-      topBar: MiuixTopAppBar(
+      topBar: MiuixTopAppBar(color: MiuixTheme.of(context).colors.background, 
         title: "设置".tl,
         scrollBehavior: _leftBehavior,
         blurred: true,
@@ -656,7 +656,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
       final isDark = Theme.of(context).brightness == Brightness.dark;
       return MiuixScaffold(
         containerColor: Theme.of(context).scaffoldBackgroundColor,
-        topBar: MiuixTopAppBar(
+        topBar: MiuixTopAppBar(color: MiuixTheme.of(context).colors.background, 
           title: categories[currentPage].tl,
           scrollBehavior: _rightBehavior,
           blurred: true,
