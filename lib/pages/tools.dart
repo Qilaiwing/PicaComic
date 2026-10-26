@@ -23,13 +23,7 @@ void openTool() {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 14),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
+      child: MiuixPressable(shape: const MiuixSquircleBorder(cornerRadius: 14), onPressed: onTap, child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: ShapeDecoration(
               shape: MiuixSquircleBorder(
@@ -75,9 +69,7 @@ void openTool() {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
+          )),
     );
   }
 
@@ -163,134 +155,132 @@ void openTool() {
             buildToolItem(
               icon: Icons.link,
               title: "打开链接".tl,
-              onTap: () {
-                final FocusNode focusNode = FocusNode();
-                showDialog(
+              onTap: () async {
+                final controller = TextEditingController();
+                String? errorText;
+                String? validateText() {
+                  var text = controller.text;
+                  if (text == "") {
+                    return null;
+                  }
+
+                  if (!text.contains("http://") &&
+                      !text.contains("https://")) {
+                    text = "https://$text";
+                  }
+
+                  if (!text.isURL) {
+                    return "不支持的链接".tl;
+                  }
+                  var uri = Uri.parse(text);
+                  if (![
+                    "exhentai.org",
+                    "e-hentai.org",
+                    "hitomi.la",
+                    "nhentai.net",
+                    "nhentai.xxx"
+                  ].contains(uri.host)) {
+                    return "不支持的链接".tl;
+                  }
+                  return null;
+                }
+
+                final ok = await showMiuixDialog<bool>(
                   context: App.globalContext!,
-                  builder: (context) {
-                    final controller = TextEditingController();
-                    focusNode.requestFocus();
-
-                    validateText() {
-                      var text = controller.text;
-                      if (text == "") {
-                        return null;
-                      }
-
-                      if (!text.contains("http://") &&
-                          !text.contains("https://")) {
-                        text = "https://$text";
-                      }
-
-                      if (!text.isURL) {
-                        return "不支持的链接".tl;
-                      }
-                      var uri = Uri.parse(text);
-                      if (![
-                        "exhentai.org",
-                        "e-hentai.org",
-                        "hitomi.la",
-                        "nhentai.net",
-                        "nhentai.xxx"
-                      ].contains(uri.host)) {
-                        return "不支持的链接".tl;
-                      }
-                      return null;
-                    }
-
-                    void Function(void Function())? stateSetter;
-
-                    onFinish() {
-                      if (validateText() != null) {
-                        stateSetter?.call(() {});
-                      } else {
-                        App.globalBack();
-                        var text = controller.text;
-                        if (!text.contains("http://") &&
-                            !text.contains("https://")) {
-                          text = "https://$text";
+                  title: "输入链接".tl,
+                  contentBuilder: (context, close) => StatefulBuilder(
+                    builder: (context, setState) {
+                      void onFinish() {
+                        errorText = validateText();
+                        if (errorText != null) {
+                          setState(() {});
+                        } else {
+                          close(true);
                         }
-                        App.globalBack();
-                        handleAppLinks(Uri.parse(text));
                       }
-                    }
 
-                    return AlertDialog(
-                      shape: const MiuixSquircleBorder(cornerRadius: 20),
-                      title: Text("输入链接".tl),
-                      content: StatefulBuilder(
-                        builder: (BuildContext context,
-                            void Function(void Function()) setState) {
-                          stateSetter = setState;
-                          return TextField(
-                            focusNode: focusNode,
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MiuixTextField(
                             controller: controller,
-                            decoration: InputDecoration(
-                              errorText: validateText(),
-                            ),
+                            autofocus: true,
+                            singleLine: true,
+                            onChanged: (_) {
+                              if (errorText != null) {
+                                setState(() => errorText = validateText());
+                              }
+                            },
                             onSubmitted: (s) => onFinish(),
-                          );
-                        },
-                      ),
-                      actions: [
-                        MiuixTextButton("打开".tl, onPressed: onFinish),
-                      ],
-                    );
-                  },
+                          ),
+                          if (errorText != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                              child: Text(
+                                errorText!,
+                                style: TextStyle(
+                                    color: context.colorScheme.error,
+                                    fontSize: 12),
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: MiuixTextButton("打开".tl,
+                                colors: MiuixButtonDefaults.buttonColorsPrimary(
+                                    context),
+                                onPressed: onFinish),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 );
+                if (ok != true || validateText() != null) return;
+                var text = controller.text;
+                if (!text.contains("http://") && !text.contains("https://")) {
+                  text = "https://$text";
+                }
+                App.globalBack();
+                handleAppLinks(Uri.parse(text));
               },
             ),
             buildToolItem(
               icon: Icons.numbers,
               title: "禁漫漫画ID".tl,
-              onTap: () {
+              onTap: () async {
                 var controller = TextEditingController();
-                final FocusNode focusNode = FocusNode();
-                showDialog(
+                final action = await showMiuixDialog<String>(
                   context: context,
-                  builder: (context) {
-                    focusNode.requestFocus();
-                    return AlertDialog(
-                      shape: const MiuixSquircleBorder(cornerRadius: 20),
-                      title: Text("输入禁漫漫画ID".tl),
-                      content: Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                        child: TextField(
-                          focusNode: focusNode,
-                          keyboardType: TextInputType.number,
-                          controller: controller,
-                          onEditingComplete: () {
-                            App.globalBack();
-                            if (controller.text.isNum) {
-                              context.to(() => JmComicPage(controller.text));
-                            } else {
-                              showToast(message: "输入的ID不是数字".tl);
-                            }
-                          },
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                          ],
-                          decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              labelText: "ID",
-                              prefix: Text("JM")),
-                        ),
-                      ),
-                      actions: [
-                        MiuixTextButton("提交".tl, onPressed: () {
-                              App.globalBack();
-                              if (controller.text.isNum) {
-                                App.globalBack();
-                                App.mainNavigatorKey?.currentContext
-                                    ?.to(() => JmComicPage(controller.text));
-                              } else {
-                                showToast(message: "输入的ID不是数字".tl);
-                              }
-                            })
-                      ],
-                    );
-                  },
+                  title: "输入禁漫漫画ID".tl,
+                  contentBuilder: (context, close) => MiuixTextField(
+                    controller: controller,
+                    autofocus: true,
+                    singleLine: true,
+                    keyboardType: TextInputType.number,
+                    label: "ID",
+                    leadingIcon: const Padding(
+                      padding: EdgeInsets.only(left: 12, right: 4),
+                      child: Text("JM"),
+                    ),
+                    onSubmitted: (_) => close("edit"),
+                  ),
+                  actionsBuilder: (context, close) => [
+                    MiuixTextButton("提交".tl,
+                        colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                        onPressed: () => close("submit")),
+                  ],
                 );
+                if (action == null) return;
+                final id = controller.text.replaceAll(RegExp("[^0-9]"), "");
+                if (id.isNum) {
+                  if (action == "submit") App.globalBack();
+                  App.mainNavigatorKey?.currentContext
+                      ?.to(() => JmComicPage(id));
+                } else {
+                  showToast(message: "输入的ID不是数字".tl);
+                }
               },
             ),
             const SizedBox(height: 12),

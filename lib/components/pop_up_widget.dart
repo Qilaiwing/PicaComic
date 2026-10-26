@@ -123,7 +123,7 @@ class _PopUpWidgetScaffoldState extends State<PopUpWidgetScaffold> {
                 const SizedBox(
                   width: 8,
                 ),
-                Tooltip(
+                AppTooltip(
                   message: "返回".tl,
                   child: MiuixIconButton(
                     onPressed: () => Navigator.of(context).canPop()

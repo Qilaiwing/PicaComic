@@ -73,7 +73,7 @@ class _AppWebviewState extends State<AppWebview> {
     bool useCustomAppBar = !UiMode.m1(context) && !widget.singlePage;
 
     final actions = [
-      Tooltip(
+      AppTooltip(
         message: "More",
         child: Builder(builder: (buttonContext) => MiuixIconButton(
           child: const Icon(Icons.more_horiz),
@@ -149,12 +149,21 @@ class _AppWebviewState extends State<AppWebview> {
       );
     }
 
-    return Scaffold(
-      appBar: !useCustomAppBar ? AppBar(
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,),
+    return MiuixScaffold(
+      topBar: !useCustomAppBar ? MiuixSmallTopAppBar(
+        title: title,
+        navigationIcon: MiuixIconButton(
+          child: MiuixIcon(
+            vector: MiuixIcons.os4.chevronBackward,
+            size: 20,
+          ),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         actions: actions,
       ) : null,
-      body: body
+      content: (padding) => !useCustomAppBar
+          ? Padding(padding: EdgeInsets.only(top: padding.top), child: body)
+          : body,
     );
   }
 }

@@ -32,8 +32,8 @@ class _ImageFavoritesPageState extends State<ImageFavoritesPage> {
       init: SimpleController(),
       builder: (controller) {
         final images = ImageFavoriteManager.getAll();
-        return Scaffold(
-          body: SmoothCustomScrollView(
+        return MiuixScaffold(
+          content: (_) => SmoothCustomScrollView(
             slivers: [
               SliverAppbar(
                 title: Text("图片收藏".tl),
@@ -75,9 +75,8 @@ class FavoriteImageTile extends StatelessWidget {
             shape: MiuixSquircleBorder(
               cornerRadius: 14,
               side: BorderSide(
-                color: isDark
-                    ? const Color(0x18FFFFFF)
-                    : const Color(0x0A000000),
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
                 width: 0.6,
               ),
             ),
@@ -132,15 +131,12 @@ class FavoriteImageTile extends StatelessWidget {
                 ),
               ),
               Positioned.fill(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onTap,
-                    onLongPress: onLongTap,
+                child: GestureDetector(
                     onSecondaryTapDown: onSecondaryTap,
-                    child: const SizedBox.expand(),
-                  ),
-                ),
+                    child: MiuixPressable(
+                        onPressed: onTap,
+                        onLongPress: onLongTap,
+                        child: const SizedBox.expand())),
               ),
             ],
           ),
@@ -151,8 +147,8 @@ class FavoriteImageTile extends StatelessWidget {
 
   void onTap() {
     var type = image.id.split("-")[0];
-    _readWithKey(type, image.id.replaceFirst("$type-", ""), image.ep, image.page,
-        image.title, image.otherInfo);
+    _readWithKey(type, image.id.replaceFirst("$type-", ""), image.ep,
+        image.page, image.title, image.otherInfo);
   }
 
   void _readWithKey(String key, String target, int ep, int page, String title,

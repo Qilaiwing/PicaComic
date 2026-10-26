@@ -15,8 +15,8 @@ class LogsPage extends StatefulWidget {
 class _LogsPageState extends State<LogsPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SmoothCustomScrollView(
+    return MiuixScaffold(
+      content: (_) => SmoothCustomScrollView(
         slivers: [
           SliverAppbar(
             title: const Text("Logs"),

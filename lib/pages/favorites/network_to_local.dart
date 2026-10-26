@@ -86,25 +86,21 @@ class _ChooseNetworkFolderWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Appbar(
-        title: Text("选择收藏夹".tl),
-        actions: [
-          IconButton(
-            onPressed: context.pop,
-            icon: const Icon(Icons.close),
-          )
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(
+ title: "选择收藏夹".tl,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+ actions: [
+          MiuixIconButton(onPressed: context.pop, child: const Icon(Icons.close))
         ],
-      ),
-      body: Column(
+),
+ content: (padding) => Padding(
+ padding: padding,
+ child: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child: ExpansionPanelList(
-                materialGapSize: 0,
-                expandedHeaderPadding: EdgeInsets.zero,
-                expansionCallback: (i, value) =>
-                    setState(() => isExpanded[i] = value),
+              child: Column(
                 children: _folders.map((e) => buildItem(e)).toList(),
               ),
             ),
@@ -137,19 +133,38 @@ class _ChooseNetworkFolderWidgetState
             SizedBox(height: MediaQuery.of(context).padding.bottom)
         ],
       ),
-    );
+ ),
+);
   }
 
-  ExpansionPanel buildItem(FavoriteData data) {
-    return ExpansionPanel(
-        headerBuilder: (context, expand) {
-          return MiuixBasicComponent(
-                   title: data.title,
-                 );
-        },
-        isExpanded: isExpanded[_folders.indexOf(data)],
-        body: buildBody(data),
-        canTapOnHeader: true);
+  Widget buildItem(FavoriteData data) {
+    final i = _folders.indexOf(data);
+    final expand = isExpanded[i];
+    return MiuixCard(
+      insideMargin: EdgeInsets.zero,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MiuixBasicComponent(
+            title: data.title,
+            endActions: [
+              AnimatedRotation(
+                turns: expand ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: const Icon(Icons.expand_more),
+              ),
+            ],
+            onClick: () => setState(() => isExpanded[i] = !expand),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.fastOutSlowIn,
+            alignment: Alignment.topCenter,
+            child: expand ? buildBody(data) : const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
+    ).paddingHorizontal(12).paddingVertical(4);
   }
 
   Widget buildTile(String key, String title) {

@@ -363,19 +363,19 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
     }
 
     if (withRefreshFloatingButton) {
-      return Scaffold(
-        floatingActionButton: FloatingActionButton(
-          child: const Icon(Icons.refresh),
+      return MiuixScaffold(
+        floatingActionButton: MiuixFloatingActionButton(
+          child: const Icon(Icons.refresh, color: Colors.white),
           onPressed: () {
             refresh();
           },
         ),
-        body: body,
+        content: (_) => body,
       );
     } else {
+      // 保留 Material：列表里的 InkWell 等需要 Material 祖先；颜色改用 Miuix 背景色。
       return Material(
-        child: body,
-      );
+          color: MiuixTheme.of(context).colors.background, child: body);
     }
   }
 
@@ -393,19 +393,20 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                 const SizedBox(
                   width: 16,
                 ),
-                MiuixButton(onPressed: () => prevPage(logic), child: Text("上一页".tl)),
+                MiuixButton(
+                    onPressed: () => prevPage(logic), child: Text("上一页".tl)),
                 const Spacer(),
-                ActionChip(
-                  label: Text(
+                MiuixButton(
+                  minHeight: 36,
+                  insideMargin:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  onPressed: () => selectPage(logic),
+                  child: Text(
                       "${"页面".tl}: ${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
-                  onPressed: () async {
-                    selectPage(logic);
-                  },
-                  elevation: 1,
-                  side: BorderSide.none,
                 ),
                 const Spacer(),
-                MiuixButton(onPressed: () => nextPage(logic), child: Text("下一页".tl)),
+                MiuixButton(
+                    onPressed: () => nextPage(logic), child: Text("下一页".tl)),
                 const SizedBox(
                   width: 16,
                 ),
@@ -425,63 +426,59 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
               ? const Offset(0, 0)
               : const Offset(1.5, 0),
           duration: const Duration(milliseconds: 200),
-          child: Material(
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(16),
-            elevation: 3,
-            child: SizedBox(
-              height: 156,
-              width: 58,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16)),
-                      onTap: () {
-                        prevPage(logic);
-                      },
-                      child: const SizedBox.expand(
-                        child: Center(
-                          child: Icon(Icons.keyboard_arrow_left),
-                        ),
-                      ),
+          child: MiuixSurface(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              cornerRadius: 16,
+              shadowElevation: 3,
+              child: SizedBox(
+                height: 156,
+                width: 58,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: MiuixPressable(
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16)),
+                          onPressed: () {
+                            prevPage(logic);
+                          },
+                          child: const SizedBox.expand(
+                            child: Center(
+                              child: Icon(Icons.keyboard_arrow_left),
+                            ),
+                          )),
                     ),
-                  ),
-                  const MiuixHorizontalDivider(),
-                  Expanded(
-                      child: InkWell(
-                    onTap: () {
-                      selectPage(logic);
-                    },
-                    child: SizedBox.expand(
-                      child: Center(
-                        child: Text(
-                            "${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
-                      ),
+                    const MiuixHorizontalDivider(),
+                    Expanded(
+                        child: MiuixPressable(
+                            onPressed: () {
+                              selectPage(logic);
+                            },
+                            child: SizedBox.expand(
+                              child: Center(
+                                child: Text(
+                                    "${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
+                              ),
+                            ))),
+                    const MiuixHorizontalDivider(),
+                    Expanded(
+                      child: MiuixPressable(
+                          borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16)),
+                          onPressed: () {
+                            nextPage(logic);
+                          },
+                          child: const SizedBox.expand(
+                            child: Center(
+                              child: Icon(Icons.keyboard_arrow_right),
+                            ),
+                          )),
                     ),
-                  )),
-                  const MiuixHorizontalDivider(),
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16)),
-                      onTap: () {
-                        nextPage(logic);
-                      },
-                      child: const SizedBox.expand(
-                        child: Center(
-                          child: Icon(Icons.keyboard_arrow_right),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+                  ],
+                ),
+              )),
         ));
   }
 
@@ -549,8 +546,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
         children: [
           const Icon(Icons.search_off, size: 56),
           const SizedBox(height: 12),
-          Text("无匹配结果".tl,
-              style: Theme.of(context).textTheme.titleMedium),
+          Text("无匹配结果".tl, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 6),
         ],
       ),
@@ -558,7 +554,8 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
   }
 
   Widget buildItem(BuildContext context, T item) {
-    return buildComicTile(context, item, sourceKey, addonMenuOptions: addonMenuOptions);
+    return buildComicTile(context, item, sourceKey,
+        addonMenuOptions: addonMenuOptions);
   }
 }
 
@@ -620,7 +617,7 @@ class _SliverGridComics extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverGrid(
       delegate: SliverChildBuilderDelegate(
-            (context, index) {
+        (context, index) {
           if (index == comics.length - 1) {
             onLastItemBuild?.call();
           }

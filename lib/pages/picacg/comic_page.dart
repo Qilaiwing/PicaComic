@@ -183,9 +183,7 @@ class PicacgComicPage extends BaseComicPage<ComicItem> {
   }
 
   @override
-  Card? get uploaderInfo => Card(
-        elevation: 0,
-        color: context.colorScheme.inversePrimary,
+  Widget? get uploaderInfo => MiuixCard(colors: MiuixCardColors(color: context.colorScheme.inversePrimary, contentColor: context.colorScheme.onSurface),
         child: SizedBox(
           height: 60,
           child: Row(

@@ -150,39 +150,54 @@ class WRLLogic extends StateController {
   }
 }
 
-class WeekRecommendationList extends StatelessWidget {
+class WeekRecommendationList extends StatefulWidget {
   const WeekRecommendationList(this.id, {Key? key}) : super(key: key);
   final String id;
 
   @override
+  State<WeekRecommendationList> createState() => _WeekRecommendationListState();
+}
+
+class _WeekRecommendationListState extends State<WeekRecommendationList> {
+  String get id => widget.id;
+  int _tabIndex = 0;
+  final _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-        length: 3,
-        child: Column(
-          children: [
-            TabBar(tabs: [
-              Tab(
-                text: "韩漫".tl,
-              ),
-              Tab(
-                text: "日漫".tl,
-              ),
-              Tab(
-                text: "其它".tl,
-              )
-            ]),
-            Expanded(
-                child: StateBuilder<WRLLogic>(
-                    init: WRLLogic(),
-                    tag: id,
-                    builder: (logic) {
-                      return TabBarView(children: [
-                        for (int i = 0; i <= 2; i++)
-                          buildPage(i, logic, context)
-                      ]);
-                    }))
-          ],
-        ));
+    return Column(
+      children: [
+        MiuixTabRow(
+          tabs: ["韩漫".tl, "日漫".tl, "其它".tl],
+          selectedTabIndex: _tabIndex,
+          onTabSelected: (i) {
+            setState(() => _tabIndex = i);
+            _pageController.animateToPage(i,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOut);
+          },
+        ).paddingHorizontal(12),
+        Expanded(
+            child: StateBuilder<WRLLogic>(
+                init: WRLLogic(),
+                tag: id,
+                builder: (logic) {
+                  return PageView(
+                    controller: _pageController,
+                    onPageChanged: (i) => setState(() => _tabIndex = i),
+                    children: [
+                      for (int i = 0; i <= 2; i++) buildPage(i, logic, context)
+                    ],
+                  );
+                }))
+      ],
+    );
   }
 
   Widget buildPage(int index, WRLLogic logic, BuildContext context) {

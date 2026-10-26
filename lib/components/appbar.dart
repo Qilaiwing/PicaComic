@@ -84,10 +84,10 @@ class _AppbarState extends State<Appbar> {
                 padding: const EdgeInsets.symmetric(horizontal: 60),
                 child: DefaultTextStyle(
                   style: DefaultTextStyle.of(context).style.copyWith(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.2,
-                  ),
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                      ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -100,17 +100,19 @@ class _AppbarState extends State<Appbar> {
             left: 8,
             child: widget.leading ??
                 (Navigator.of(context).canPop()
-                    ? Tooltip(
+                    ? AppTooltip(
                         message: "返回".tl,
                         child: MiuixIconButton(
                           onPressed: () => Navigator.pop(context),
                           child: MiuixIcon(
-                            vector: MiuixIcons.extended.byName('chevronBackward') ??
-                                MiuixIcons.os4.back,
+                            vector:
+                                MiuixIcons.extended.byName('chevronBackward') ??
+                                    MiuixIcons.os4.back,
                             size: 20,
-                            tint: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : const Color(0xFF111111),
+                            tint:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : const Color(0xFF111111),
                           ),
                         ),
                       )
@@ -129,8 +131,8 @@ class _AppbarState extends State<Appbar> {
     ).paddingTop(context.padding.top);
     if (widget.backgroundColor != Colors.transparent) {
       final isDark = Theme.of(context).brightness == Brightness.dark;
-      final baseColor = widget.backgroundColor ??
-          Theme.of(context).scaffoldBackgroundColor;
+      final baseColor =
+          widget.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
       final translucentColor = baseColor.withOpacity(isDark ? 0.45 : 0.52);
       return ClipRect(
         child: BackdropFilter(
@@ -264,129 +266,134 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
                   : null,
             ),
             child: Stack(
-          children: [
-            Positioned(
-              top: topPadding,
-              left: 0,
-              right: 0,
-              height: _kAppBarHeight,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned.fill(
-                    child: leftSmallTitle
-                        ? Padding(
-                            padding: const EdgeInsets.only(left: 58, right: 54),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Opacity(
-                                opacity: smallTitleOpacity,
-                                child: Transform.translate(
-                                  offset: Offset(0, 10 * (1 - smallTitleOpacity) - 1.0),
-                                  child: DefaultTextStyle(
-                                    style: TextStyle(
-                                      fontSize: 15.5,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: -0.2,
-                                      height: 1.2,
-                                      color: isDark
-                                          ? Colors.white
-                                          : const Color(0xFF111111),
+              children: [
+                Positioned(
+                  top: topPadding,
+                  left: 0,
+                  right: 0,
+                  height: _kAppBarHeight,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned.fill(
+                        child: leftSmallTitle
+                            ? Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 58, right: 54),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Opacity(
+                                    opacity: smallTitleOpacity,
+                                    child: Transform.translate(
+                                      offset: Offset(0,
+                                          10 * (1 - smallTitleOpacity) - 1.0),
+                                      child: DefaultTextStyle(
+                                        style: TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
+                                          height: 1.2,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF111111),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                        child: title,
+                                      ),
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.left,
-                                    child: title,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        : Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 50),
-                              child: Opacity(
-                                opacity: smallTitleOpacity,
-                                child: Transform.translate(
-                                  offset: Offset(0, 10 * (1 - smallTitleOpacity) - 1.0),
-                                  child: DefaultTextStyle(
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: -0.2,
-                                      height: 1.2,
-                                      color: isDark
-                                          ? Colors.white
-                                          : const Color(0xFF111111),
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    child: title,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                  ),
-                  Positioned(
-                    left: 8,
-                    child: leading ??
-                        (Navigator.of(context).canPop()
-                            ? Tooltip(
-                                message: "返回".tl,
-                                child: MiuixIconButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: MiuixIcon(
-                                    vector: MiuixIcons.extended
-                                            .byName('chevronBackward') ??
-                                        MiuixIcons.os4.back,
-                                    size: 20,
-                                    tint: isDark
-                                        ? Colors.white
-                                        : const Color(0xFF111111),
                                   ),
                                 ),
                               )
-                            : const SizedBox()),
-                  ),
-                  if (actions != null)
-                    Positioned(
-                      right: 8,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: actions!,
+                            : Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  child: Opacity(
+                                    opacity: smallTitleOpacity,
+                                    child: Transform.translate(
+                                      offset: Offset(0,
+                                          10 * (1 - smallTitleOpacity) - 1.0),
+                                      child: DefaultTextStyle(
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: -0.2,
+                                          height: 1.2,
+                                          color: isDark
+                                              ? Colors.white
+                                              : const Color(0xFF111111),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        child: title,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            if (largeTitleOpacity > 0.01)
-              Positioned(
-                left: 24,
-                right: 24,
-                bottom: 18 + (1 - largeTitleOpacity) * 6,
-                child: Opacity(
-                  opacity: largeTitleOpacity,
-                  child: DefaultTextStyle(
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.4,
-                      color: isDark ? Colors.white : const Color(0xFF111111),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    child: largeTitle ?? title,
+                      Positioned(
+                        left: 8,
+                        child: leading ??
+                            (Navigator.of(context).canPop()
+                                ? AppTooltip(
+                                    message: "返回".tl,
+                                    child: MiuixIconButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: MiuixIcon(
+                                        vector: MiuixIcons.extended
+                                                .byName('chevronBackward') ??
+                                            MiuixIcons.os4.back,
+                                        size: 20,
+                                        tint: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF111111),
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox()),
+                      ),
+                      if (actions != null)
+                        Positioned(
+                          right: 8,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: actions!,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-          ],
+                if (largeTitleOpacity > 0.01)
+                  Positioned(
+                    left: 24,
+                    right: 24,
+                    bottom: 18 + (1 - largeTitleOpacity) * 6,
+                    child: Opacity(
+                      opacity: largeTitleOpacity,
+                      child: DefaultTextStyle(
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.4,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF111111),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        child: largeTitle ?? title,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 
   @override
@@ -437,75 +444,81 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
     return math.max(widget.height, 53);
   }
 
+  /// MiuixInputField 的展开状态，聚焦后为 true；不主动收起，避免清空输入。
+  bool _expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(FloatingSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF262628) : const Color(0xFFF0F1F5);
-    final border = isDark ? const Color(0x28FFFFFF) : const Color(0x12000000);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       width: double.infinity,
       height: effectiveHeight,
-      child: Container(
-        height: 46,
-        decoration: ShapeDecoration(
-          color: bg,
-          shape: MiuixSquircleBorder(
-            cornerRadius: 23,
-            side: BorderSide(color: border, width: 0.6),
+      child: Row(children: [
+        AppTooltip(
+          message: "返回".tl,
+          child: MiuixIconButton(
+            minWidth: 36,
+            minHeight: 36,
+            onPressed: () => context.pop(),
+            child: MiuixIcon(
+              vector: MiuixIcons.extended.byName('chevronBackward') ??
+                  MiuixIcons.os4.back,
+              size: 20,
+              tint: isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
+            ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Row(children: [
-          Tooltip(
-            message: "返回".tl,
-            child: MiuixIconButton(
-              minWidth: 36,
-              minHeight: 36,
-              onPressed: () => context.pop(),
-              child: MiuixIcon(
-                vector: MiuixIcons.extended.byName('chevronBackward') ??
-                    MiuixIcons.os4.back,
-                size: 20,
-                tint: isDark
-                    ? const Color(0xEEFFFFFF)
-                    : const Color(0xDD000000),
-              ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SizedBox(
+            height: 46,
+            child: MiuixInputField(
+              query: widget.controller.text,
+              label: "Search",
+              expanded: _expanded,
+              onExpandedChange: (v) {
+                if (v != _expanded) setState(() => _expanded = v);
+              },
+              onQueryChange: (s) {
+                widget.controller.value = TextEditingValue(
+                  text: s,
+                  selection: TextSelection.collapsed(offset: s.length),
+                );
+                widget.onChanged?.call(s);
+              },
+              onSearch: widget.onSearch,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Center(
-              child: TextField(
-                controller: widget.controller,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isDark
-                      ? const Color(0xEEFFFFFF)
-                      : const Color(0xDD000000),
-                ),
-                decoration: InputDecoration(
-                  isCollapsed: true,
-                  border: InputBorder.none,
-                  hintText: "Search",
-                  hintStyle: TextStyle(
-                    color: isDark
-                        ? const Color(0x66FFFFFF)
-                        : const Color(0x66000000),
-                    fontSize: 15,
-                  ),
-                ),
-                onSubmitted: (s) {
-                  widget.onSearch(s);
-                },
-                onChanged: widget.onChanged,
-              ),
-            ),
-          ),
-          if (widget.trailing != null) widget.trailing!
-        ]),
-      ),
+        ),
+        if (widget.trailing != null) widget.trailing!
+      ]),
     );
   }
 }
@@ -627,8 +640,8 @@ class _FilledTabBarState extends State<FilledTabBar> {
               builder: (context, controller, physics) {
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
                   controller: controller,
                   physics: physics,
                   child: Row(
@@ -648,18 +661,15 @@ class _FilledTabBarState extends State<FilledTabBar> {
       BuildContext context, int i, bool isDark, Color primaryColor) {
     final isSelected = i == _controller.index;
     final tab = widget.tabs[i];
-    final String text = tab.text ??
-        (tab.child is Text ? (tab.child as Text).data ?? '' : '');
+    final String text =
+        tab.text ?? (tab.child is Text ? (tab.child as Text).data ?? '' : '');
 
     return Padding(
       key: keys[i],
       padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Material(
-        color: Colors.transparent,
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
+      child: MiuixPressable(
+          shape: const StadiumBorder(),
+          onPressed: () {
             onTabClicked(i);
             _scrollToCenter(i);
           },
@@ -698,9 +708,7 @@ class _FilledTabBarState extends State<FilledTabBar> {
                 height: 1.15,
               ),
             ),
-          ),
-        ),
-      ),
+          )),
     );
   }
 }

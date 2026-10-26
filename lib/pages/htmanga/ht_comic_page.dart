@@ -124,9 +124,7 @@ class HtComicPage extends BaseComicPage<HtComicInfo> {
   String? get title => data?.name.removeAllBlank;
 
   @override
-  Card? get uploaderInfo => Card(
-        elevation: 0,
-        color: Theme.of(context).colorScheme.inversePrimary,
+  Widget? get uploaderInfo => MiuixCard(colors: MiuixCardColors(color: Theme.of(context).colorScheme.inversePrimary, contentColor: Theme.of(context).colorScheme.onSurface),
         child: SizedBox(
           height: 60,
           child: Row(

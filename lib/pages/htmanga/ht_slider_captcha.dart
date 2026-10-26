@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_miuix/miuix.dart';
+import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/network/htmanga_network/htmanga_main_network.dart';
 import 'package:pica_comic/network/htmanga_network/models.dart';
 import 'package:pica_comic/tools/translations.dart';
@@ -25,10 +26,10 @@ class HtSliderCaptchaDialog extends StatefulWidget {
 
   /// 弹出滑块验证；通过时返回一次性通行证，取消/失败时返回 null。
   static Future<String?> show(BuildContext context) {
-    return showDialog<String>(
+    return showMiuixDialog<String>(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const HtSliderCaptchaDialog(),
+      dismissible: false,
+      contentBuilder: (context, close) => const HtSliderCaptchaDialog(),
     );
   }
 
@@ -337,14 +338,7 @@ class _HtSliderCaptchaDialogState extends State<HtSliderCaptchaDialog> {
     final theme = MiuixTheme.of(context);
     final colors = theme.colors;
 
-    return Dialog(
-      backgroundColor: colors.background,
-      surfaceTintColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
-      shape: const MiuixSquircleBorder(cornerRadius: 28),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-        child: LayoutBuilder(
+    return LayoutBuilder(
           builder: (context, constraints) {
             // 画布宽度自适应对话框可用宽度（上限 320，与网页端一致）。
             final width = constraints.maxWidth.clamp(200.0, 320.0);
@@ -377,8 +371,6 @@ class _HtSliderCaptchaDialogState extends State<HtSliderCaptchaDialog> {
               ],
             );
           },
-        ),
-      ),
     );
   }
 

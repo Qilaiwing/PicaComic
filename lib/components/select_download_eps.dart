@@ -40,52 +40,51 @@ class _SelectDownloadChapterState extends State<SelectDownloadChapter> {
               itemBuilder: (BuildContext context, int i) {
                 return Padding(
                   padding: const EdgeInsets.all(4),
-                  child: InkWell(
-                    borderRadius: const BorderRadius.all(Radius.circular(16)),
-                    onTap: widget.downloadedEps.contains(i)
-                        ? null
-                        : () {
-                            setState(() {
-                              if (selected.contains(i)) {
-                                selected.remove(i);
-                              } else {
-                                selected.add(i);
-                              }
-                            });
-                          },
-                    child: AnimatedContainer(
-                      decoration: BoxDecoration(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16)),
-                        color: (selected.contains(i) ||
-                                widget.downloadedEps.contains(i))
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                      ),
-                      duration: const Duration(milliseconds: 200),
-                      child: Row(
-                        children: [
-                          const SizedBox(
-                            width: 16,
-                          ),
-                          Expanded(
-                            child: Text(
-                              widget.eps[i],
-                              overflow: TextOverflow.ellipsis,
+                  child: MiuixPressable(
+                      borderRadius: const BorderRadius.all(Radius.circular(16)),
+                      onPressed: widget.downloadedEps.contains(i)
+                          ? null
+                          : () {
+                              setState(() {
+                                if (selected.contains(i)) {
+                                  selected.remove(i);
+                                } else {
+                                  selected.add(i);
+                                }
+                              });
+                            },
+                      child: AnimatedContainer(
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16)),
+                          color: (selected.contains(i) ||
+                                  widget.downloadedEps.contains(i))
+                              ? Theme.of(context).colorScheme.primaryContainer
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                        ),
+                        duration: const Duration(milliseconds: 200),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
                             ),
-                          ),
-                          if (selected.contains(i)) const Icon(Icons.done),
-                          if (widget.downloadedEps.contains(i))
-                            const Icon(Icons.download_done),
-                          const SizedBox(
-                            width: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                            Expanded(
+                              child: Text(
+                                widget.eps[i],
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (selected.contains(i)) const Icon(Icons.done),
+                            if (widget.downloadedEps.contains(i))
+                              const Icon(Icons.download_done),
+                            const SizedBox(
+                              width: 16,
+                            ),
+                          ],
+                        ),
+                      )),
                 );
               },
               itemCount: widget.eps.length,

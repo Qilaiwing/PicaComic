@@ -34,28 +34,31 @@ class _ToastOverlay extends StatelessWidget {
       right: 0,
       child: Align(
         alignment: Alignment.bottomCenter,
+        // Miuix 表面 + 阴影；透明 Material 只为 Text 提供默认文字样式。
         child: Material(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
-          shape: const MiuixSquircleBorder(cornerRadius: 20),
-          elevation: 3,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) icon!.paddingRight(8),
-                Text(
-                  message,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w500),
-                  maxLines: 3,
+            type: MaterialType.transparency,
+            child: MiuixSurface(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              cornerRadius: 20,
+              shadowElevation: 3,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) icon!.paddingRight(8),
+                    Text(
+                      message,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w500),
+                      maxLines: 3,
+                    ),
+                    if (trailing != null) trailing!.paddingLeft(8)
+                  ],
                 ),
-                if (trailing != null) trailing!.paddingLeft(8)
-              ],
-            ),
-          ),
-        ),
+              ),
+            )),
       ),
     );
   }
@@ -173,8 +176,8 @@ LoadingDialogController showLoadingDialog(BuildContext context,
       context: context,
       barrierDismissible: barrierDismissible,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: const MiuixSquircleBorder(cornerRadius: 24),
+        return _MiuixDialogShell(
+          cornerRadius: 24,
           child: Container(
             width: 100,
             padding: const EdgeInsets.all(16.0),
@@ -194,11 +197,10 @@ LoadingDialogController showLoadingDialog(BuildContext context,
                 ),
                 const Spacer(),
                 if (allowCancel)
-                  MiuixTextButton(cancelButtonText.tl,
-                      onPressed: () {
-                        controller.close();
-                        onCancel?.call();
-                      })
+                  MiuixTextButton(cancelButtonText.tl, onPressed: () {
+                    controller.close();
+                    onCancel?.call();
+                  })
               ],
             ),
           ),
@@ -248,13 +250,11 @@ class ContentDialog extends StatelessWidget {
         const SizedBox(height: 16),
       ],
     );
-    return Dialog(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
+    return _MiuixDialogShell(
+      color: Theme.of(context).brightness == Brightness.dark
           ? const Color(0xFF1C1C1E)
           : Colors.white,
-      elevation: 0,
-      surfaceTintColor: Colors.transparent,
-      shape: const MiuixSquircleBorder(cornerRadius: 28),
+      cornerRadius: 28,
       insetPadding: context.width < 400
           ? const EdgeInsets.symmetric(horizontal: 4)
           : const EdgeInsets.symmetric(horizontal: 16),
@@ -308,8 +308,8 @@ Future<T?> _pushMiuixOverlayRoute<T>(
       barrierDismissible: false,
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
-      pageBuilder: (context, _, __) => _MiuixOverlayRouteHost<T>(
-          builder: builder, completer: completer),
+      pageBuilder: (context, _, __) =>
+          _MiuixOverlayRouteHost<T>(builder: builder, completer: completer),
     ),
   )
       .then((value) {
@@ -512,4 +512,79 @@ Future<int?> showMiuixMenu({
       ),
     );
   }, useRootNavigator: useRootNavigator);
+}
+
+/// Miuix 风格的文字提示：长按 / 悬停时在控件下方弹出 [MiuixPlainTooltip]。
+/// 用来替代 Material 的 `Tooltip(message:, child:)`，参数保持一致。
+class AppTooltip extends StatelessWidget {
+  const AppTooltip({super.key, required this.message, required this.child});
+
+  final String message;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (message.isEmpty) return child;
+    return MiuixTooltipBox(
+      semanticLabel: message,
+      tooltip: (context, scope) => MiuixPlainTooltip(
+        scope: scope,
+        child: Text(message),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Miuix 风格的对话框外壳：替代 Material `Dialog`，用 [MiuixSurface] 画背景，
+/// 保留 inset / 键盘避让，并提供透明 Material 作为文字样式与输入框的祖先。
+class _MiuixDialogShell extends StatelessWidget {
+  const _MiuixDialogShell({
+    required this.child,
+    this.color,
+    this.cornerRadius = 28,
+    this.insetPadding =
+        const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+  });
+
+  final Widget child;
+  final Color? color;
+  final double cornerRadius;
+  final EdgeInsets insetPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final padding = MediaQuery.viewInsetsOf(context) +
+        insetPadding.copyWith(top: 24, bottom: 24);
+    return AnimatedPadding(
+      padding: padding,
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.decelerate,
+      child: MediaQuery.removeViewInsets(
+        removeLeft: true,
+        removeTop: true,
+        removeRight: true,
+        removeBottom: true,
+        context: context,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 280),
+            child: Material(
+              type: MaterialType.transparency,
+              child: MiuixSurface(
+                color: color,
+                cornerRadius: cornerRadius,
+                child: ClipPath(
+                  clipper: ShapeBorderClipper(
+                    shape: MiuixSquircleBorder(cornerRadius: cornerRadius),
+                  ),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

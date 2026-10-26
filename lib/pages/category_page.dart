@@ -20,7 +20,8 @@ class CategoryPageController extends StateController {
         .where((element) => element != null)
         .map((e) => e!)
         .toList();
-    categories = categories.where((element) => allCategories.contains(element)).toList();
+    categories =
+        categories.where((element) => allCategories.contains(element)).toList();
     tabController = TabController(length: categories.length, vsync: vsync);
   }
 }
@@ -245,22 +246,16 @@ class CategoryPage extends StatelessWidget {
       return tag;
     }
 
-    final isDark =
-        Theme.of(App.globalContext!).brightness == Brightness.dark;
+    final isDark = Theme.of(App.globalContext!).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 12),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => onClick(tag, param),
+      child: MiuixPressable(
+          shape: const MiuixSquircleBorder(cornerRadius: 12),
+          onPressed: () => onClick(tag, param),
           child: Container(
             decoration: ShapeDecoration(
-              color: isDark
-                  ? const Color(0xFF2C2C2E)
-                  : const Color(0xFFF2F2F4),
+              color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F4),
               shape: MiuixSquircleBorder(
                 cornerRadius: 12,
                 side: BorderSide(
@@ -276,9 +271,7 @@ class CategoryPage extends StatelessWidget {
               translateTag(tag),
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
-          ),
-        ),
-      ),
+          )),
     );
   }
 

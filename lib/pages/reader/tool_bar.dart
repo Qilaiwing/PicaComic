@@ -100,9 +100,7 @@ extension ToolBar on ComicReadingPage {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             if (App.isAndroid && appdata.settings[76] == "0")
-                              Tooltip(
-                                message: "屏幕方向".tl,
-                                child: MiuixIconButton(
+                              MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("屏幕方向".tl)), child: MiuixIconButton(
                                   minWidth: 38,
                                   minHeight: 38,
                                   child: Icon(
@@ -138,9 +136,7 @@ extension ToolBar on ComicReadingPage {
                                 ),
                               ),
                             if (showEps)
-                              Tooltip(
-                                message: "章节".tl,
-                                child: MiuixIconButton(
+                              MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("章节".tl)), child: MiuixIconButton(
                                   minWidth: 38,
                                   minHeight: 38,
                                   onPressed: openEpsDrawer,
@@ -151,9 +147,7 @@ extension ToolBar on ComicReadingPage {
                                   ),
                                 ),
                               ),
-                            Tooltip(
-                              message: "自动翻页".tl,
-                              child: MiuixIconButton(
+                            MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("自动翻页".tl)), child: MiuixIconButton(
                                 minWidth: 38,
                                 minHeight: 38,
                                 onPressed: () {
@@ -172,9 +166,7 @@ extension ToolBar on ComicReadingPage {
                                 ),
                               ),
                             ),
-                            Tooltip(
-                              message: "收藏图片".tl,
-                              child: MiuixIconButton(
+                            MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("收藏图片".tl)), child: MiuixIconButton(
                                 minWidth: 38,
                                 minHeight: 38,
                                 child: MiuixIcon(
@@ -238,9 +230,7 @@ extension ToolBar on ComicReadingPage {
                                 },
                               ),
                             ),
-                            Tooltip(
-                              message: "保存图片".tl,
-                              child: MiuixIconButton(
+                            MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("保存图片".tl)), child: MiuixIconButton(
                                 minWidth: 38,
                                 minHeight: 38,
                                 onPressed: saveCurrentImage,
@@ -251,9 +241,7 @@ extension ToolBar on ComicReadingPage {
                                 ),
                               ),
                             ),
-                            Tooltip(
-                              message: "分享".tl,
-                              child: MiuixIconButton(
+                            MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("分享".tl)), child: MiuixIconButton(
                                 minWidth: 38,
                                 minHeight: 38,
                                 onPressed: share,
@@ -264,9 +252,7 @@ extension ToolBar on ComicReadingPage {
                               ),
                             ),
                             if (App.isWindows)
-                              Tooltip(
-                                message: "${"全屏".tl}(F12)",
-                                child: MiuixIconButton(
+                              MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("${"全屏".tl}(F12)")), child: MiuixIconButton(
                                   minWidth: 38,
                                   minHeight: 38,
                                   child: const Icon(Icons.fullscreen, size: 20),
@@ -427,9 +413,7 @@ extension ToolBar on ComicReadingPage {
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       child: Row(
                         children: [
-                          Tooltip(
-                            message: "返回".tl,
-                            child: MiuixIconButton(
+                          MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("返回".tl)), child: MiuixIconButton(
                               minWidth: 38,
                               minHeight: 38,
                               onPressed: () => App.globalBack(),
@@ -455,9 +439,7 @@ extension ToolBar on ComicReadingPage {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Tooltip(
-                            message: "阅读设置".tl,
-                            child: MiuixIconButton(
+                          MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("阅读设置".tl)), child: MiuixIconButton(
                               minWidth: 38,
                               minHeight: 38,
                               onPressed: () => showSettings(context),

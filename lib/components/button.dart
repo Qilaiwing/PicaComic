@@ -338,7 +338,7 @@ class _IconButtonState extends State<_IconButton> {
           if (widget.isLoading) return;
           widget.onPressed();
         },
-        child: Tooltip(
+        child: AppTooltip(
           message: widget.tooltip ?? "",
           child: Container(
             decoration: BoxDecoration(

@@ -109,11 +109,14 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
     if (loading) {
       loadData();
     }
-    return Scaffold(
-      appBar: Appbar(
-        title: const Text("Profile"),
-      ),
-      body: loading
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(
+ title: "Profile",
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => Padding(
+ padding: padding,
+ child: loading
           ? const Center(
               child: MiuixCircularProgressIndicator(),
             )
@@ -122,7 +125,8 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
               : profiles == null
                   ? const Center(child: Text("Unknown Error"))
                   : buildBody(),
-    );
+ ),
+);
   }
 
   Widget buildBody(){

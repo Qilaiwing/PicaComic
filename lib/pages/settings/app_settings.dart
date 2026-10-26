@@ -373,15 +373,13 @@ class _SetExplorePagesState extends State<SetExplorePages> {
   Widget buildItem(String i) {
     Widget removeButton = Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: IconButton(
-          onPressed: () {
+      child: MiuixIconButton(onPressed: () {
             setState(() {
               var config = appdata.appSettings.explorePages;
               config.remove(i);
               appdata.appSettings.explorePages = config;
             });
-          },
-          icon: const Icon(Icons.delete)),
+          }, child: const Icon(Icons.delete)),
     );
 
     return Padding(
@@ -487,8 +485,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
       title: "探索页面".tl,
       tailing: [
         if (notShowPages.isNotEmpty)
-          IconButton(
-            onPressed: () {
+          MiuixIconButton(onPressed: () {
               showMiuixDialog(
                 context: context,
                 title: "添加".tl,
@@ -499,9 +496,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
                       .toList(),
                 ),
               );
-            },
-            icon: const Icon(Icons.add),
-          )
+            }, child: const Icon(Icons.add))
       ],
       body: view,
     );
@@ -726,25 +721,30 @@ void setCacheLimit() {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 需要 errorText，保留 Material TextField
-            TextField(
+            MiuixTextField(
               focusNode: focusNode,
               controller: controller,
               keyboardType: TextInputType.number,
+              label: "MB",
+              trailingIcon: const Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: Text("MB"),
+              ),
               onChanged: (s) {
                 size = int.tryParse(s) ?? 500;
                 setState(() {
                   isValid = size < minSize ? false : true;
                 });
               },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(color: isValid ? Colors.grey : Colors.red),
-                ),
-                suffix: const Text("MB"),
-                errorText: isValid ? null : "${"不能小于".tl} $minSize MB",
-              ),
             ),
+            if (!isValid)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 4),
+                child: Text(
+                  "${"不能小于".tl} $minSize MB",
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                ),
+              ),
             const SizedBox(height: 16),
             MiuixButton(
               colors: MiuixButtonDefaults.buttonColorsPrimary(context),

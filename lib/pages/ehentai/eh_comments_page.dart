@@ -120,12 +120,9 @@ class _EhCommentWidgetState extends State<_EhCommentWidget> {
 
     var isUploader = uploader == comment.name;
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      elevation: 0,
-      color: isUploader
+    return Padding(padding: const EdgeInsets.fromLTRB(12, 4, 12, 4), child: MiuixCard(colors: MiuixCardColors(color: isUploader
           ? Theme.of(context).colorScheme.primaryContainer
-          : Theme.of(context).colorScheme.surfaceContainer,
+          : Theme.of(context).colorScheme.surfaceContainer, contentColor: Theme.of(context).colorScheme.onSurface),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Column(
@@ -192,7 +189,7 @@ class _EhCommentWidgetState extends State<_EhCommentWidget> {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -269,32 +266,11 @@ class CommentsPage extends StatelessWidget {
         ),
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        decoration: ShapeDecoration(
-          shape: const MiuixSquircleBorder(cornerRadius: 22),
-          color: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest
-              .withOpacity(isDark ? 0.45 : 0.65),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: logic.controller,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  isCollapsed: true,
-                  hintText: "评论...".tl,
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                style: const TextStyle(fontSize: 14.5),
-                minLines: 1,
-                maxLines: 5,
-              ),
+              child: MiuixTextField(controller: logic.controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 5),
             ),
             logic.sending
                 ? const Padding(

@@ -40,8 +40,8 @@ class _RankingPageState extends State<RankingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _CustomCategoryComicsList(
+    return MiuixScaffold(
+      content: (_) => _CustomCategoryComicsList(
         key: ValueKey("RankingPage with $optionValue"),
         loader: data.rankingData!.load,
         optionValue: optionValue,

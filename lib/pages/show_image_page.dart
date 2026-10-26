@@ -1,10 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_miuix/miuix.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/foundation/image_loader/cached_image.dart';
 import 'package:pica_comic/foundation/image_manager.dart';
 import 'package:pica_comic/tools/save_image.dart';
 import 'package:pica_comic/tools/translations.dart';
+
+MiuixSmallTopAppBar _buildImageTopBar(BuildContext context,
+    {List<Widget>? actions}) {
+  return MiuixSmallTopAppBar(
+    title: "图片".tl,
+    navigationIcon: MiuixIconButton(
+      child: MiuixIcon(
+        vector: MiuixIcons.os4.chevronBackward,
+        size: 20,
+      ),
+      onPressed: () => Navigator.of(context).maybePop(),
+    ),
+    actions: actions,
+  );
+}
+
+Widget _buildLoading(BuildContext context, ImageChunkEvent? event) {
+  return Container(
+    decoration: const BoxDecoration(color: Colors.black),
+    child: const Center(
+      child: MiuixCircularProgressIndicator(),
+    ),
+  );
+}
 
 class ShowImagePage extends StatelessWidget {
   const ShowImagePage(this.url, {super.key});
@@ -13,21 +37,15 @@ class ShowImagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("图片".tl),
-      ),
-      body: PhotoView(
-        minScale: PhotoViewComputedScale.contained * 0.9,
-        imageProvider: CachedImageProvider(url),
-        loadingBuilder: (context, event) {
-          return Container(
-            decoration: const BoxDecoration(color: Colors.black),
-            child: const Center(
-              child: MiuixCircularProgressIndicator(),
-            ),
-          );
-        },
+    return MiuixScaffold(
+      topBar: _buildImageTopBar(context),
+      content: (padding) => Padding(
+        padding: EdgeInsets.only(top: padding.top),
+        child: PhotoView(
+          minScale: PhotoViewComputedScale.contained * 0.9,
+          imageProvider: CachedImageProvider(url),
+          loadingBuilder: _buildLoading,
+        ),
       ),
     );
   }
@@ -42,39 +60,32 @@ class ShowImagePageWithHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("图片".tl),
-        actions: [
-          Tooltip(
-            message: "保存".tl,
-            child: MiuixIconButton(
-              child: const Icon(Icons.download),
-              onPressed: () async{
-                var file = await ImageManager().getFile(url);
-                if(file != null){
-                  saveImage(file);
-                }
+    return MiuixScaffold(
+      topBar: _buildImageTopBar(context, actions: [
+        AppTooltip(
+          message: "保存".tl,
+          child: MiuixIconButton(
+            child: const Icon(Icons.download),
+            onPressed: () async {
+              var file = await ImageManager().getFile(url);
+              if (file != null) {
+                saveImage(file);
               }
-          ))
-        ],
-      ),
-      body: Hero(
-        tag: tag,
-        child: PhotoView(
-          minScale: PhotoViewComputedScale.contained * 0.9,
-          imageProvider: CachedImageProvider(url),
-          loadingBuilder: (context, event) {
-            return Container(
-              decoration: const BoxDecoration(color: Colors.black),
-              child: const Center(
-                child: MiuixCircularProgressIndicator(),
-              ),
-            );
-          },
+            },
+          ),
+        ),
+      ]),
+      content: (padding) => Padding(
+        padding: EdgeInsets.only(top: padding.top),
+        child: Hero(
+          tag: tag,
+          child: PhotoView(
+            minScale: PhotoViewComputedScale.contained * 0.9,
+            imageProvider: CachedImageProvider(url),
+            loadingBuilder: _buildLoading,
+          ),
         ),
       ),
     );
   }
 }
-

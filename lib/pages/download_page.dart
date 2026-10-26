@@ -166,6 +166,9 @@ class DownloadPageLogic extends StateController {
 
   bool searchInit = false;
 
+  /// 下载页搜索框焦点，仅 searchInit 时请求聚焦
+  final FocusNode searchFocusNode = FocusNode();
+
   String keyword = "";
   String keyword_ = "";
 
@@ -229,17 +232,18 @@ class DownloadPage extends StatelessWidget {
               logic.resetSelected(logic.comics.length);
               logic.change();
             });
-            return const Scaffold(
-              body: Center(
+            return MiuixScaffold(
+ content: (_) => Center(
                 child: MiuixCircularProgressIndicator(),
               ),
-            );
+);
           } else {
-            return Scaffold(
+            return MiuixScaffold(
+              topBar: buildAppbar(context, logic),
               floatingActionButton: buildFAB(context, logic),
-              body: SmoothCustomScrollView(
+              content: (padding) => SmoothCustomScrollView(
                 slivers: [
-                  buildAppbar(context, logic),
+                  SliverToBoxAdapter(child: SizedBox(height: padding.top)),
                   buildComics(context, logic)
                 ],
               ),
@@ -543,14 +547,8 @@ class DownloadPage extends StatelessWidget {
     final isSelecting = logic.selecting;
     final hasSelection = logic.selectedNum > 0;
 
-    return Material(
-      color: Colors.transparent,
-      shape: const MiuixSquircleBorder(cornerRadius: 18),
-      clipBehavior: Clip.antiAlias,
-      elevation: 4,
-      shadowColor: (isSelecting ? Colors.red : primary).withOpacity(0.35),
-      child: InkWell(
-        onTap: () {
+    return MiuixPressable(
+ onPressed: () {
           if (!logic.selecting) {
             logic.selecting = true;
             logic.update();
@@ -573,7 +571,8 @@ class DownloadPage extends StatelessWidget {
             );
           }
         },
-        child: AnimatedContainer(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
           height: 50,
@@ -630,72 +629,54 @@ class DownloadPage extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+);
   }
 
   Widget buildTitle(BuildContext context, DownloadPageLogic logic) {
     if (logic.searchMode && !logic.selecting) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      return Transform.translate(
-        offset: const Offset(12, 6.0),
-        child: Container(
-          height: 38,
-          margin: const EdgeInsets.only(right: 20),
-          decoration: ShapeDecoration(
-            shape: const MiuixSquircleBorder(cornerRadius: 19),
-            color: isDark
-                ? const Color(0x26FFFFFF)
-                : const Color(0x10000000),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            children: [
-              MiuixIcon(
+      if (logic.searchInit) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (logic.searchFocusNode.context != null) {
+            logic.searchFocusNode.requestFocus();
+          }
+        });
+      }
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 0, 8),
+        child: Padding(
+          padding: const EdgeInsets.only(right: 20),
+          child: MiuixInputField(
+            // 与原 autofocus: searchInit 一致：仅在 searchInit 时聚焦
+            focusNode: logic.searchFocusNode,
+            query: logic.keyword,
+            label: "搜索已下载漫画".tl,
+            expanded: false,
+            onExpandedChange: (_) {},
+            onSearch: (_) {},
+            onQueryChange: (s) {
+              logic.keyword = s.toLowerCase();
+              logic.searchInit = false;
+              logic.update();
+            },
+            leadingIcon: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: MiuixIcon(
                 vector: MiuixIcons.os4.search,
                 size: 17,
-                tint: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  autofocus: logic.searchInit,
-                  controller: TextEditingController(text: logic.keyword)
-                    ..selection =
-                        TextSelection.collapsed(offset: logic.keyword.length),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    isCollapsed: true,
-                    hintText: "搜索已下载漫画".tl,
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  style: const TextStyle(fontSize: 14),
-                  onChanged: (s) {
-                    logic.keyword = s.toLowerCase();
-                    logic.searchInit = false;
-                    logic.update();
-                  },
-                ),
-              ),
-              if (logic.keyword.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    logic.keyword = "";
-                    logic.update();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
+            ),
+            trailingIcon: logic.keyword.isNotEmpty
+                ? MiuixIconButton(
+                    onPressed: () {
+                      logic.keyword = "";
+                      logic.update();
+                    },
                     child: MiuixIcon(
                       vector: MiuixIcons.os4.close,
                       size: 16,
-                      tint: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                  ),
-                ),
-            ],
+                  )
+                : null,
           ),
         ),
       );
@@ -707,12 +688,11 @@ class DownloadPage extends StatelessWidget {
   }
 
   Widget buildAppbar(BuildContext context, DownloadPageLogic logic) {
-    return SliverAppbar(
-      radius: UiMode.m1(context) ? 0 : 16,
+    return MiuixTopAppBar(
       color: logic.selecting
         ? Theme.of(context).colorScheme.primaryContainer
         : null,
-      leading: logic.selecting
+      navigationIcon: logic.selecting
           ? MiuixIconButton(
               onPressed: () {
                 logic.selecting = false;
@@ -727,9 +707,20 @@ class DownloadPage extends StatelessWidget {
                 size: 20,
               ),
             )
+          : (Navigator.of(context).canPop()
+              ? MiuixIconButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: MiuixIcon(vector: MiuixIcons.os4.back, size: 20),
+                )
+              : null),
+      title: logic.selecting
+          ? "已选择 @num 个项目".tlParams({"num": logic.selectedNum.toString()})
+          : "已下载".tl,
+      largeTitle: (logic.selecting || logic.searchMode) ? null : "已下载".tl,
+      // 搜索模式下搜索框放在 bottomContent
+      bottomContent: (logic.searchMode && !logic.selecting)
+          ? buildTitle(context, logic)
           : null,
-      title: buildTitle(context, logic),
-      largeTitle: (logic.selecting || logic.searchMode) ? null : Text("已下载".tl),
       actions: buildActions(context, logic),
     );
   }
@@ -737,9 +728,9 @@ class DownloadPage extends StatelessWidget {
   List<Widget> buildActions(BuildContext context, DownloadPageLogic logic) {
     return [
       if (!logic.selecting && !logic.searchMode)
-        Tooltip(
-          message: "排序".tl,
-          child: MiuixIconButton(
+        MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("排序".tl)),
+ child: MiuixIconButton(
             child: MiuixIcon(
               vector: MiuixIcons.extended.byName('sort') ?? MiuixIcons.os4.more,
               size: 20,
@@ -801,11 +792,11 @@ class DownloadPage extends StatelessWidget {
               }
             },
           ),
-        ),
+),
       if (!logic.selecting && !logic.searchMode)
-        Tooltip(
-          message: "下载管理器".tl,
-          child: MiuixIconButton(
+        MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("下载管理器".tl)),
+ child: MiuixIconButton(
             child: MiuixIcon(
               vector: MiuixIcons.extended.byName('download') ?? MiuixIcons.os4.download,
               size: 20,
@@ -817,7 +808,7 @@ class DownloadPage extends StatelessWidget {
               );
             },
           ),
-        )
+)
       else if (logic.selecting)
         MiuixWindowIconDropdownMenu(
           entry: MiuixDropdownEntry(
@@ -877,9 +868,9 @@ class DownloadPage extends StatelessWidget {
           ),
         ),
       if (!logic.selecting)
-        Tooltip(
-          message: logic.searchMode ? "关闭搜索".tl : "搜索".tl,
-          child: MiuixIconButton(
+        MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text(logic.searchMode ? "关闭搜索".tl : "搜索".tl)),
+ child: MiuixIconButton(
             child: MiuixIcon(
               vector: logic.searchMode ? MiuixIcons.os4.close : MiuixIcons.os4.search,
               size: 20,
@@ -893,7 +884,7 @@ class DownloadPage extends StatelessWidget {
               logic.update();
             },
           ),
-        )
+)
     ];
   }
 
@@ -1107,16 +1098,16 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
                 ),
               ),
               const SizedBox(width: 8),
-              Tooltip(
-                message: "关闭".tl,
-                child: MiuixIconButton(
+              MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("关闭".tl)),
+ child: MiuixIconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
                   child: MiuixIcon(
                     vector: MiuixIcons.os4.close,
                     size: 20,
                   ),
                 ),
-              ),
+),
             ],
           ),
         ),
@@ -1130,15 +1121,13 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
             ),
             itemBuilder: (BuildContext context, int i) {
               final isDownloaded = downloadedEps.contains(i);
-              return Material(
-                color: Colors.transparent,
-                shape: const MiuixSquircleBorder(cornerRadius: 12),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => readSpecifiedEps(i),
-                  onLongPress: () => deleteEpisode(i),
-                  onSecondaryTapDown: (details) => deleteEpisode(i),
-                  child: Container(
+              return GestureDetector(
+ onLongPress: () => deleteEpisode(i),
+ onSecondaryTapDown: (details) => deleteEpisode(i),
+child: MiuixPressable(
+ onPressed: () => readSpecifiedEps(i),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: ShapeDecoration(
                       shape: MiuixSquircleBorder(
@@ -1179,8 +1168,8 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
                       ],
                     ),
                   ),
-                ),
-              );
+),
+);
             },
             itemCount: eps.length,
           ),
@@ -1195,16 +1184,13 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
           child: Row(
             children: [
               Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const MiuixSquircleBorder(cornerRadius: 14),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () {
+                child: MiuixPressable(
+ onPressed: () {
                       Navigator.of(context).pop();
                       _toComicInfoPage(widget.item);
                     },
-                    child: Container(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                       height: 46,
                       alignment: Alignment.center,
                       decoration: ShapeDecoration(
@@ -1220,18 +1206,14 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
                         ),
                       ),
                     ),
-                  ),
-                ),
+),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const MiuixSquircleBorder(cornerRadius: 14),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => read(),
-                    child: Container(
+                child: MiuixPressable(
+ onPressed: () => read(),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                       height: 46,
                       alignment: Alignment.center,
                       decoration: ShapeDecoration(
@@ -1254,8 +1236,7 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
                         ),
                       ),
                     ),
-                  ),
-                ),
+),
               ),
             ],
           ),
@@ -1278,11 +1259,7 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.60,
         ),
-        child: Material(
-          color: Colors.transparent,
-          shape: const MiuixSquircleBorder(cornerRadius: 26),
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          child: ClipRRect(
+        child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
@@ -1294,7 +1271,6 @@ class _DownloadedComicInfoViewState extends State<DownloadedComicInfoView> {
               ),
             ),
           ),
-        ),
       );
     }
 

@@ -31,11 +31,11 @@ class _DownloadingPageState extends State<DownloadingPage> {
   }
 
   void onChange() {
-    if(downloadManager.error) {
+    if (downloadManager.error) {
       setState(() {});
     } else if (downloadManager.downloading.length != comics.length) {
       rebuild();
-    } else if (key.currentState != null){
+    } else if (key.currentState != null) {
       key.currentState!.updateUi();
     }
   }
@@ -54,7 +54,7 @@ class _DownloadingPageState extends State<DownloadingPage> {
     var widgets = <Widget>[];
     for (var i in comics) {
       var key = Key(i.id);
-      if(i == comics.first) {
+      if (i == comics.first) {
         key = this.key;
       }
 
@@ -101,9 +101,8 @@ class _DownloadingPageState extends State<DownloadingPage> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: ShapeDecoration(
                 shape: const MiuixSquircleBorder(cornerRadius: 14),
-                color: isDark
-                    ? const Color(0xFF222226)
-                    : const Color(0xFFF4F4F6),
+                color:
+                    isDark ? const Color(0xFF222226) : const Color(0xFFF4F4F6),
               ),
               child: Row(
                 children: [
@@ -121,7 +120,8 @@ class _DownloadingPageState extends State<DownloadingPage> {
                     ),
                     child: MiuixIcon(
                       vector: downloadManager.isDownloading
-                          ? (MiuixIcons.extended.byName('download') ?? MiuixIcons.os4.download)
+                          ? (MiuixIcons.extended.byName('download') ??
+                              MiuixIcons.os4.download)
                           : (downloadManager.error
                               ? MiuixIcons.os4.close
                               : MiuixIcons.os4.pause),
@@ -142,12 +142,10 @@ class _DownloadingPageState extends State<DownloadingPage> {
                     ),
                   ),
                   if (downloadManager.downloading.isNotEmpty)
-                    Material(
-                      color: Colors.transparent,
-                      shape: const StadiumBorder(),
-                      child: InkWell(
+                    MiuixPressable(
+                        shape: const StadiumBorder(),
                         borderRadius: BorderRadius.circular(20),
-                        onTap: () {
+                        onPressed: () {
                           downloadManager.isDownloading
                               ? downloadManager.pause()
                               : downloadManager.start();
@@ -187,9 +185,7 @@ class _DownloadingPageState extends State<DownloadingPage> {
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
+                        )),
                 ],
               ),
             );
@@ -249,7 +245,7 @@ class _DownloadingTileState extends State<_DownloadingTile> {
   }
 
   void updateStatistic() {
-    if(comic != DownloadManager().downloading.first) {
+    if (comic != DownloadManager().downloading.first) {
       return;
     }
     comic = DownloadManager().downloading.first;
@@ -337,8 +333,8 @@ class _DownloadingTileState extends State<_DownloadingTile> {
                         foregroundColor: primary,
                         disabledForegroundColor: primary,
                         backgroundColor: isDark
-                          ? const Color(0x22FFFFFF)
-                          : const Color(0x18000000),
+                            ? const Color(0x22FFFFFF)
+                            : const Color(0x18000000),
                       ),
                     ),
                   ),
@@ -350,7 +346,7 @@ class _DownloadingTileState extends State<_DownloadingTile> {
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Tooltip(
+                AppTooltip(
                   message: "置顶".tl,
                   child: MiuixIconButton(
                     minWidth: 34,
@@ -365,7 +361,7 @@ class _DownloadingTileState extends State<_DownloadingTile> {
                     },
                   ),
                 ),
-                Tooltip(
+                AppTooltip(
                   message: "取消".tl,
                   child: MiuixIconButton(
                     minWidth: 34,
@@ -413,8 +409,8 @@ class _DownloadingTileState extends State<_DownloadingTile> {
 
     String status = "${"已下载".tl}$downloadPages/$pagesCount";
 
-    if (comic is EhDownloadingItem
-        && (comic as EhDownloadingItem).downloadType != 0) {
+    if (comic is EhDownloadingItem &&
+        (comic as EhDownloadingItem).downloadType != 0) {
       status = "${_bytesToSize(downloadPages).split(' ').first}"
           "/${_bytesToSize(pagesCount!)}";
     }

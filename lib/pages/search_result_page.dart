@@ -151,8 +151,8 @@ class _SearchResultPageState extends State<_SearchResultPage> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: Material(
-              child: _Suggestions(
+            child: MiuixScaffold(
+              content: (_) => _Suggestions(
                 controller: suggestionsController,
               ),
             ),
@@ -202,8 +202,8 @@ class _SearchResultPageState extends State<_SearchResultPage> {
       );
     }
 
-    return Scaffold(
-      floatingActionButton: _showFab
+    return MiuixScaffold(
+ floatingActionButton: _showFab
           ? Container(
               width: 54,
               height: 54,
@@ -221,29 +221,25 @@ class _SearchResultPageState extends State<_SearchResultPage> {
                   ),
                 ],
               ),
-              child: Material(
-                color: Colors.transparent,
-                shape: const MiuixSquircleBorder(cornerRadius: 18),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () {
+              child: MiuixPressable(
+ onPressed: () {
                     var s = controller.text;
                     setState(() {
                       keyword = s;
                     });
                   },
-                  child: Center(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Center(
                     child: MiuixIcon(
                       vector: MiuixIcons.basic.search,
                       size: 24,
                       tint: Colors.white,
                     ),
                   ),
-                ),
-              ),
+),
             )
           : null,
-      body: NotificationListener<ScrollUpdateNotification>(
+ content: (_) => NotificationListener<ScrollUpdateNotification>(
         onNotification: (notification) {
           if (suggestionsController.entry != null) {
             suggestionsController.remove();
@@ -289,7 +285,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
           options: options,
         ),
       ),
-    );
+);
   }
 
   void more() async {
@@ -516,8 +512,9 @@ class _SuggestionsState extends State<_Suggestions> {
     Widget buildItem(Pair<String, TranslationType> value) {
       var subTitle = TagsTranslation.translationTagWithNamespace(
           value.left, value.right.name);
-      return ListTile(
-        title: Row(
+      return MiuixBasicComponent(
+        content: [
+          Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Expanded(
@@ -538,12 +535,15 @@ class _SuggestionsState extends State<_Suggestions> {
               )
           ],
         ),
-        subtitle: (showMethod && showTranslation) ? Text(subTitle) : null,
-        trailing: Text(
-          value.right.name,
-          style: const TextStyle(fontSize: 13),
-        ),
-        onTap: () => onSelected(value.left, value.right),
+          if (showMethod && showTranslation) Text(subTitle),
+        ],
+        endActions: [
+          Text(
+            value.right.name,
+            style: const TextStyle(fontSize: 13),
+          ),
+        ],
+        onClick: () => onSelected(value.left, value.right),
       );
     }
 
@@ -558,20 +558,20 @@ class _SuggestionsState extends State<_Suggestions> {
               ),
               Text("建议".tl),
               const Spacer(),
-              InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () {
+              MiuixPressable(
+ onPressed: () {
                   widget.controller.suggestions.clear();
                   widget.controller.remove();
                 },
-                child: Padding(
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(14),
+ child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: MiuixIcon(
                     vector: MiuixIcons.basic.close,
                     size: 18,
                   ),
                 ),
-              ),
+),
               const SizedBox(
                 width: 36,
               ),
@@ -705,14 +705,14 @@ class _SearchOptionsState extends State<_SearchOptions> {
           runSpacing: 8,
           spacing: 8,
           children: option.options.entries.map((e) {
-            return InkWell(
-              onTap: () {
+            return MiuixPressable(
+ onPressed: () {
                 setState(() {
                   options[i] = e.key;
                 });
               },
-              borderRadius: BorderRadius.circular(8),
-              child: AnimatedContainer(
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(8),
+ child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 decoration: BoxDecoration(
                   color: options[i] == e.key
@@ -726,7 +726,7 @@ class _SearchOptionsState extends State<_SearchOptions> {
                   child: Text(e.value.tl),
                 ),
               ),
-            );
+);
           }).toList(),
         ).paddingHorizontal(16));
       }

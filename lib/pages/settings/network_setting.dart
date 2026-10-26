@@ -82,24 +82,26 @@ class _EditRuleViewState extends State<EditRuleView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Appbar(
-        title: const Text("rule.json"),
-      ),
-      body: SingleChildScrollView(
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(
+ title: "rule.json",
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => Padding(
+ padding: padding,
+ child: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.fromLTRB(8, 0, 8, MediaQuery.of(context).padding.bottom),
-          child: TextField(
+          child: MiuixTextField(
             keyboardType: TextInputType.multiline,
             maxLines: null,
-            decoration: const InputDecoration(
-                border: InputBorder.none
-            ),
+            singleLine: false,
             controller: controller,
           ),
         )
-      )
-    );
+      ),
+ ),
+);
   }
 }
 

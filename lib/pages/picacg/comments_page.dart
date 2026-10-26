@@ -117,32 +117,11 @@ class CommentsPage extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: Container(
-                    decoration: ShapeDecoration(
-                      shape: const MiuixSquircleBorder(cornerRadius: 22),
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withOpacity(0.65),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: logic.controller,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: "评论...".tl,
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            style: const TextStyle(fontSize: 14.5),
-                            minLines: 1,
-                            maxLines: 4,
-                          ),
+                          child: MiuixTextField(controller: logic.controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 4),
                         ),
                         logic.sending
                             ? const Padding(
@@ -202,11 +181,7 @@ class CommentsPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return Scaffold(
-        appBar: Appbar(
-          title: Text("评论".tl),
-        ),
-        body: body,
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }
@@ -347,33 +322,11 @@ class ReplyPage extends StatelessWidget {
                   ),
                 ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  decoration: ShapeDecoration(
-                    shape: const MiuixSquircleBorder(cornerRadius: 22),
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withOpacity(
-                            Theme.of(context).brightness == Brightness.dark ? 0.45 : 0.65),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: commentsPageLogic.controller,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            isCollapsed: true,
-                            hintText: "回复...".tl,
-                            hintStyle: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          style: const TextStyle(fontSize: 14.5),
-                          minLines: 1,
-                          maxLines: 4,
-                        ),
+                        child: MiuixTextField(controller: commentsPageLogic.controller, label: "回复...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 4),
                       ),
                       commentsPageLogic.sending
                           ? const Padding(
@@ -435,11 +388,7 @@ class ReplyPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text("回复".tl),
-        ),
-        body: body,
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "回复".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }

@@ -73,7 +73,7 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
       title: widget.title,
       tailing: [
         if (keys.length < widget.pages.length)
-          IconButton(onPressed: showAddDialog, icon: const Icon(Icons.add))
+          MiuixIconButton(onPressed: showAddDialog, child: const Icon(Icons.add))
       ],
       body: view,
     );
@@ -82,14 +82,12 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
   Widget buildItem(String key) {
     Widget removeButton = Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: IconButton(
-          onPressed: () {
+      child: MiuixIconButton(onPressed: () {
             setState(() {
               keys.remove(key);
             });
             updateSetting();
-          },
-          icon: const Icon(Icons.delete)),
+          }, child: const Icon(Icons.delete)),
     );
 
     return Padding(

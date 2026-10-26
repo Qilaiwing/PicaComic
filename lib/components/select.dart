@@ -170,22 +170,21 @@ class _FilterChipFixedWidthState extends State<FilterChipFixedWidth> {
   Widget build(BuildContext context) {
     return Material(
       textStyle: Theme.of(context).textTheme.labelLarge,
-      child: InkWell(
-        onTap: () => widget.onSelected(true),
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-        child: AnimatedContainer(
-          duration: _fastAnimationDuration,
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
-            borderRadius: const BorderRadius.all(Radius.circular(8)),
-            color: selected
-                ? Theme.of(context).colorScheme.primaryContainer
-                : null,
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: labelWidth == null ? firstBuild() : buildContent(),
-        ),
-      ),
+      child: MiuixPressable(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          onPressed: () => widget.onSelected(true),
+          child: AnimatedContainer(
+            duration: _fastAnimationDuration,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+              color: selected
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : null,
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            child: labelWidth == null ? firstBuild() : buildContent(),
+          )),
     );
   }
 
@@ -319,12 +318,9 @@ class OptionChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    return Material(
-      color: Colors.transparent,
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
+    return MiuixPressable(
+        shape: const StadiumBorder(),
+        onPressed: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
@@ -342,11 +338,11 @@ class OptionChip extends StatelessWidget {
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected
                   ? Colors.white
-                  : (isDark ? const Color(0xDDFFFFFF) : const Color(0xDD000000)),
+                  : (isDark
+                      ? const Color(0xDDFFFFFF)
+                      : const Color(0xDD000000)),
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

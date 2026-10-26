@@ -197,37 +197,37 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
   Widget buildCard(BuildContext context) {
     return MiuixSettingsCard(
       children: [
-        ListTile(
-          title: Row(
+        MiuixBasicComponent(
+          content: [
+            Row(
             children: [
               Text("添加漫画源".tl),
               const SizedBox(
                 width: 2,
               ),
-              InkWell(
-                borderRadius: const BorderRadius.all(Radius.circular(18)),
-                onTap: () => showDialogMessage(
+              MiuixPressable(
+ onPressed: () => showDialogMessage(
                     context,
                     "警告".tl,
                     "${"此功能已不再受支持".tl}\n${"请勿反馈相关问题".tl}"
                 ),
-                child: const Icon(
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: const BorderRadius.all(Radius.circular(18)),
+ child: const Icon(
                   Icons.warning_amber_rounded,
                   color: Colors.red,
                   size: 18,
                 ),
-              )
+)
             ]
           ),
-          leading: const Icon(Icons.dashboard_customize),
+          ],
+          startAction: const Icon(Icons.dashboard_customize),
         ),
         MiuixTextField(
                 label: "URL",
                 useLabelAsPlaceholder: true,
                 singleLine: true,
-                trailingIcon: IconButton(
-                    onPressed: () => handleAddSource(url),
-                    icon: const Icon(Icons.check)),
+                trailingIcon: MiuixIconButton(onPressed: () => handleAddSource(url), child: const Icon(Icons.check)),
                 onChanged: (value) {
                   url = value;
                 },
@@ -337,15 +337,19 @@ class _ComicSourceListState extends State<_ComicSourceList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Appbar(
-        title: Text("漫画源".tl),
-        actions: const [
-          IconButton(onPressed: App.globalBack, icon: Icon(Icons.close)),
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(
+ title: "漫画源".tl,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+ actions: const [
+          MiuixIconButton(onPressed: App.globalBack, child: Icon(Icons.close)),
         ],
-      ),
-      body: buildBody(),
-    );
+),
+ content: (padding) => Padding(
+ padding: padding,
+ child: buildBody(),
+ ),
+);
   }
 
   Widget buildBody() {
@@ -360,17 +364,14 @@ class _ComicSourceListState extends State<_ComicSourceList> {
           var key = json![index]["key"];
           var action = currentKey.contains(key)
               ? const Icon(Icons.check)
-              : Tooltip(
-                  message: "Add",
-                  child: IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () async {
+              : MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("Add")),
+ child: MiuixIconButton(onPressed: () async {
                       await widget.onAdd(
                           "https://raw.githubusercontent.com/wgh136/pica_configs/master/${json![index]["fileName"]}");
                       setState(() {});
-                    },
-                  ),
-                );
+                    }, child: const Icon(Icons.add)),
+);
 
           return MiuixBasicComponent(
                    title: json![index]["name"],

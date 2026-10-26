@@ -44,97 +44,82 @@ abstract class ComicTile extends StatelessWidget {
   bool get showFavorite => true;
 
   void showBlockPane() {
-    showDialog(
+    showMiuixDialog<void>(
       context: App.globalContext!,
-      builder: (context) => _BlockingPane(comic: this),
+      contentBuilder: (context, close) =>
+          _BlockingPane(comic: this, onClose: () => close()),
     );
   }
 
-  void onLongTap_() {
+  void onLongTap_() async {
     bool favorite = false;
-    showDialog(
+    final action = await showMiuixDialog<String>(
       context: App.globalContext!,
-      builder: (context) {
+      contentBuilder: (context, close) {
         return StatefulBuilder(builder: (context, setState) {
           Widget child;
           if (!favorite) {
-            child = Dialog(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  key: const Key("1"),
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: SelectableText(
-                        title.replaceAll("\n", ""),
-                        style: const TextStyle(fontSize: 22),
-                      ),
+            child = ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                key: const Key("1"),
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                    child: SelectableText(
+                      title.replaceAll("\n", ""),
+                      style: const TextStyle(fontSize: 22),
                     ),
-                    const MiuixHorizontalDivider(),
+                  ),
+                  const MiuixHorizontalDivider(),
+                  MiuixBasicComponent(
+                    startAction: const Icon(Icons.article),
+                    title: "查看详情".tl,
+                    onClick: () => close("view"),
+                  ),
+                  if (favoriteItem != null)
                     MiuixBasicComponent(
-                      startAction: const Icon(Icons.article),
-                      title: "查看详情".tl,
+                      startAction: const Icon(Icons.bookmark_rounded),
+                      title: "本地收藏".tl,
                       onClick: () {
-                        context.pop();
-                        onTap_();
+                        setState(() {
+                          favorite = true;
+                        });
                       },
                     ),
-                    if (favoriteItem != null)
+                  if (read != null)
+                    MiuixBasicComponent(
+                      startAction: const Icon(Icons.chrome_reader_mode),
+                      title: "阅读".tl,
+                      onClick: () => close("read"),
+                    ),
+                  MiuixBasicComponent(
+                    startAction: const Icon(Icons.search),
+                    title: "搜索".tl,
+                    onClick: () => close("search"),
+                  ),
+                  MiuixBasicComponent(
+                    startAction: const Icon(Icons.block),
+                    title: "屏蔽".tl,
+                    onClick: () => close("block"),
+                  ),
+                  if (addonMenuOptions != null)
+                    for (var option in addonMenuOptions!)
                       MiuixBasicComponent(
-                        startAction: const Icon(Icons.bookmark_rounded),
-                        title: "本地收藏".tl,
-                        onClick: () {
-                          setState(() {
-                            favorite = true;
-                          });
-                        },
+                        startAction: Icon(option.icon),
+                        title: option.title,
+                        onClick: () => option.onTap(comicID),
                       ),
-                    if (read != null)
-                      MiuixBasicComponent(
-                        startAction: const Icon(Icons.chrome_reader_mode),
-                        title: "阅读".tl,
-                        onClick: () {
-                          context.pop();
-                          read!();
-                        },
-                      ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.search),
-                      title: "搜索".tl,
-                      onClick: () {
-                        context.pop();
-                        context.to(() => PreSearchPage(
-                              initialValue: title,
-                            ));
-                      },
-                    ),
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.block),
-                      title: "屏蔽".tl,
-                      onClick: () {
-                        context.pop();
-                        showBlockPane();
-                      },
-                    ),
-                    if (addonMenuOptions != null)
-                      for (var option in addonMenuOptions!)
-                        MiuixBasicComponent(
-                          startAction: Icon(option.icon),
-                          title: option.title,
-                          onClick: () => option.onTap(comicID),
-                        ),
-                    const SizedBox(
-                      height: 16,
-                    ),
-                  ],
-                ),
+                ],
               ),
             );
           } else {
-            child = buildFavoriteDialog(context);
+            child = KeyedSubtree(
+              key: const Key("2"),
+              child: buildFavoriteDialog(context, () => close()),
+            );
           }
           return AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
@@ -143,9 +128,32 @@ abstract class ComicTile extends StatelessWidget {
         });
       },
     );
+    switch (action) {
+      case "view":
+        onTap_();
+      case "read":
+        read!();
+      case "search":
+        App.globalContext!.to(() => PreSearchPage(
+              initialValue: title,
+            ));
+      case "block":
+        showBlockPane();
+    }
   }
 
-  Widget buildFavoriteDialog(BuildContext context) {
+  /// 弹出 Miuix 对话框，把漫画加入本地收藏夹。
+  void showFavoriteDialog() {
+    showMiuixDialog<void>(
+      context: App.globalContext!,
+      title: "添加收藏".tl,
+      contentBuilder: (context, close) =>
+          buildFavoriteDialog(context, () => close()),
+    );
+  }
+
+  /// 收藏夹选择内容（不含对话框外壳）；[onDone] 为空时回退为 `context.pop()`。
+  Widget buildFavoriteDialog(BuildContext context, [VoidCallback? onDone]) {
     String? folder = appdata.settings[51];
     int? initialFolderIndex =
         LocalFavoritesManager().folderNames.indexOf(appdata.settings[51]);
@@ -153,18 +161,20 @@ abstract class ComicTile extends StatelessWidget {
       folder = null;
       initialFolderIndex = null;
     }
-    return SimpleDialog(
-      title: Text("添加收藏".tl),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         MiuixBasicComponent(
           title: "收藏夹".tl,
-          endActions: [Select(
-            outline: true,
-            width: 156,
-            values: LocalFavoritesManager().folderNames,
-            initialValue: initialFolderIndex,
-            onChange: (i) => folder = LocalFavoritesManager().folderNames[i],
-          )],
+          endActions: [
+            Select(
+              outline: true,
+              width: 156,
+              values: LocalFavoritesManager().folderNames,
+              initialValue: initialFolderIndex,
+              onChange: (i) => folder = LocalFavoritesManager().folderNames[i],
+            )
+          ],
         ),
         const SizedBox(
           height: 16,
@@ -175,12 +185,13 @@ abstract class ComicTile extends StatelessWidget {
             child: const Text("确认"),
             onPressed: () {
               LocalFavoritesManager().addComic(folder!, favoriteItem!);
-              context.pop();
+              if (onDone != null) {
+                onDone();
+              } else {
+                context.pop();
+              }
             },
           ),
-        ),
-        const SizedBox(
-          height: 16,
         ),
       ],
     );
@@ -214,9 +225,7 @@ abstract class ComicTile extends StatelessWidget {
       ),
       DesktopMenuEntry(
         text: "本地收藏".tl,
-        onClick: () => Future.microtask(() => showDialog(
-            context: App.globalContext!,
-            builder: (context) => buildFavoriteDialog(context))),
+        onClick: () => Future.microtask(showFavoriteDialog),
       ),
       DesktopMenuEntry(
         text: "屏蔽".tl,
@@ -289,10 +298,8 @@ abstract class ComicTile extends StatelessWidget {
                   Container(
                     height: 22,
                     padding: const EdgeInsets.symmetric(horizontal: 6),
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withOpacity(0.92),
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.92),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -356,47 +363,44 @@ abstract class ComicTile extends StatelessWidget {
             ),
           ],
         ),
-        child: Material(
-          color: Colors.transparent,
-          shape: const MiuixSquircleBorder(cornerRadius: 16),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap_,
-            onLongPress: enableLongPressed ? onLongTap_ : null,
+        child: GestureDetector(
             onSecondaryTapDown: onSecondaryTap_,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: height * 0.68,
-                    height: double.infinity,
-                    decoration: ShapeDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
-                      shape: const MiuixSquircleBorder(cornerRadius: 12),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: image,
+            child: MiuixPressable(
+                shape: const MiuixSquircleBorder(cornerRadius: 16),
+                onPressed: onTap_,
+                onLongPress: enableLongPressed ? onLongTap_ : null,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: height * 0.68,
+                        height: double.infinity,
+                        decoration: ShapeDecoration(
+                          color:
+                              Theme.of(context).colorScheme.secondaryContainer,
+                          shape: const MiuixSquircleBorder(cornerRadius: 12),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: image,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: _ComicDescription(
+                          title: pages == null
+                              ? title.replaceAll("\n", "")
+                              : "[${pages}P]${title.replaceAll("\n", "")}",
+                          user: subTitle,
+                          description: description,
+                          subDescription: buildSubDescription(context),
+                          badge: badge,
+                          tags: tags,
+                          maxLines: maxLines,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: _ComicDescription(
-                      title: pages == null
-                          ? title.replaceAll("\n", "")
-                          : "[${pages}P]${title.replaceAll("\n", "")}",
-                      user: subTitle,
-                      description: description,
-                      subDescription: buildSubDescription(context),
-                      badge: badge,
-                      tags: tags,
-                      maxLines: maxLines,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+                ))),
       );
     });
   }
@@ -404,66 +408,63 @@ abstract class ComicTile extends StatelessWidget {
   Widget _buildBriefMode(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 12),
-        elevation: 1,
-        child: Stack(
-          children: [
-            Positioned.fill(
-                child: Container(
-                    decoration: ShapeDecoration(
-                        color: Theme.of(context).colorScheme.secondaryContainer,
-                        shape: const MiuixSquircleBorder(cornerRadius: 12)),
-                    clipBehavior: Clip.antiAlias,
-                    child: image)),
-            Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.5),
-                          ]),
-                      borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                          bottomRight: Radius.circular(8))),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                    child: Text(
-                      title.replaceAll("\n", ""),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14.0,
-                        color: Colors.white,
+      child: MiuixSurface(
+          color: Colors.transparent,
+          cornerRadius: 12,
+          shadowElevation: 1,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                  child: Container(
+                      decoration: ShapeDecoration(
+                          color:
+                              Theme.of(context).colorScheme.secondaryContainer,
+                          shape: const MiuixSquircleBorder(cornerRadius: 12)),
+                      clipBehavior: Clip.antiAlias,
+                      child: image)),
+              Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.3),
+                              Colors.black.withOpacity(0.5),
+                            ]),
+                        borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(8),
+                            bottomRight: Radius.circular(8))),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                      child: Text(
+                        title.replaceAll("\n", ""),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14.0,
+                          color: Colors.white,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                )),
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onTap_,
-                  onLongPress: enableLongPressed ? onLongTap_ : null,
-                  onSecondaryTapDown: onSecondaryTap_,
-                  borderRadius: BorderRadius.circular(8),
-                  child: const SizedBox.expand(),
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
+                  )),
+              Positioned.fill(
+                child: GestureDetector(
+                    onSecondaryTapDown: onSecondaryTap_,
+                    child: MiuixPressable(
+                        borderRadius: BorderRadius.circular(8),
+                        onPressed: onTap_,
+                        onLongPress: enableLongPressed ? onLongTap_ : null,
+                        child: const SizedBox.expand())),
+              )
+            ],
+          )),
     );
   }
 }
@@ -982,9 +983,10 @@ String? isBlocked(BaseComic item) {
 }
 
 class _BlockingPane extends StatefulWidget {
-  const _BlockingPane({required this.comic});
+  const _BlockingPane({required this.comic, this.onClose});
 
   final ComicTile comic;
+  final VoidCallback? onClose;
 
   @override
   State<_BlockingPane> createState() => _BlockingPaneState();
@@ -1023,21 +1025,10 @@ class _BlockingPaneState extends State<_BlockingPane> {
       ],
     );
 
-    if (context.width > 400) {
-      return Dialog(
-        elevation: 0,
-        backgroundColor: context.colorScheme.surface,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: content,
-        ),
-      );
-    } else {
-      return Dialog.fullscreen(
-        backgroundColor: context.colorScheme.surface,
-        child: content,
-      );
-    }
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 600),
+      child: content,
+    );
   }
 
   Iterable<Widget> buildTags() sync* {
@@ -1105,6 +1096,10 @@ class _BlockingPaneState extends State<_BlockingPane> {
     for (var c in StateController.findAll<SliverGridComicsController>()) {
       c.update();
     }
-    context.pop();
+    if (widget.onClose != null) {
+      widget.onClose!();
+    } else {
+      context.pop();
+    }
   }
 }

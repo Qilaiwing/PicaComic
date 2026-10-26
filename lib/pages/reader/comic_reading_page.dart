@@ -65,7 +65,6 @@ part 'reading_data.dart';
 
 ///阅读器
 class ComicReadingPage extends StatelessWidget {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final ReadingData readingData;
 
@@ -272,15 +271,7 @@ class ComicReadingPage extends StatelessWidget {
           color: useDarkBackground ? Colors.white : null,
           fontSize: 16,
         ),
-        child: Scaffold(
-          backgroundColor: useDarkBackground ? Colors.black : null,
-          endDrawerEnableOpenDragGesture: false,
-          key: _scaffoldKey,
-          endDrawer: Drawer(
-            child: buildEpsView(),
-          ),
-          floatingActionButton: buildEpChangeButton(logic),
-          body: StateBuilder<ComicReadingPageLogic>(builder: (logic) {
+        child: MiuixScaffold(containerColor: useDarkBackground ? Colors.black : MiuixTheme.of(context).colors.background, floatingActionButton: buildEpChangeButton(logic), content: (_) => StateBuilder<ComicReadingPageLogic>(builder: (logic) {
             if (logic.isLoading) {
               history?.readEpisode.add(logic.order);
               loadInfo(logic);
@@ -625,22 +616,14 @@ class ComicReadingPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16)),
                   child: Stack(
                     children: [
-                      Positioned.fill(
-                          child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => logic.jumpToNextChapter(),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Center(
+                      Positioned.fill(child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(16), onPressed: () => logic.jumpToNextChapter(), child: Center(
                               child: Icon(
                             Icons.arrow_forward_ios,
                             size: 24,
                             color: Theme.of(App.globalContext!)
                                 .colorScheme
                                 .onPrimaryContainer,
-                          )),
-                        ),
-                      )),
+                          )))),
                       Positioned(
                         bottom: 0,
                         left: 0,

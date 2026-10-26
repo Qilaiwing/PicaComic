@@ -187,7 +187,7 @@ class HitomiComicPage extends BaseComicPage<HitomiComic> {
   String? get title => data?.title;
 
   @override
-  Card? get uploaderInfo => null;
+  Widget? get uploaderInfo => null;
 
   @override
   Future<bool> loadFavorite(HitomiComic data) async {

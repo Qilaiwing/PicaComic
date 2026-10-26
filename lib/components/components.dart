@@ -39,6 +39,7 @@ import '../foundation/ui_mode.dart';
 
 part 'animated_image.dart';
 part 'appbar.dart';
+part 'expandable.dart';
 part 'avatar.dart';
 part 'button.dart';
 part 'comic_tile.dart';

@@ -23,10 +23,13 @@ class ExplorePageController extends StateController {
 
   void init(TickerProvider vsync) {
     pages = appdata.appSettings.explorePages;
-    var all = ComicSource.sources.map((e) => e.explorePages).expand((e) => e.map((e) => e.title)).toList();
+    var all = ComicSource.sources
+        .map((e) => e.explorePages)
+        .expand((e) => e.map((e) => e.title))
+        .toList();
     pages = pages.where((e) => all.contains(e)).toList();
-    if(pages.isEmpty && appdata.appSettings.explorePages.isNotEmpty) {
-      if(appdata.appSettings.explorePages.first.isNum) {
+    if (pages.isEmpty && appdata.appSettings.explorePages.isNotEmpty) {
+      if (appdata.appSettings.explorePages.first.isNum) {
         // is odd data, update
         appdata.appSettings.explorePages = all;
         pages = all;
@@ -55,13 +58,10 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget buildFAB() {
     final primary = Theme.of(context).colorScheme.primary;
 
-    return Material(
-      color: Colors.transparent,
-      shape: const MiuixSquircleBorder(cornerRadius: 16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    return MiuixPressable(
         key: const Key("FAB"),
-        onTap: refresh,
+        shape: const MiuixSquircleBorder(cornerRadius: 16),
+        onPressed: refresh,
         child: Container(
           width: 48,
           height: 48,
@@ -83,9 +83,7 @@ class _ExplorePageState extends State<ExplorePage> {
               size: 22,
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 
   Tab buildTab(String i) {
@@ -131,9 +129,7 @@ class _ExplorePageState extends State<ExplorePage> {
               removeTop: true,
               child: TabBarView(
                 controller: logic.tabController,
-                children: logic.pages
-                    .map((e) => buildBody(e))
-                    .toList(),
+                children: logic.pages.map((e) => buildBody(e)).toList(),
               ),
             ),
           ),
@@ -338,11 +334,17 @@ class _MixedExplorePageState
             comics: (cache),
             sourceKey: widget.sourceKey,
           );
-          yield const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()));
+          yield const SliverToBoxAdapter(
+              child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: MiuixHorizontalDivider()));
           cache.clear();
         }
         yield* _buildExplorePagePart(part, widget.sourceKey);
-        yield const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: MiuixHorizontalDivider()));
+        yield const SliverToBoxAdapter(
+            child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: MiuixHorizontalDivider()));
       } else {
         cache.addAll(part as List<BaseComic>);
       }
@@ -403,12 +405,9 @@ Iterable<Widget> _buildExplorePagePart(
             ),
             const Spacer(),
             if (part.viewMore != null)
-              Material(
-                color: Colors.transparent,
-                shape: const MiuixSquircleBorder(cornerRadius: 14),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () {
+              MiuixPressable(
+                  shape: const MiuixSquircleBorder(cornerRadius: 14),
+                  onPressed: () {
                     var context = App.mainNavigatorKey!.currentContext!;
                     if (part.viewMore!.startsWith("search:")) {
                       context.to(
@@ -460,15 +459,12 @@ Iterable<Widget> _buildExplorePagePart(
                         MiuixIcon(
                           vector: MiuixIcons.os4.chevronForward,
                           size: 14,
-                          tint: Theme.of(App.globalContext!)
-                              .colorScheme
-                              .primary,
+                          tint:
+                              Theme.of(App.globalContext!).colorScheme.primary,
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
+                  )),
           ],
         ),
       ),

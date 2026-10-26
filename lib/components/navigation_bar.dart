@@ -479,7 +479,7 @@ class _NaviPaneState extends State<NaviPane>
                   : null,
               actions: [
                 for (var action in widget.paneActions)
-                  Tooltip(
+                  AppTooltip(
                     message: action.label,
                     child: MiuixIconButton(
                       onPressed: action.onTap,
@@ -517,7 +517,7 @@ class _NaviPaneState extends State<NaviPane>
             : null,
         actions: [
           for (var action in widget.paneActions)
-            Tooltip(
+            AppTooltip(
               message: action.label,
               child: MiuixIconButton(
                 onPressed: action.onTap,
@@ -557,7 +557,7 @@ class _NaviPaneState extends State<NaviPane>
             : null,
         actions: [
           for (var action in widget.paneActions)
-            Tooltip(
+            AppTooltip(
               message: action.label,
               child: MiuixIconButton(
                 onPressed: action.onTap,
@@ -579,7 +579,7 @@ class _NaviPaneState extends State<NaviPane>
       onHeightChanged: (info) => _onTopBarHeightChanged(0, info),
       actions: [
         for (var action in widget.paneActions)
-          Tooltip(
+          AppTooltip(
             message: action.label,
             child: MiuixIconButton(
               onPressed: action.onTap,

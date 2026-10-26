@@ -20,6 +20,8 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final comics = HistoryManager().getAll();
   bool searchInit = false;
+  /// MiuixInputField 的展开状态：进入搜索时（searchInit）自动聚焦。
+  bool searchExpanded = false;
   bool searchMode = false;
   String keyword = "";
   var results = <History>[];
@@ -35,65 +37,23 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget buildTitle() {
     if (searchMode) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Transform.translate(
         offset: const Offset(12, 6.0),
         child: Container(
           height: 38,
           margin: const EdgeInsets.only(right: 20),
-          decoration: ShapeDecoration(
-            shape: const MiuixSquircleBorder(cornerRadius: 19),
-            color: isDark ? const Color(0x26FFFFFF) : const Color(0x10000000),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            children: [
-              MiuixIcon(
-                vector: MiuixIcons.os4.search,
-                size: 17,
-                tint: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  autofocus: searchInit,
-                  controller: TextEditingController(text: keyword)
-                    ..selection = TextSelection.collapsed(offset: keyword.length),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    isCollapsed: true,
-                    hintText: "搜索历史记录".tl,
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  style: const TextStyle(fontSize: 14),
-                  onChanged: (s) {
-                    setState(() {
-                      keyword = s.toLowerCase();
-                      searchInit = false;
-                    });
-                  },
-                ),
-              ),
-              if (keyword.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      keyword = "";
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: MiuixIcon(
-                      vector: MiuixIcons.os4.close,
-                      size: 16,
-                      tint: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
+          child: MiuixInputField(
+            query: keyword,
+            label: "搜索历史记录".tl,
+            expanded: searchExpanded,
+            onExpandedChange: (v) => setState(() => searchExpanded = v),
+            onSearch: (_) {},
+            onQueryChange: (s) {
+              setState(() {
+                keyword = s.toLowerCase();
+                searchInit = false;
+              });
+            },
           ),
         ),
       );
@@ -121,15 +81,15 @@ class _HistoryPageState extends State<HistoryPage> {
     if (searchMode) {
       find();
     }
-    return Scaffold(
-      body: SmoothCustomScrollView(
+    return MiuixScaffold(
+      content: (_) => SmoothCustomScrollView(
         slivers: [
           SliverAppbar(
             title: buildTitle(),
             largeTitle: searchMode ? null : Text("${"历史记录".tl} (${comics.length})"),
             actions: [
               if (!searchMode)
-                Tooltip(
+                AppTooltip(
                   message: "清除".tl,
                   child: MiuixIconButton(
                     child: MiuixIcon(
@@ -148,7 +108,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                   ),
                 ),
-              Tooltip(
+              AppTooltip(
                 message: searchMode ? "关闭搜索".tl : "搜索".tl,
                 child: MiuixIconButton(
                   child: MiuixIcon(
@@ -159,6 +119,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     setState(() {
                       searchMode = !searchMode;
                       searchInit = true;
+                      searchExpanded = searchMode;
                       if (!searchMode) {
                         keyword = "";
                       }

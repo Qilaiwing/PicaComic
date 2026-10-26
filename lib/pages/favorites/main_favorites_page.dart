@@ -219,11 +219,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
               ),
             ],
           ),
-          child: Material(
-            color: Colors.transparent,
-            shape: const MiuixSquircleBorder(cornerRadius: 16),
-            clipBehavior: Clip.antiAlias,
-            child: SizedBox(
+          child: SizedBox(
               height: _kSecondaryTopBarHeight,
               child: Row(children: [
                 Icon(
@@ -239,9 +235,9 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ).paddingBottom(3),
                 const Spacer(),
-                Tooltip(
-                  message: "全选".tl,
-                  child: MiuixIconButton(
+                MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("全选".tl)),
+ child: MiuixIconButton(
                     child: MiuixIcon(
                       vector: MiuixIcons.extended.byName('selectAll') ??
                           MiuixIcons.basic.check,
@@ -254,10 +250,10 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                       controller.update();
                     },
                   ),
-                ),
-                Tooltip(
-                  message: "取消".tl,
-                  child: MiuixIconButton(
+),
+                MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("取消".tl)),
+ child: MiuixIconButton(
                     child: MiuixIcon(
                       vector: MiuixIcons.basic.close,
                       size: 20,
@@ -267,10 +263,10 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                       controller.update();
                     },
                   ),
-                ),
-                Tooltip(
-                  message: "菜单".tl,
-                  child: MiuixIconButton(
+),
+                MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("菜单".tl)),
+ child: MiuixIconButton(
                     child: MiuixIcon(
                       vector: MiuixIcons.os4.more,
                       size: 20,
@@ -284,10 +280,9 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                       }
                     },
                   ),
-                ),
+),
               ]).paddingHorizontal(16),
             ),
-          ),
         ),
       );
     }
@@ -313,13 +308,8 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
             ),
           ],
         ),
-        child: Material(
-          color: Colors.transparent,
-          shape: const MiuixSquircleBorder(cornerRadius: 12),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            hoverColor: Colors.transparent,
-            onTap: () {
+        child: MiuixPressable(
+ onPressed: () {
               if (controller.selectingFolder) {
                 if (controller.current == null) {
                   showToast(message: "选择收藏夹".tl);
@@ -334,7 +324,8 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                 appdata.writeImplicitData();
               }
             },
-            child: SizedBox(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: SizedBox(
               height: _kSecondaryTopBarHeight,
               child: Row(children: [
                 MiuixIcon(
@@ -357,14 +348,13 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                 if (controller.selectingFolder)
                   const Icon(Icons.keyboard_arrow_up, size: 18)
                 else
-                  Tooltip(
-                    message: "切换收藏夹".tl,
-                    child: const Icon(Icons.unfold_more, size: 18),
-                  ),
+                  MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("切换收藏夹".tl)),
+ child: const Icon(Icons.unfold_more, size: 18),
+),
               ]).paddingHorizontal(14),
             ),
-          ),
-        ),
+),
       ),
     );
   }
@@ -375,9 +365,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
         .whereType<FavoriteData>();
     final hasNetwork = networkFolders.isNotEmpty;
 
-    return Material(
-      color: Colors.transparent,
-      child: SmoothCustomScrollView(
+    return SmoothCustomScrollView(
         slivers: [
           if (hasNetwork) ...[
             buildTitle("网络".tl)
@@ -396,8 +384,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
           buildLocal().sliverPaddingHorizontal(14),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
-      ),
-    );
+      );
   }
 
   Widget buildTitle(String title) {
@@ -433,12 +420,8 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
         final data = folders.elementAt(index);
         return Padding(
           padding: const EdgeInsets.all(3.5),
-          child: Material(
-            color: Colors.transparent,
-            shape: const MiuixSquircleBorder(cornerRadius: 14),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () {
+          child: MiuixPressable(
+ onPressed: () {
                 controller.current = data?.title;
                 controller.isNetwork = true;
                 controller.selectingFolder = false;
@@ -447,7 +430,8 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                 appdata.implicitData[0] = "0;1;${data?.title ?? ""}";
                 appdata.writeImplicitData();
               },
-              child: Container(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                 decoration: ShapeDecoration(
                   shape: MiuixSquircleBorder(
                     cornerRadius: 14,
@@ -499,8 +483,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                   ],
                 ),
               ),
-            ),
-          ),
+),
         );
       }, childCount: folders.length),
     );
@@ -523,12 +506,10 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
           child: GestureDetector(
             onLongPressStart: (details) =>
                 _showMenu(data, details.globalPosition),
-            child: Material(
-              color: Colors.transparent,
-              shape: const MiuixSquircleBorder(cornerRadius: 14),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: () {
+            onSecondaryTapUp: (details) =>
+                _showDesktopMenu(data, details.globalPosition),
+            child: MiuixPressable(
+ onPressed: () {
                   controller.current = data;
                   controller.isNetwork = false;
                   controller.selectingFolder = false;
@@ -536,9 +517,8 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                   appdata.implicitData[0] = "0;0;$data";
                   appdata.writeImplicitData();
                 },
-                onSecondaryTapUp: (details) =>
-                    _showDesktopMenu(data, details.globalPosition),
-                child: Container(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                   decoration: ShapeDecoration(
                     shape: MiuixSquircleBorder(
                       cornerRadius: 14,
@@ -607,8 +587,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                     ],
                   ),
                 ),
-              ),
-            ),
+),
           ),
         );
       }, childCount: folders.length),
@@ -623,13 +602,10 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
       return Expanded(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Material(
-            color: Colors.transparent,
-            shape: const MiuixSquircleBorder(cornerRadius: 14),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: onTap,
-              child: Container(
+          child: MiuixPressable(
+ onPressed: onTap,
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                 height: 44,
                 decoration: ShapeDecoration(
                   shape: MiuixSquircleBorder(
@@ -668,8 +644,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                   ],
                 ),
               ),
-            ),
-          ),
+),
         ),
       );
     }
@@ -975,9 +950,21 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
       return buildEmptyView();
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: MediaQuery.removePadding(
+    return MiuixScaffold(
+ floatingActionButton: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 150),
+        reverseDuration: const Duration(milliseconds: 150),
+        child: showFB && folderSync() != null ? buildFAB() : const SizedBox(),
+        transitionBuilder: (widget, animation) {
+          var tween =
+              Tween<Offset>(begin: const Offset(0, 1), end: const Offset(0, 0));
+          return SlideTransition(
+            position: tween.animate(animation),
+            child: widget,
+          );
+        },
+      ),
+ content: (_) => MediaQuery.removePadding(
         key: Key(folder),
         removeTop: true,
         context: context,
@@ -1052,32 +1039,15 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
           ),
         ),
       ),
-      floatingActionButton: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 150),
-        reverseDuration: const Duration(milliseconds: 150),
-        child: showFB && folderSync() != null ? buildFAB() : const SizedBox(),
-        transitionBuilder: (widget, animation) {
-          var tween =
-              Tween<Offset>(begin: const Offset(0, 1), end: const Offset(0, 0));
-          return SlideTransition(
-            position: tween.animate(animation),
-            child: widget,
-          );
-        },
-      ),
-    );
+);
   }
 
-  Widget buildFAB() => Material(
-        color: Colors.transparent,
-        child: FloatingActionButton(
-          key: const Key("FAB"),
-          shape: const MiuixSquircleBorder(cornerRadius: 18),
-          onPressed: () => onRefresh(context),
-          child: MiuixIcon(
-            vector: MiuixIcons.os4.refresh,
-            size: 22,
-          ),
+  Widget buildFAB() => MiuixFloatingActionButton(
+        key: const Key("FAB"),
+        onPressed: () => onRefresh(context),
+        child: MiuixIcon(
+          vector: MiuixIcons.os4.refresh,
+          size: 22,
         ),
       );
 
@@ -1184,9 +1154,14 @@ class _FoldersReorderPageState extends State<_FoldersReorderPage> {
               ),
             ));
 
-    return Scaffold(
-      appBar: AppBar(title: Text("排序".tl)),
-      body: Column(
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(
+ title: "排序".tl,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => Padding(
+ padding: padding,
+ child: Column(
         children: [
           Expanded(
             child: ReorderableBuilder(
@@ -1221,6 +1196,7 @@ class _FoldersReorderPageState extends State<_FoldersReorderPage> {
           )
         ],
       ),
-    );
+ ),
+);
   }
 }

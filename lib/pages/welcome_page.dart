@@ -27,58 +27,52 @@ class _WelcomePageState extends State<WelcomePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: isDark ? const Color(0xFF141416) : const Color(0xFFF3F3F6),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 540, maxHeight: 600),
-            child: Material(
-              color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
-              elevation: 0,
-              shape: MiuixSquircleBorder(
-                cornerRadius: 28,
-                side: BorderSide(
-                  color: isDark ? const Color(0x18FFFFFF) : const Color(0x0E000000),
-                  width: 0.8,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox.expand(
-                child: PageView(
-                  controller: controller,
-                  onPageChanged: (i) {
-                    setState(() {
-                      page = i;
-                    });
-                  },
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: const [
-                    _AppIcon(),
-                    _AppInfo(),
-                    _AppAppearance(),
-                    _ComicsDisplaySettings(),
-                    _ReadingSettings(),
-                    _ComicSource(),
-                    _More(),
-                  ],
-                ),
-              ),
-            ),
-          ).toCenter(),
-        ),
-      ),
-    );
+        color: isDark ? const Color(0xFF141416) : const Color(0xFFF3F3F6),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 540, maxHeight: 600),
+              child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: MiuixSurface(
+                      color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+                      cornerRadius: 28,
+                      child: SizedBox.expand(
+                        child: PageView(
+                          controller: controller,
+                          onPageChanged: (i) {
+                            setState(() {
+                              page = i;
+                            });
+                          },
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: const [
+                            _AppIcon(),
+                            _AppInfo(),
+                            _AppAppearance(),
+                            _ComicsDisplaySettings(),
+                            _ReadingSettings(),
+                            _ComicSource(),
+                            _More(),
+                          ],
+                        ),
+                      ))),
+            ).toCenter(),
+          ),
+        ));
   }
 
   void next() {
     controller.animateToPage((controller.page! + 1).round(),
-        duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic);
   }
 
   void back() {
     controller.animateToPage((controller.page! - 1).round(),
-        duration: const Duration(milliseconds: 260), curve: Curves.easeOutCubic);
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic);
   }
 }
 
@@ -107,17 +101,17 @@ mixin class _WelcomePageComponents {
       child: Row(
         children: [
           if (page != 0)
-            Material(
-              color: Colors.transparent,
-              shape: const StadiumBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: state.back,
+            MiuixPressable(
+                shape: const StadiumBorder(),
+                onPressed: state.back,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7.5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7.5),
                   decoration: ShapeDecoration(
                     shape: const StadiumBorder(),
-                    color: isDark ? const Color(0x22FFFFFF) : const Color(0x12000000),
+                    color: isDark
+                        ? const Color(0x22FFFFFF)
+                        : const Color(0x12000000),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -134,14 +128,13 @@ mixin class _WelcomePageComponents {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF222222),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF222222),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            )
+                ))
           else
             const SizedBox(width: 50),
           const Spacer(),
@@ -160,18 +153,17 @@ mixin class _WelcomePageComponents {
                     borderRadius: BorderRadius.circular(3),
                     color: i == page
                         ? primary
-                        : (isDark ? const Color(0x33FFFFFF) : const Color(0x22000000)),
+                        : (isDark
+                            ? const Color(0x33FFFFFF)
+                            : const Color(0x22000000)),
                   ),
                 ),
             ],
           ),
           const Spacer(),
-          Material(
-            color: Colors.transparent,
-            shape: const StadiumBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: canNext
+          MiuixPressable(
+              shape: const StadiumBorder(),
+              onPressed: canNext
                   ? (page != 6
                       ? state.next
                       : () async {
@@ -183,10 +175,15 @@ mixin class _WelcomePageComponents {
                   : null,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7.5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 7.5),
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),
-                  color: canNext ? primary : (isDark ? const Color(0x22FFFFFF) : const Color(0x18000000)),
+                  color: canNext
+                      ? primary
+                      : (isDark
+                          ? const Color(0x22FFFFFF)
+                          : const Color(0x18000000)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -196,7 +193,11 @@ mixin class _WelcomePageComponents {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: canNext ? Colors.white : (isDark ? const Color(0x66FFFFFF) : const Color(0x55000000)),
+                        color: canNext
+                            ? Colors.white
+                            : (isDark
+                                ? const Color(0x66FFFFFF)
+                                : const Color(0x55000000)),
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -205,7 +206,11 @@ mixin class _WelcomePageComponents {
                         vector: MiuixIcons.extended.byName('chevronForward') ??
                             MiuixIcons.os4.chevronForward,
                         size: 15,
-                        tint: canNext ? Colors.white : (isDark ? const Color(0x66FFFFFF) : const Color(0x55000000)),
+                        tint: canNext
+                            ? Colors.white
+                            : (isDark
+                                ? const Color(0x66FFFFFF)
+                                : const Color(0x55000000)),
                       )
                     else
                       const Icon(
@@ -215,9 +220,7 @@ mixin class _WelcomePageComponents {
                       ),
                   ],
                 ),
-              ),
-            ),
-          ),
+              )),
         ],
       ),
     );
@@ -322,7 +325,9 @@ class _AppInfoState extends State<_AppInfo> with _WelcomePageComponents {
               shape: MiuixSquircleBorder(
                 cornerRadius: 16,
                 side: BorderSide(
-                  color: isDark ? const Color(0x18FFFFFF) : const Color(0x14000000),
+                  color: isDark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x14000000),
                   width: 0.6,
                 ),
               ),
@@ -337,11 +342,9 @@ class _AppInfoState extends State<_AppInfo> with _WelcomePageComponents {
           ),
         ),
         const SizedBox(height: 12),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
+        MiuixPressable(
             borderRadius: BorderRadius.circular(8),
-            onTap: () => setState(() => agree = !agree),
+            onPressed: () => setState(() => agree = !agree),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
               child: Row(
@@ -366,9 +369,7 @@ class _AppInfoState extends State<_AppInfo> with _WelcomePageComponents {
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
+            )),
         buildBottom(context, 1, agree),
       ],
     );
@@ -483,14 +484,12 @@ class _ComicsDisplaySettingsState extends State<_ComicsDisplaySettings>
     final primary = Theme.of(context).colorScheme.primary;
     final selectedType = appdata.appSettings.comicsListDisplayType;
 
-    Widget buildOptionTile(int value, String title, String subtitle, IconData icon) {
+    Widget buildOptionTile(
+        int value, String title, String subtitle, IconData icon) {
       final isSelected = selectedType == value;
-      return Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 16),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
+      return MiuixPressable(
+          shape: const MiuixSquircleBorder(cornerRadius: 16),
+          onPressed: () {
             setState(() {
               appdata.appSettings.comicsListDisplayType = value;
             });
@@ -505,20 +504,26 @@ class _ComicsDisplaySettingsState extends State<_ComicsDisplaySettings>
                 side: BorderSide(
                   color: isSelected
                       ? primary.withOpacity(isDark ? 0.55 : 0.42)
-                      : (isDark ? const Color(0x1AFFFFFF) : const Color(0x14000000)),
+                      : (isDark
+                          ? const Color(0x1AFFFFFF)
+                          : const Color(0x14000000)),
                   width: isSelected ? 1.0 : 0.8,
                 ),
               ),
               color: isSelected
                   ? primary.withOpacity(isDark ? 0.14 : 0.07)
-                  : (isDark ? const Color(0xFF222226) : const Color(0xFFF7F7F9)),
+                  : (isDark
+                      ? const Color(0xFF222226)
+                      : const Color(0xFFF7F7F9)),
             ),
             child: Row(
               children: [
                 Icon(
                   icon,
                   size: 22,
-                  color: isSelected ? primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: isSelected
+                      ? primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -530,7 +535,9 @@ class _ComicsDisplaySettingsState extends State<_ComicsDisplaySettings>
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w600,
-                          color: isSelected ? primary : Theme.of(context).colorScheme.onSurface,
+                          color: isSelected
+                              ? primary
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -557,9 +564,7 @@ class _ComicsDisplaySettingsState extends State<_ComicsDisplaySettings>
                 ),
               ],
             ),
-          ),
-        ),
-      );
+          ));
     }
 
     return buildView(
@@ -630,19 +635,25 @@ class _ComicSourceState extends State<_ComicSource>
             itemBuilder: (context, index) {
               var key = builtInSources[index];
               final isEnabled = appdata.appSettings.isComicSourceEnabled(key);
-              final sourceName = ComicSource.builtIn.firstWhere((e) => e.key == key).name;
+              final sourceName =
+                  ComicSource.builtIn.firstWhere((e) => e.key == key).name;
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: ShapeDecoration(
                   shape: MiuixSquircleBorder(
                     cornerRadius: 14,
                     side: BorderSide(
-                      color: isDark ? const Color(0x18FFFFFF) : const Color(0x14000000),
+                      color: isDark
+                          ? const Color(0x18FFFFFF)
+                          : const Color(0x14000000),
                       width: 0.6,
                     ),
                   ),
-                  color: isDark ? const Color(0xFF242428) : const Color(0xFFF7F7F9),
+                  color: isDark
+                      ? const Color(0xFF242428)
+                      : const Color(0xFFF7F7F9),
                 ),
                 child: Row(
                   children: [
@@ -696,12 +707,9 @@ class _More extends StatelessWidget with _WelcomePageComponents {
           ),
           color: isDark ? const Color(0xFF242428) : const Color(0xFFF7F7F9),
         ),
-        child: Material(
-          color: Colors.transparent,
-          shape: const MiuixSquircleBorder(cornerRadius: 16),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
+        child: MiuixPressable(
+            shape: const MiuixSquircleBorder(cornerRadius: 16),
+            onPressed: onTap,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
@@ -725,9 +733,7 @@ class _More extends StatelessWidget with _WelcomePageComponents {
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
+            )),
       );
     }
 

@@ -178,8 +178,8 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
       canPop.value = true;
       App.temporaryDisablePopGesture = false;
     }
-    return Material(
-      child: buildBody(),
+    return MiuixScaffold(
+      content: (_) => buildBody(),
     );
   }
 
@@ -217,9 +217,8 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               height: MediaQuery.of(context).size.height,
               child: Listener(
                 onPointerDown: handlePointerDown,
-                child: Material(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: buildRight(),
+                child: MiuixScaffold(
+                  content: (_) => buildRight(),
                 ),
               ),
             )
@@ -244,9 +243,9 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         blurRadius: 50,
         blurTintAlpha: isDark ? 0.42 : 0.48,
         navigationIcon: Navigator.of(context).canPop()
-            ? Tooltip(
-                message: "返回".tl,
-                child: MiuixIconButton(
+            ? MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("返回".tl)),
+ child: MiuixIconButton(
                   child: MiuixIcon(
                     vector: MiuixIcons.extended.byName('chevronBackward') ??
                         MiuixIcons.os4.back,
@@ -254,7 +253,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
                   ),
                   onPressed: () => App.globalBack(),
                 ),
-              )
+)
             : null,
       ),
       content: (padding) => MiuixScrollBehaviorListener(
@@ -306,19 +305,15 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-        child: Material(
-          color: Colors.transparent,
-          shape: const MiuixSquircleBorder(cornerRadius: 16),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => setState(() {
+        child: MiuixPressable(
+ onPressed: () => setState(() {
               _rightBehavior.state.heightOffset = 0;
               _rightBehavior.state.contentOffset = 0;
               currentPage = id;
             }),
-            child: content,
-          ),
-        ),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: content,
+),
       );
     }
 

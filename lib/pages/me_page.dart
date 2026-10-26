@@ -141,8 +141,7 @@ class _MePageState extends State<MePage> {
     final historyCount = HistoryManager().count();
 
     final name = logged ? profile.name : "点击登录 PicaCG".tl;
-    final slogan =
-        logged ? (profile.slogan ?? '') : "登录后即可展示你的个人信息".tl;
+    final slogan = logged ? (profile.slogan ?? '') : "登录后即可展示你的个人信息".tl;
     final avatarUrl = logged ? profile.avatarUrl : null;
 
     /// 等级胶囊, 点击可在 "Lv1 萌新" 与 "经验值" 之间切换
@@ -186,18 +185,16 @@ class _MePageState extends State<MePage> {
       VoidCallback? onTap,
     }) {
       return Expanded(
-        child: Material(
-          color: Colors.transparent,
-          shape: MiuixSquircleBorder(
-            cornerRadius: 16,
-            side: BorderSide(
-              color: isDark ? const Color(0x0DFFFFFF) : const Color(0x0A000000),
-              width: 0.6,
+        child: MiuixPressable(
+            shape: MiuixSquircleBorder(
+              cornerRadius: 16,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0x0DFFFFFF) : const Color(0x0A000000),
+                width: 0.6,
+              ),
             ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
+            onPressed: onTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               color: isDark ? const Color(0x0DFFFFFF) : const Color(0x0A000000),
@@ -235,9 +232,7 @@ class _MePageState extends State<MePage> {
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
+            )),
       );
     }
 
@@ -377,12 +372,9 @@ class _MePageState extends State<MePage> {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => context.to(() => const HistoryPage()),
+      child: MiuixPressable(
+          shape: const MiuixSquircleBorder(cornerRadius: 18),
+          onPressed: () => context.to(() => const HistoryPage()),
           child: Column(
             children: [
               MiuixBasicComponent(
@@ -404,9 +396,10 @@ class _MePageState extends State<MePage> {
                     const spacing = 10.0;
                     const horizontalPadding = 14.0;
                     // 一屏正好显示 3 个封面
-                    final itemWidth =
-                        (constraints.maxWidth - horizontalPadding * 2 - spacing * 2) /
-                            3;
+                    final itemWidth = (constraints.maxWidth -
+                            horizontalPadding * 2 -
+                            spacing * 2) /
+                        3;
                     final itemHeight = itemWidth * 1.42;
                     return SizedBox(
                       height: itemHeight,
@@ -420,18 +413,15 @@ class _MePageState extends State<MePage> {
                         itemBuilder: (context, index) {
                           return SizedBox(
                             width: itemWidth,
-                            child: Material(
-                              color: Colors.transparent,
-                              shape: const MiuixSquircleBorder(
-                                  cornerRadius: 12),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () => toComicPageWithHistory(
+                            child: MiuixPressable(
+                                shape:
+                                    const MiuixSquircleBorder(cornerRadius: 12),
+                                onPressed: () => toComicPageWithHistory(
                                     context, history[index]),
                                 child: ClipPath(
                                   clipper: const ShapeBorderClipper(
-                                    shape: MiuixSquircleBorder(
-                                        cornerRadius: 12),
+                                    shape:
+                                        MiuixSquircleBorder(cornerRadius: 12),
                                   ),
                                   child: Container(
                                     decoration: ShapeDecoration(
@@ -455,9 +445,7 @@ class _MePageState extends State<MePage> {
                                       filterQuality: FilterQuality.medium,
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
+                                )),
                           );
                         },
                       ),
@@ -466,9 +454,7 @@ class _MePageState extends State<MePage> {
                 ),
               const SizedBox(height: 12),
             ],
-          ),
-        ),
-      ),
+          )),
     );
   }
 
@@ -498,7 +484,10 @@ class _MePageState extends State<MePage> {
         height: 26,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: ShapeDecoration(
-          color: Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.08),
+          color: Theme.of(App.globalContext!)
+              .colorScheme
+              .primary
+              .withOpacity(0.08),
           shape: const MiuixSquircleBorder(cornerRadius: 13),
         ),
         child: Center(
@@ -580,12 +569,9 @@ class _MePageCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
+      child: MiuixPressable(
+          shape: const MiuixSquircleBorder(cornerRadius: 18),
+          onPressed: onTap,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -609,7 +595,10 @@ class _MePageCard extends StatelessWidget {
                 description,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.8),
                 ),
               )
                   .paddingHorizontal(16)
@@ -617,9 +606,7 @@ class _MePageCard extends StatelessWidget {
                   .paddingTop(2),
               if (child != null) child!,
             ],
-          ),
-        ),
-      ),
+          )),
     );
   }
 }

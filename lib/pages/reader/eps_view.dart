@@ -21,8 +21,7 @@ class _EpsViewState extends State<EpsView> {
     for(int index = 0; index<data.eps!.length; index++){
       String title = data.eps!.values.elementAt(index);
       epsWidgets.add(
-          InkWell(
-            onTap: (){
+          MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, onPressed: (){
               Navigator.pop(App.globalContext!);
               logic.jumpToChapter(index+1);
             },

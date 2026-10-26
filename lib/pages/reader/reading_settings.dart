@@ -2,14 +2,17 @@ part of pica_reader;
 
 void showSettings(BuildContext context) {
   if (UiMode.m1(context)) {
-    showModalBottomSheet(
+    showMiuixBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      // 遮罩几乎透明，否则面板底下的模糊采样到的是被压暗的画面，
-      // 玻璃效果会被灰色糊掉，看起来就像没有模糊。
-      barrierColor: Colors.black.withOpacity(0.06),
-      builder: (context) => const _MiuixReadingSettingsModal(),
+      builder: (context, close) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.75,
+        child: const Material(
+          type: MaterialType.transparency,
+          child: SingleChildScrollView(
+            child: ReadingSettings(),
+          ),
+        ),
+      ),
     );
   } else {
     showSideBar(
@@ -19,54 +22,6 @@ void showSettings(BuildContext context) {
       ),
       useSurfaceTintColor: true,
       width: 450,
-    );
-  }
-}
-
-class _MiuixReadingSettingsModal extends StatelessWidget {
-  const _MiuixReadingSettingsModal();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
-
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      child: MiuixGlassPanel(
-        cornerRadius: 26,
-        // 之前是不透明度 0xF0/0xF4，几乎是不透明实色，背后的模糊透不出来
-        tint: isDark ? const Color(0xD01C1C1E) : const Color(0xDCF4F4F7),
-        strokeColor: isDark ? const Color(0x24FFFFFF) : const Color(0x0E000000),
-        strokeWidth: 0.8,
-        blurRadius: 30,
-        shadow: BoxShadow(
-          color: Colors.black.withOpacity(isDark ? 0.5 : 0.16),
-          blurRadius: 24,
-          offset: const Offset(0, -6),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 6),
-                width: 36,
-                height: 4.5,
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0x38FFFFFF)
-                      : const Color(0x28000000),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ),
-            const Flexible(
-              child: ReadingSettings(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -105,33 +60,15 @@ class _ReadingSettingsState extends State<ReadingSettings> {
   }
 
   Widget _buildCard({required List<Widget> children, required bool isDark}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: ShapeDecoration(
-        shape: MiuixSquircleBorder(
-          cornerRadius: 16,
-          side: BorderSide(
-            color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
-            width: 0.6,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: MiuixCard(
+        child: Material(
+          type: MaterialType.transparency,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
           ),
-        ),
-        color: isDark ? const Color(0xFF242428) : Colors.white,
-        shadows: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.22 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      // 内外都用 squircle 裁剪；之前内层是普通圆角，边缘会错位出一圈亮边
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 16),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: children,
         ),
       ),
     );
@@ -179,9 +116,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                   ),
                 ),
                 const Spacer(),
-                Tooltip(
-                  message: "关闭".tl,
-                  child: MiuixIconButton(
+                MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("关闭".tl)), child: MiuixIconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
                     child: MiuixIcon(
                       vector: MiuixIcons.os4.close,

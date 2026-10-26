@@ -15,11 +15,9 @@ class BlockingKeywordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var addButton = Tooltip(
-      message: "添加".tl,
-      child: IconButton(
-        icon: const Icon(Icons.add),
-        onPressed: () {
+    var addButton = MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("添加".tl)),
+ child: MiuixIconButton(onPressed: () {
           showMiuixDialog(
             context: context,
             title: "添加屏蔽关键词".tl,
@@ -63,24 +61,20 @@ class BlockingKeywordPage extends StatelessWidget {
               ),
             ),
           );
-        },
-      ),
-    );
+        }, child: const Icon(Icons.add)),
+);
 
     var orderButton = StateBuilder<BlockingKeywordPageLogic>(
       builder: (logic) {
-        return Tooltip(
-          message: "显示顺序",
-          child: IconButton(
-            icon: logic.down
-                ? const Icon(Icons.arrow_downward)
-                : const Icon(Icons.arrow_upward),
-            onPressed: () {
+        return MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("显示顺序")),
+ child: MiuixIconButton(onPressed: () {
               logic.down = !logic.down;
               logic.update();
-            },
-          ),
-        );
+            }, child: logic.down
+                ? const Icon(Icons.arrow_downward)
+                : const Icon(Icons.arrow_upward)),
+);
       },
     );
 
@@ -119,14 +113,11 @@ class BlockingKeywordPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () {
+                          MiuixIconButton(onPressed: () {
                               appdata.firstUse[0] = "0";
                               appdata.writeData();
                               logic.update();
-                            },
-                          ),
+                            }, child: const Icon(Icons.close, size: 18)),
                         ],
                       ),
                     ),
@@ -151,18 +142,15 @@ class BlockingKeywordPage extends StatelessWidget {
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                      onPressed: () {
+                    MiuixIconButton(onPressed: () {
                         logic.keywords.remove(keywords[index - 1]);
                         logic.update();
                         appdata.writeData();
-                      },
-                    ),
+                      }, child: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.outline,
+                      )),
                   ],
                 ),
               ),

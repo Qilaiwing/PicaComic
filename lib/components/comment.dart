@@ -39,14 +39,12 @@ class CommentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final outlineColor = isDark ? const Color(0x99FFFFFF) : const Color(0x8A000000);
+    final outlineColor =
+        isDark ? const Color(0x99FFFFFF) : const Color(0x8A000000);
 
-    return Material(
-      color: Colors.transparent,
-      shape: const MiuixSquircleBorder(cornerRadius: 14),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
+    return MiuixPressable(
+        shape: const MiuixSquircleBorder(cornerRadius: 14),
+        onPressed: onTap,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           child: SizedBox(
@@ -93,23 +91,23 @@ class CommentTile extends StatelessWidget {
                             ),
                           const Spacer(),
                           if (like != null)
-                            Material(
-                              color: Colors.transparent,
-                              shape: const MiuixSquircleBorder(cornerRadius: 8),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: like,
+                            MiuixPressable(
+                                shape:
+                                    const MiuixSquircleBorder(cornerRadius: 8),
+                                onPressed: like,
                                 child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 4),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       MiuixIcon(
                                         vector: (liked ?? false)
-                                            ? (MiuixIcons.extended.byName('favoritesFill') ??
+                                            ? (MiuixIcons.extended
+                                                    .byName('favoritesFill') ??
                                                 MiuixIcons.os4.favorites)
-                                            : (MiuixIcons.extended.byName('favorites') ??
+                                            : (MiuixIcons.extended
+                                                    .byName('favorites') ??
                                                 MiuixIcons.os4.favorites),
                                         size: 14,
                                         tint: (liked ?? false)
@@ -128,25 +126,22 @@ class CommentTile extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ),
+                                )),
                           if (like != null) const SizedBox(width: 12),
                           if (comments != null)
-                            Material(
-                              color: Colors.transparent,
-                              shape: const MiuixSquircleBorder(cornerRadius: 8),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: onTap,
+                            MiuixPressable(
+                                shape:
+                                    const MiuixSquircleBorder(cornerRadius: 8),
+                                onPressed: onTap,
                                 child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 4),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       MiuixIcon(
-                                        vector: MiuixIcons.extended.byName('messages') ??
+                                        vector: MiuixIcons.extended
+                                                .byName('messages') ??
                                             MiuixIcons.os4.more,
                                         size: 14,
                                         tint: outlineColor,
@@ -161,9 +156,7 @@ class CommentTile extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ),
+                                )),
                         ],
                       )
                     ],
@@ -172,8 +165,6 @@ class CommentTile extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

@@ -56,8 +56,8 @@ class _CategoryComicsPageState extends State<CategoryComicsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _CategoryComicsList(
+    return MiuixScaffold(
+      content: (_) => _CategoryComicsList(
         key: ValueKey(
             "${widget.category} with ${widget.param} and $optionsValue"),
         loader: data.load,

@@ -157,12 +157,8 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Center(
-                  child: Material(
-                    color: Colors.transparent,
-                    shape: const StadiumBorder(),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
+                  child: MiuixPressable(
+ onPressed: () {
                         showMiuixDialog(
                             context: context,
                             title: "创建收藏夹".tl,
@@ -174,7 +170,8 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
                                       }));
                             });
                       },
-                      child: Container(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 10),
                         decoration: ShapeDecoration(
@@ -202,8 +199,7 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
                           ],
                         ),
                       ),
-                    ),
-                  ),
+),
                 ),
               ),
             )
@@ -235,13 +231,10 @@ class _FolderTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Material(
-        color: Colors.transparent,
-        shape: const MiuixSquircleBorder(cornerRadius: 14),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
+      child: MiuixPressable(
+ onPressed: onTap,
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
             decoration: ShapeDecoration(
               shape: MiuixSquircleBorder(
                 cornerRadius: 14,
@@ -291,17 +284,13 @@ class _FolderTile extends StatelessWidget {
                   ),
                 ),
                 if (deleteFolder != null)
-                  IconButton(
-                    icon: const Icon(Icons.delete_forever_outlined, size: 20),
-                    onPressed: () => onDeleteFolder(context),
-                  )
+                  MiuixIconButton(onPressed: () => onDeleteFolder(context), child: const Icon(Icons.delete_forever_outlined, size: 20))
                 else
                   const Icon(Icons.chevron_right, size: 18),
               ],
             ),
           ),
-        ),
-      ),
+),
     );
   }
 

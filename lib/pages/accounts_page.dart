@@ -40,8 +40,8 @@ class AccountsPage extends StatelessWidget {
       );
       return PopUpWidgetScaffold(title: "账号管理".tl, body: body);
     } else {
-      return Scaffold(
-        body: StateBuilder<AccountsPageLogic>(
+      return MiuixScaffold(
+        content: (_) => StateBuilder<AccountsPageLogic>(
           init: AccountsPageLogic(),
           builder: (logic) {
             return SmoothCustomScrollView(

@@ -138,33 +138,11 @@ class JmCommentsPage extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                    decoration: ShapeDecoration(
-                      shape: const MiuixSquircleBorder(cornerRadius: 22),
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withOpacity(
-                              Theme.of(context).brightness == Brightness.dark ? 0.45 : 0.65),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: logic.controller,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isCollapsed: true,
-                              hintText: "评论...".tl,
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            style: const TextStyle(fontSize: 14.5),
-                            minLines: 1,
-                            maxLines: 5,
-                          ),
+                          child: MiuixTextField(controller: logic.controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 5),
                         ),
                         MiuixIconButton(
                           minWidth: 36,
@@ -198,11 +176,7 @@ class JmCommentsPage extends StatelessWidget {
     if (popUp) {
       return body;
     } else {
-      return Scaffold(
-        appBar: Appbar(
-          title: Text("评论".tl),
-        ),
-        body: body,
+      return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "评论".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: body),
       );
     }
   }

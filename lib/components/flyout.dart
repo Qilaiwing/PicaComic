@@ -72,13 +72,17 @@ class _FlyoutState extends State<Flyout> {
   @override
   Widget build(BuildContext context) {
     if (widget.withInkWell) {
-      return InkWell(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        onTap: widget.enableTap ? show : null,
+      // Miuix 按压反馈替代 InkWell 水波纹；双击 / 右键仍由外层 GestureDetector 处理。
+      return GestureDetector(
         onDoubleTap: widget.enableDoubleTap ? show : null,
-        onLongPress: widget.enableLongPress ? show : null,
         onSecondaryTap: widget.enableSecondaryTap ? show : null,
-        child: widget.child,
+        child: MiuixPressable(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          feedbackType: MiuixPressFeedbackType.sink,
+          onPressed: widget.enableTap ? show : null,
+          onLongPress: widget.enableLongPress ? show : null,
+          child: widget.child,
+        ),
       );
     }
     return GestureDetector(
@@ -90,74 +94,27 @@ class _FlyoutState extends State<Flyout> {
     );
   }
 
+  /// 以 Miuix 弹窗（[MiuixOverlayListPopup]）在控件处弹出 flyout 内容。
+  /// flyout 里的按钮直接 `Navigator.pop` 也能正常关闭。
   void show() {
     var renderBox = context.findRenderObject() as RenderBox;
     var rect = renderBox.localToGlobal(Offset.zero) & renderBox.size;
-    var navigator = widget.navigator ?? Navigator.of(context);
-    navigator.push(PageRouteBuilder(
-        fullscreenDialog: true,
-        barrierDismissible: true,
-        opaque: false,
-        transitionDuration: _fastAnimationDuration,
-        reverseTransitionDuration: _fastAnimationDuration,
-        pageBuilder: (context, animation, secondaryAnimation) {
-          var left = rect.left;
-          var top = rect.bottom;
-
-          if (left + minFlyoutWidth > MediaQuery.of(context).size.width) {
-            left = MediaQuery.of(context).size.width - minFlyoutWidth;
-          }
-          if (top + minFlyoutHeight > MediaQuery.of(context).size.height) {
-            top = MediaQuery.of(context).size.height - minFlyoutHeight;
-          }
-
-          Widget transition(BuildContext context, Animation<double> animation,
-              Animation<double> secondaryAnimation, Widget flyout) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, -0.05),
-                end: const Offset(0, 0),
-              ).animate(animation),
-              child: flyout,
-            );
-          }
-
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: navigator.pop,
-                  child: AnimatedBuilder(
-                    animation: animation,
-                    builder: (context, builder) {
-                      return ColoredBox(
-                        color: Colors.black.withOpacity(0.3 * animation.value),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Positioned(
-                left: left,
-                right: 0,
-                top: top,
-                bottom: 0,
-                child: transition(
-                    context,
-                    animation,
-                    secondaryAnimation,
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: widget.flyoutBuilder(context),
-                    )),
-              )
-            ],
-          );
-        }));
+    final navigator = widget.navigator;
+    _pushMiuixOverlayRoute<void>(navigator?.context ?? context,
+        (context, show, close, finished) {
+      return MiuixOverlayListPopup(
+        show: show,
+        anchorBounds: rect,
+        minWidth: minFlyoutWidth,
+        onDismissRequest: () => close(),
+        onDismissFinished: finished,
+        content: widget.flyoutBuilder(context),
+      );
+    }, useRootNavigator: navigator == null);
   }
 }
 
+/// flyout 的内容：标题、可选说明和右下角操作按钮。外层表面由 Miuix 弹窗提供。
 class FlyoutContent extends StatelessWidget {
   const FlyoutContent(
       {super.key, required this.title, required this.actions, this.content});
@@ -171,40 +128,34 @@ class FlyoutContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IntrinsicWidth(
-      child: Material(
-        borderRadius: BorderRadius.circular(16),
-        type: MaterialType.card,
-        elevation: 1,
-        surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
-        child: Container(
-          constraints: const BoxConstraints(
-            minWidth: minFlyoutWidth,
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16)),
-              if (content != null)
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(content!, style: const TextStyle(fontSize: 12)),
-                ),
-              const SizedBox(
-                height: 12,
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [const Spacer(), ...actions],
-              ),
-            ],
-          ),
+      child: Container(
+        constraints: const BoxConstraints(
+          minWidth: minFlyoutWidth,
         ),
-      ).paddingAll(4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16)),
+            if (content != null)
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(content!, style: const TextStyle(fontSize: 12)),
+              ),
+            const SizedBox(
+              height: 12,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [const Spacer(), ...actions],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -878,18 +878,17 @@ class LocalFavoriteTile extends ComicTile {
                                             const SizedBox(
                                               width: 4,
                                             ),
-                                            InkWell(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              child: const Icon(
-                                                Icons.close,
-                                                size: 20,
-                                              ),
-                                              onTap: () {
+                                            MiuixPressable(
+ onPressed: () {
                                                 tags.remove(e);
                                                 setState(() {});
                                               },
-                                            )
+ feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(10),
+ child: const Icon(
+                                                Icons.close,
+                                                size: 20,
+                                              ),
+)
                                           ],
                                         ),
                                       ))
@@ -901,17 +900,14 @@ class LocalFavoriteTile extends ComicTile {
                             MiuixTextField(
                               controller: controller,
                               singleLine: true,
-                              trailingIcon: IconButton(
-                                icon: const Icon(Icons.add),
-                                onPressed: () {
+                              trailingIcon: MiuixIconButton(onPressed: () {
                                   var value = controller.text;
                                   if (value.isNotEmpty) {
                                     controller.clear();
                                     tags.add(value);
                                     setState(() {});
                                   }
-                                },
-                              ),
+                                }, child: const Icon(Icons.add)),
                               onSubmitted: (value) {
                                 if (value.isNotEmpty) {
                                   tags.add(value);
@@ -1042,9 +1038,14 @@ class _LocalFavoritesFolderState extends State<LocalFavoritesFolder> {
               false,
               key: Key(comics[index].target),
             ));
-    return Scaffold(
-      appBar: Appbar(title: Text(widget.name)),
-      body: Column(
+    return MiuixScaffold(
+ topBar: MiuixSmallTopAppBar(
+ title: widget.name,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+),
+ content: (padding) => Padding(
+ padding: padding,
+ child: Column(
         children: [
           Expanded(
             child: ReorderableBuilder(
@@ -1076,7 +1077,8 @@ class _LocalFavoritesFolderState extends State<LocalFavoritesFolder> {
           )
         ],
       ),
-    );
+ ),
+);
   }
 }
 

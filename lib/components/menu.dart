@@ -1,8 +1,15 @@
 part of "components.dart";
 
+/// 右键 / 桌面菜单：以 Miuix 列表弹窗（[showMiuixMenu]）在 [location] 处弹出。
 void showDesktopMenu(
     BuildContext context, Offset location, List<DesktopMenuEntry> entries) {
-  Navigator.of(context).push(DesktopMenuRoute(entries, location));
+  showMiuixMenu(
+    context: context,
+    anchorBounds: Rect.fromLTWH(location.dx, location.dy, 0, 0),
+    items: entries.map((e) => e.text).toList(),
+  ).then((index) {
+    if (index != null) entries[index].onClick();
+  });
 }
 
 class DesktopMenuRoute<T> extends PopupRoute<T> {
@@ -67,10 +74,10 @@ class DesktopMenuRoute<T> extends PopupRoute<T> {
   }
 
   Widget buildEntry(DesktopMenuEntry entry, BuildContext context) {
-    return InkWell(
+    return MiuixPressable(
       borderRadius: BorderRadius.circular(8),
-      customBorder: const MiuixSquircleBorder(cornerRadius: 8),
-      onTap: () {
+      shape: const MiuixSquircleBorder(cornerRadius: 8),
+      onPressed: () {
         Navigator.of(context).pop();
         entry.onClick();
       },

@@ -74,33 +74,12 @@ class _NhentaiCommentsPageState extends State<NhentaiCommentsPage> {
               ),
             ),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-              decoration: ShapeDecoration(
-                shape: const MiuixSquircleBorder(cornerRadius: 22),
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withOpacity(
-                        Theme.of(context).brightness == Brightness.dark ? 0.45 : 0.65),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      enabled: false,
-                      controller: controller,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        isCollapsed: true,
-                        hintText: "评论...".tl,
-                        hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      minLines: 1,
-                      maxLines: 5,
-                    ),
+                    child: MiuixTextField(enabled: false,
+                      controller: controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 5),
                   ),
                   MiuixIconButton(
                     minWidth: 36,

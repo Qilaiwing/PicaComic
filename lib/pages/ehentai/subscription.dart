@@ -16,11 +16,8 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: Appbar(title: Text("EH订阅".tl), actions: [
-        Tooltip(
-          message: "更多".tl,
-          child: MiuixIconButton(
+    return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "EH订阅".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop()), actions: [
+        MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("更多".tl)), child: MiuixIconButton(
             child: const Icon(Icons.more_horiz),
             onPressed: (){
               Future.microtask(() => showMiuixDialog<void>(
@@ -34,9 +31,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             },
           ),
         )
-      ],),
-      body: EhSubscriptionComics(),
-    );
+      ]), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: EhSubscriptionComics()));
   }
 }
 

@@ -49,15 +49,12 @@ class CollectionsPage extends StatelessWidget {
               logic.change();
             }
           });
-          return Scaffold(
-            appBar: Appbar(title: Text("推荐".tl)),
-            body: const Center(
+          return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: const Center(
               child: MiuixInfiniteProgressIndicator(),
-            ),
+            )),
           );
         } else if (logic.status) {
-          return Scaffold(
-            body: SmoothCustomScrollView(
+          return MiuixScaffold(content: (_) => SmoothCustomScrollView(
               slivers: [
                 SliverAppbar(title: Text("推荐".tl)),
                 SliverGridComics(
@@ -73,15 +70,13 @@ class CollectionsPage extends StatelessWidget {
             ),
           );
         } else {
-          return Scaffold(
-            appBar: Appbar(title: Text("推荐".tl)),
-            body: NetworkError(
+          return MiuixScaffold(topBar: MiuixSmallTopAppBar(title: "推荐".tl, navigationIcon: MiuixIconButton(child: MiuixIcon(vector: MiuixIcons.os4.chevronBackward, size: 20), onPressed: () => Navigator.of(context).maybePop())), content: (padding) => Padding(padding: EdgeInsets.only(top: padding.top), child: NetworkError(
               message: logic.message ?? "网络错误".tl,
               retry: () {
                 logic.status = true;
                 logic.change();
               },
-            ),
+            )),
           );
         }
       },

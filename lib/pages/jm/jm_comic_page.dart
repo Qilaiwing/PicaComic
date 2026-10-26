@@ -181,7 +181,7 @@ class JmComicPage extends BaseComicPage<JmComicInfo> {
   String? get title => data?.name;
 
   @override
-  Card? get uploaderInfo => null;
+  Widget? get uploaderInfo => null;
 
   @override
   String get source => "禁漫天堂".tl;

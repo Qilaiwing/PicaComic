@@ -1,3 +1,4 @@
+import 'package:flutter_miuix/miuix.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:flutter/material.dart';
@@ -39,8 +40,8 @@ class _AuthPageState extends State<AuthPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: auth,
-      child: Scaffold(
-        body: PopScope(
+      child: MiuixScaffold(
+        content: (_) => PopScope(
           canPop: false,
           child: SizedBox(
             width: MediaQuery.of(context).size.width,

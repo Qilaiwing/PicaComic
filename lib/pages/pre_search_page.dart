@@ -38,27 +38,13 @@ class _FloatingSearchBar extends StatefulWidget {
 class _FloatingSearchBarState extends State<_FloatingSearchBar> {
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF262628) : const Color(0xFFF0F1F5);
-    final border = isDark ? const Color(0x28FFFFFF) : const Color(0x12000000);
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
-      margin: const EdgeInsets.symmetric(horizontal: 14) +
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14) +
           const EdgeInsets.only(top: 8, bottom: 4),
-      width: double.infinity,
-      height: 48,
-      decoration: ShapeDecoration(
-        color: bg,
-        shape: MiuixSquircleBorder(
-          cornerRadius: 24,
-          side: BorderSide(color: border, width: 0.6),
-        ),
-      ),
       child: Row(children: [
-        Tooltip(
-          message: "返回".tl,
+        MiuixTooltipBox(
+          tooltip: (_, scope) =>
+              MiuixPlainTooltip(scope: scope, child: Text("返回".tl)),
           child: MiuixIconButton(
             minWidth: 36,
             minHeight: 36,
@@ -67,103 +53,53 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
               vector: MiuixIcons.extended.byName('chevronBackward') ??
                   MiuixIcons.os4.back,
               size: 20,
-              tint: isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
             ),
           ),
         ),
         const SizedBox(width: 4),
-        MiuixIcon(
-          vector: MiuixIcons.os4.search,
-          size: 18,
-          tint: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 8),
         Expanded(
-          child: Center(
-            child: TextField(
-              controller: widget.controller,
-              style: TextStyle(
-                fontSize: 15,
-                color:
-                    isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
-              ),
-              onChanged: (s) {
+          // 外部 controller 仍是唯一数据源；MiuixInputField 在 query 变化时同步
+          child: ListenableBuilder(
+            listenable: widget.controller,
+            builder: (context, _) => MiuixInputField(
+              query: widget.controller.text,
+              label: widget.supportingText,
+              expanded: true,
+              onExpandedChange: (_) {},
+              focusNode: widget.focusNode,
+              onQueryChange: (s) {
+                widget.controller.text = s;
                 if (s.length <= 1) {
                   setState(() {});
                 }
                 widget.onChanged?.call(s);
               },
-              focusNode: widget.focusNode,
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: widget.supportingText,
-                hintStyle: TextStyle(
-                  color: isDark
-                      ? const Color(0x66FFFFFF)
-                      : const Color(0x66000000),
-                  fontSize: 14.5,
-                ),
+              onSearch: widget.onFinish,
+              leadingIcon: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: MiuixIcon(vector: MiuixIcons.os4.search, size: 18),
               ),
-              textInputAction: TextInputAction.search,
-              onSubmitted: widget.onFinish,
+              trailingIcon: widget.controller.text.isNotEmpty
+                  ? MiuixIconButton(
+                      minWidth: 32,
+                      minHeight: 32,
+                      onPressed: () {
+                        setState(() {
+                          widget.controller.text = "";
+                        });
+                        widget.onChanged?.call("");
+                      },
+                      child: MiuixIcon(vector: MiuixIcons.os4.close, size: 14),
+                    )
+                  : null,
             ),
           ),
         ),
-        if (widget.controller.text.isNotEmpty)
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                widget.controller.text = "";
-              });
-              widget.onChanged?.call("");
-            },
-            child: Container(
-              width: 24,
-              height: 24,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: ShapeDecoration(
-                shape: const CircleBorder(),
-                color:
-                    isDark ? const Color(0x22FFFFFF) : const Color(0x14000000),
-              ),
-              child: Center(
-                child: MiuixIcon(
-                  vector: MiuixIcons.os4.close,
-                  size: 14,
-                  tint: isDark
-                      ? const Color(0xAAFFFFFF)
-                      : const Color(0x8A000000),
-                ),
-              ),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.only(right: 2),
-          child: Material(
-            color: Colors.transparent,
-            shape: const StadiumBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => widget.onFinish(widget.controller.text),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7.5),
-                decoration: ShapeDecoration(
-                  shape: const StadiumBorder(),
-                  color: primary,
-                ),
-                child: Text(
-                  "搜索".tl,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        const SizedBox(width: 6),
+        MiuixButton(
+          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+          onPressed: () => widget.onFinish(widget.controller.text),
+          child: Text("搜索".tl),
         ),
       ]),
     );
@@ -312,8 +248,8 @@ class PreSearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
+    return MiuixScaffold(
+ content: (_) => Column(
         children: [
           if (UiMode.m1(context))
             SizedBox(
@@ -340,7 +276,7 @@ class PreSearchPage extends StatelessWidget {
           buildBody(context)
         ],
       ),
-    );
+);
   }
 
   Widget buildBody(BuildContext context) {
@@ -504,8 +440,9 @@ class PreSearchPage extends StatelessWidget {
 
             var subTitle = TagsTranslation.translationTagWithNamespace(
                 value.left, value.right.name);
-            return ListTile(
-              title: Row(
+            return MiuixBasicComponent(
+              content: [
+                Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(value.left),
@@ -522,8 +459,10 @@ class PreSearchPage extends StatelessWidget {
                     )
                 ],
               ),
-              subtitle: (showMethod && showTranslation) ? Text(subTitle) : null,
-              trailing: Container(
+                if (showMethod && showTranslation) Text(subTitle),
+              ],
+              endActions: [
+                Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: ShapeDecoration(
@@ -540,7 +479,8 @@ class PreSearchPage extends StatelessWidget {
                   ),
                 ),
               ),
-              onTap: () => onSelected(value.left, value.right),
+              ],
+              onClick: () => onSelected(value.left, value.right),
             );
           }
 
@@ -560,24 +500,20 @@ class PreSearchPage extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Material(
-                      color: Colors.transparent,
-                      shape: const CircleBorder(),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
+                    MiuixPressable(
+ onPressed: () {
                           searchController.suggestions.clear();
                           logic.update([100]);
                         },
-                        child: const Padding(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: const Padding(
                           padding: EdgeInsets.all(4),
                           child: Icon(
                             Icons.close_rounded,
                             size: 18,
                           ),
                         ),
-                      ),
-                    ),
+),
                   ],
                 ),
               ),
@@ -606,13 +542,10 @@ class PreSearchPage extends StatelessWidget {
       final isSelected = logic.target == id;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Material(
-          color: Colors.transparent,
-          shape: const StadiumBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => logic.updateTarget(id),
-            child: AnimatedContainer(
+        child: MiuixPressable(
+ onPressed: () => logic.updateTarget(id),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
               padding:
@@ -638,8 +571,7 @@ class PreSearchPage extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-        ),
+),
       );
     }
 
@@ -826,9 +758,10 @@ class PreSearchPage extends StatelessWidget {
           ],
         );
       },
-      child: InkWell(
-        onTap: () => search(history),
-        child: SizedBox(
+      child: MiuixPressable(
+ onPressed: () => search(history),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: SizedBox(
           width: double.infinity,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -841,7 +774,7 @@ class PreSearchPage extends StatelessWidget {
             ),
           ),
         ),
-      ),
+),
     );
   }
 
@@ -898,9 +831,9 @@ class PreSearchPage extends StatelessWidget {
   }
 
   Widget buildClearHistoryButton(PreSearchController logic) {
-    return Tooltip(
-      message: "清空历史记录".tl,
-      child: MiuixIconButton(
+    return MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("清空历史记录".tl)),
+ child: MiuixIconButton(
         minWidth: 32,
         minHeight: 32,
         onPressed: () {
@@ -922,13 +855,13 @@ class PreSearchPage extends StatelessWidget {
               Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
         ),
       ),
-    );
+);
   }
 
   Widget buildClearFavoriteButton(PreSearchController logic) {
-    return Tooltip(
-      message: "清空收藏".tl,
-      child: MiuixIconButton(
+    return MiuixTooltipBox(
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("清空收藏".tl)),
+ child: MiuixIconButton(
         minWidth: 32,
         minHeight: 32,
         onPressed: () {
@@ -950,7 +883,7 @@ class PreSearchPage extends StatelessWidget {
               Theme.of(App.globalContext!).colorScheme.primary.withOpacity(0.8),
         ),
       ),
-    );
+);
   }
 
   Widget buildHistorySideBar() {
@@ -1078,13 +1011,10 @@ class PreSearchPage extends StatelessWidget {
                           builder: (context) {
                             final history = appdata.searchHistory[
                                 appdata.searchHistory.length - i - 1];
-                            return Material(
-                              color: Colors.transparent,
-                              shape: const StadiumBorder(),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () => search(history),
-                                child: Container(
+                            return MiuixPressable(
+ onPressed: () => search(history),
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                                   padding:
                                       const EdgeInsets.fromLTRB(13, 6, 8, 6),
                                   decoration: ShapeDecoration(
@@ -1127,22 +1057,18 @@ class PreSearchPage extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                              ),
-                            );
+);
                           },
                         ),
                       ],
                       if (length > 12)
-                        Material(
-                          color: Colors.transparent,
-                          shape: const StadiumBorder(),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
+                        MiuixPressable(
+ onPressed: () {
                               logic.limitHistory = !logic.limitHistory;
                               logic.update(["history"]);
                             },
-                            child: Container(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
                               decoration: ShapeDecoration(
@@ -1170,8 +1096,7 @@ class PreSearchPage extends StatelessWidget {
                                 ],
                               ),
                             ),
-                          ),
-                        ),
+),
                     ],
                   ),
               ],
@@ -1247,12 +1172,8 @@ class PreSearchPage extends StatelessWidget {
                           builder: (context) {
                             final source = tag.split(':').first;
                             final keyword = tag.substring(tag.indexOf(':') + 1);
-                            return Material(
-                              color: Colors.transparent,
-                              shape: const StadiumBorder(),
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () {
+                            return MiuixPressable(
+ onPressed: () {
                                   String type = switch (source) {
                                     "Picacg" => 'picacg',
                                     "EHentai" => 'ehentai',
@@ -1264,7 +1185,8 @@ class PreSearchPage extends StatelessWidget {
                                   };
                                   search(keyword, type);
                                 },
-                                child: Container(
+ feedbackType: MiuixPressFeedbackType.sink,
+ child: Container(
                                   padding:
                                       const EdgeInsets.fromLTRB(6, 4, 8, 4),
                                   decoration: ShapeDecoration(
@@ -1324,8 +1246,7 @@ class PreSearchPage extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                              ),
-                            );
+);
                           },
                         ),
                       ],
