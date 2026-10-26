@@ -1,0 +1,570 @@
+import 'dart:convert';
+import 'dart:math';
+import 'package:dio/dio.dart';
+import 'package:pica_comic/comic_source/built_in/ht_manga.dart';
+import 'package:pica_comic/foundation/app.dart';
+import 'package:pica_comic/foundation/log.dart';
+import 'package:pica_comic/network/cache_network.dart';
+import 'package:pica_comic/network/cookie_jar.dart';
+import 'package:pica_comic/network/htmanga_network/models.dart';
+import 'package:pica_comic/network/app_dio.dart';
+import 'package:pica_comic/network/res.dart';
+import 'package:html/parser.dart';
+import 'package:pica_comic/pages/pre_search_page.dart';
+import 'package:pica_comic/tools/extensions.dart';
+import 'package:pica_comic/tools/translations.dart';
+import '../../base.dart';
+
+class HtmangaNetwork {
+  ///用于获取绅士漫画的网络请求类
+  factory HtmangaNetwork() => _cache ?? (_cache = HtmangaNetwork._create());
+
+  static HtmangaNetwork? _cache;
+
+  HtmangaNetwork._create();
+
+  static String get baseUrl => appdata.settings[31];
+
+  void logout() {
+    SingleInstanceCookieJar.instance?.deleteUri(Uri.parse(baseUrl));
+  }
+
+  ///基本的Get请求
+  Future<Res<String>> get(String url,
+      {bool cache = true, Map<String, String>? headers}) async {
+    var dio = CachedNetwork();
+    try {
+      var res = await dio.get(
+          url,
+          BaseOptions(headers: {
+            "User-Agent": webUA,
+            if (headers != null) ...headers
+          }),
+          cookieJar: SingleInstanceCookieJar.instance,
+          expiredTime: cache ? CacheExpiredTime.short : CacheExpiredTime.no);
+      if(res.url.contains("users-login")){
+        return Res(null, errorMessage: "未登录或登录到期".tl);
+      }
+      return Res(res.data);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return const Res(null, errorMessage: "连接超时");
+      } else {
+        return Res(null, errorMessage: e.toString());
+      }
+    } catch (e) {
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  ///基本的Post请求
+  Future<Res<String>> post(String url, String data) async {
+    var dio = logDio(BaseOptions(
+      headers: {
+        "User-Agent": webUA,
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      // 显式指定 plain：无论服务端返回 text/html 还是 application/json，
+      // 都保持为 String，杜绝 Dio 自动将 JSON 解析为 Map 导致泛型类型转换抛异常。
+      responseType: ResponseType.plain,
+    ));
+    dio.interceptors.add(CookieManagerSql(SingleInstanceCookieJar.instance!));
+    try {
+      var res = await dio.post(url, data: data);
+      final String strData = res.data is String
+          ? res.data as String
+          : (res.data != null ? jsonEncode(res.data) : "");
+      return Res(strData);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return const Res(null, errorMessage: "连接超时");
+      } else {
+        return Res(null, errorMessage: e.toString());
+      }
+    } catch (e) {
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  /// 把可能是字符串、也可能是已解析结构的结果统一转成 Map。
+  static Map? _asMap(dynamic data) {
+    if (data == null) return null;
+    if (data is Map) return data;
+    if (data is List<int>) {
+      final text = utf8.decode(data, allowMalformed: true);
+      final decoded = const JsonDecoder().convert(text);
+      return decoded is Map ? decoded : null;
+    }
+    final text = data.toString();
+    final decoded = const JsonDecoder().convert(text);
+    return decoded is Map ? decoded : null;
+  }
+
+  /// 判断服务端返回是否需要先通过滑块验证。
+  ///
+  /// 站点在 2026-10 起为登录/注册启用了自建滑块拼图验证（statics/js/slider-captcha.js）。
+  /// 未携带一次性通行证 `slider_pass` 时，`users-check_login.html` 会返回
+  /// `{"ret":false,"html":"請先完成滑塊驗證"}`。
+  static bool needSliderPass(String? message) {
+    if (message == null) return false;
+    return message.contains("滑塊") ||
+        message.contains("滑块") ||
+        message.contains("滑動") ||
+        message.contains("滑动");
+  }
+
+  /// 滑块验证接口地址（相对站点根路径）。
+  static String get sliderApi => "$baseUrl/index.php?ctl=slider&act=";
+
+  /// 登录
+  ///
+  /// [sliderPass] 为通过滑块验证后获得的一次性通行证；为空时不携带该字段，
+  /// 服务端会返回需要验证的提示，由调用方引导用户完成验证后重试。
+  Future<Res<bool>> login(String account, String pwd,
+      {String? sliderPass, bool saveData = true}) async {
+    var body = "login_name=${Uri.encodeComponent(account)}"
+        "&login_pass=${Uri.encodeComponent(pwd)}";
+    if (sliderPass != null && sliderPass.isNotEmpty) {
+      // 通行证只能用一次，且参与表单校验，必须原样透传。
+      body += "&slider_pass=${Uri.encodeComponent(sliderPass)}";
+    }
+    var res = await post("$baseUrl/users-check_login.html", body);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      final json = _asMap(res.data);
+      if (json == null) {
+        return Res(null, errorMessage: res.data.toString());
+      }
+      var html = (json["html"] ?? "").toString();
+      if (html.contains("登錄成功")) {
+        return const Res(true);
+      }
+      return Res(null, errorMessage: html);
+    } catch (e) {
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  Future<Res<bool>> loginFromAppdata() async {
+    var res = await htManga.reLogin();
+    return res ? const Res(true) : const Res.error("error");
+  }
+
+  /// 获取一道滑块拼图验证题目（服务端 `ctl=slider&act=create`）。
+  ///
+  /// 返回题目 token、背景图与拼图块的 base64 data URL，以及缺口纵向位置。
+  Future<Res<HtSliderChallenge>> createSliderChallenge() async {
+    // 该接口必须绕过缓存：每次都要新题目与新 token。
+    final res = await get(
+        "${sliderApi}create&_t=${DateTime.now().millisecondsSinceEpoch}",
+        cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      final json = _asMap(res.data);
+      if (json == null) return const Res(null, errorMessage: "题目解析失败");
+      if (json["error"] != null) {
+        return Res(null, errorMessage: json["error"].toString());
+      }
+      return Res(HtSliderChallenge(
+        token: json["token"] as String,
+        background: json["bg"] as String,
+        piece: json["piece"] as String,
+        y: (json["y"] as num).toDouble(),
+        width: (json["w"] as num).toDouble(),
+        height: (json["h"] as num).toDouble(),
+        pieceSize: (json["s"] as num).toDouble(),
+      ));
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  /// 提交滑块位置与拖动轨迹进行校验。
+  ///
+  /// 校验通过时返回一次性通行证，需要在登录时作为 `slider_pass` 一并提交。
+  /// [track] 为 `[相对时间ms, 相对位移(按题目原始宽度), 触点Y]` 三元组列表，
+  /// 服务端会校验轨迹的合理性，故不能只提交最终位置。
+  Future<Res<String>> verifySliderChallenge({
+    required String token,
+    required double x,
+    required List<List<num>> track,
+  }) async {
+    var body = "token=${Uri.encodeComponent(token)}"
+        "&x=${x.toStringAsFixed(1)}"
+        "&track=${Uri.encodeComponent(jsonEncode(track))}";
+    var res = await post("${sliderApi}verify", body);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      final json = _asMap(res.data);
+      if (json == null) return const Res(null, errorMessage: "驗證失敗,請重試");
+      if (json["pass"] != null) {
+        return Res(json["pass"].toString());
+      }
+      return Res(null,
+          errorMessage: (json["error"] ?? "驗證失敗,請重試").toString());
+    } catch (e) {
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  Future<Res<HtHomePageData>> getHomePage() async {
+    var res = await get(baseUrl, cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var document = parse(res.data);
+      var titles = document.querySelectorAll("div.title_sort");
+      var comicBlocks = document.querySelectorAll("div.bodywrap");
+      Map<String, String> titleRes = {};
+      for (var title in titles) {
+        var text = title.querySelector("div.title_h2")!.text;
+        text = text.replaceAll("\n", "").removeAllBlank;
+        var link = title.querySelector("div.r > a")!.attributes["href"]!;
+        link = baseUrl + link;
+        titleRes[text] = link;
+      }
+      var comicsRes = <List<HtComicBrief>>[];
+      for (var block in comicBlocks) {
+        var cs = block.querySelectorAll("div.gallary_wrap > ul.cc > li");
+        var comics = <HtComicBrief>[];
+        for (var c in cs) {
+          var link = c.querySelector("div.pic_box > a")!.attributes["href"]!;
+          var id = RegExp(r"(?<=-aid-)[0-9]+").firstMatch(link)![0]!;
+          var image =
+              c.querySelector("div.pic_box > a > img")!.attributes["src"]!;
+          image = "https:$image";
+          var name = c.querySelector("div.info > div.title > a")!.text;
+          var infoCol = c.querySelector("div.info > div.info_col")!.text;
+          var lr = infoCol.split(",");
+          var time = lr[0];
+          var pagesStr = "";
+          for (int i = 0; i < lr[1].length; i++) {
+            if (lr[1][i].isNum) {
+              pagesStr += lr[1][i];
+            }
+          }
+          var pages = int.parse(pagesStr);
+          try {
+            comics.add(HtComicBrief(name, time, image, id, pages));
+          } finally {}
+        }
+        comicsRes.add(comics);
+      }
+      if (comicsRes.length != titleRes.length) {
+        throw Exception("漫画块数量和标题数量不相等");
+      }
+      return Res(HtHomePageData(comicsRes, titleRes));
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyze", "$e\n$s");
+      return Res(null, errorMessage: "解析失败: $e");
+    }
+  }
+
+  /// 获取给定漫画列表页面的漫画
+  Future<Res<List<HtComicBrief>>> getComicList(String url, int page, {bool searchPage = false}) async {
+    if (page != 1) {
+      if (url.contains("search")) {
+        url = "$url&p=$page";
+      } else if (url.contains("ranking")) {
+        url = url.replaceAll("ranking", "ranking-page-$page");
+      } else {
+        if (!url.contains("-")) {
+          url = url.replaceAll(".html", "-.html");
+        }
+        url = url.replaceAll("index", "");
+        var lr = url.split("albums-");
+        lr[1] = "index-page-$page${lr[1]}";
+        url = "${lr[0]}albums-${lr[1]}";
+      }
+    }
+    var res = await get(url, cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var document = parse(res.data);
+      var comics = <HtComicBrief>[];
+      for (var comic in document
+          .querySelectorAll("div.grid div.gallary_wrap > ul.cc > li")) {
+        try {
+          var link =
+              comic.querySelector("div.pic_box > a")!.attributes["href"]!;
+          var id = RegExp(r"(?<=-aid-)[0-9]+").firstMatch(link)![0]!;
+          var image =
+              comic.querySelector("div.pic_box > a > img")!.attributes["src"]!;
+          image = "https:$image";
+          var name = comic
+              .querySelector("div.info > div.title > a")!
+              .attributes["title"]
+              ?.replaceAll("<em>", "")
+              .replaceAll("</em>", "");
+          name = name ??
+              comic
+                  .querySelector("div.info > div.title > a")!
+                  .text
+                  .replaceAll("<em>", "")
+                  .replaceAll("</em>", "");
+          var infoCol = comic.querySelector("div.info > div.info_col")!.text;
+          var lr = infoCol.split("，");
+          var time = lr[1].removeAllBlank;
+          time = time.replaceAll("\n", "");
+          var pagesStr = "";
+          for (int i = 0; i < lr[0].length; i++) {
+            if (lr[0][i].isNum) {
+              pagesStr += lr[0][i];
+            }
+          }
+          var pages = pagesStr == "" ? 0 : int.parse(pagesStr);
+          comics.add(HtComicBrief(name, time, image, id, pages));
+        } catch (e) {
+          continue;
+        }
+      }
+      int pages;
+      try {
+        if(searchPage){
+          var result = int.parse(document.querySelectorAll("p.result > b")[0].text.nums);
+          var comicsOnePage = document.querySelectorAll("div.grid div.gallary_wrap > ul.cc > li").length;
+          pages = result ~/ comicsOnePage + 1;
+        }else{
+          var pagesLink = document.querySelectorAll("div.f_left.paginator > a");
+          pages = int.parse(pagesLink.last.text);
+        }
+      } catch (e) {
+        pages = 1;
+      }
+      return Res(comics, subData: pages);
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  Future<Res<List<HtComicBrief>>> search(String keyword, int page) {
+    if (keyword != "") {
+      appdata.searchHistory.remove(keyword);
+      appdata.searchHistory.add(keyword);
+      appdata.writeHistory();
+    }
+    Future.delayed(const Duration(milliseconds: 300),
+            () => StateController.find<PreSearchController>().update())
+        .onError((error, stackTrace) => null);
+    return getComicList(
+        "$baseUrl/search/?q=${Uri.encodeComponent(keyword)}&f=_all&s=create_time_DESC&syn=yes",
+        page, searchPage: true);
+  }
+
+  /// 获取漫画详情, subData为第一页的缩略图
+  Future<Res<HtComicInfo>> getComicInfo(String id) async {
+    var res =
+        await get("$baseUrl/photos-index-page-1-aid-$id.html", cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var document = parse(res.data);
+      var name = document.querySelector("div.userwrap > h2")!.text;
+      var coverPath = document
+          .querySelector(
+              "div.userwrap > div.asTB > div.asTBcell.uwthumb > img")!
+          .attributes["src"]!;
+      coverPath = "https:$coverPath";
+      coverPath = coverPath.replaceRange(6, 8, "");
+      var labels = document.querySelectorAll("div.asTBcell.uwconn > label");
+      var category = labels[0].text.split("：")[1];
+      var pages = int.parse(
+          RegExp(r"\d+").firstMatch(labels[1].text.split("：")[1])![0]!);
+      var tagsDom = document.querySelectorAll("a.tagshow");
+      var tags = <String, String>{};
+      for (var tag in tagsDom) {
+        var link = tag.attributes["href"]!;
+        tags[tag.text] = link;
+      }
+      var description = document.querySelector("div.asTBcell.uwconn > p")!.text;
+      var uploader =
+          document.querySelector("div.asTBcell.uwuinfo > a > p")!.text;
+      var avatar = document
+          .querySelector("div.asTBcell.uwuinfo > a > img")!
+          .attributes["src"]!;
+      avatar = "$baseUrl/$avatar";
+      var uploadNum = int.parse(
+          document.querySelector("div.asTBcell.uwuinfo > p > font")!.text);
+      var photosDom = document.querySelectorAll("div.pic_box.tb > a > img");
+      var photos = List<String>.generate(photosDom.length,
+          (index) => "https:${photosDom[index].attributes["src"]!}");
+      return Res(
+          HtComicInfo(id, coverPath, name, category, pages, tags, description,
+              uploader, avatar, uploadNum, photos));
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  Future<Res<List<String>>> getThumbnails(String id, int page) async {
+    var res = await get("$baseUrl/photos-index-page-$page-aid-$id.html");
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var document = parse(res.data);
+      var photosDom = document.querySelectorAll("div.pic_box.tb > a > img");
+      var photos = List<String>.generate(photosDom.length,
+          (index) => "https:${photosDom[index].attributes["src"]!}");
+      return Res(photos);
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  /// 获取阅读页的图片链接
+  ///
+  /// 站点为每张大图附加了 `?verify=<epoch>-<签名>`，缺少该查询串时图片 CDN
+  /// 会直接返回 403（页面提示「鏈接已失效」）。签名与图片路径、epoch 三者
+  /// 绑定，随便改动任一部分都会失效，因此这里必须原样保留完整查询串。
+  /// 签名会在服务端轮换，页面本身不能走缓存，否则会一直拿到已失效的链接。
+  /// 详情页的缩略图走 `/data/t/` 小图，不带签名，所以预览一直是可以正常加载的。
+  Future<Res<List<String>>> getImages(String id) async {
+    var res = await get("$baseUrl/photos-gallery-aid-$id.html", cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var urls = RegExp(
+              r"(?<=//)[\w./\[\]()-]+\.(?:webp|jpe?g|png|gif|avif)(?:\?verify=[\w-]+)?")
+          .allMatches(res.data);
+      var images = <String>{};
+      for (var url in urls) {
+        images.add("https://${url[0]!}");
+      }
+      if (images.isEmpty) {
+        return const Res(null, errorMessage: "解析失败: 未找到图片链接");
+      }
+      return Res(images.toList());
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  /// 获取收藏夹
+  ///
+  /// 返回Map, 值为收藏夹名，键为ID
+  Future<Res<Map<String, String>>> getFolders() async {
+    var res = await get(
+        "$baseUrl/users-addfav-id-210814.html",
+        cache: false);
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var document = parse(res.data);
+      var data = <String, String>{};
+      for (var option in document.querySelectorAll("option")) {
+        if (option.attributes["value"] == "") continue;
+        data[option.attributes["value"]!] = option.text;
+      }
+      return Res(data);
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+
+  Future<bool> createFolder(String name) async => !(await post(
+          "$baseUrl/users-favc_save-id.html",
+          "favc_name=${Uri.encodeComponent(name)}"))
+      .error;
+
+  Future<bool> deleteFolder(String id) async => !(await get(
+          "$baseUrl/users-favclass_del-id-$id.html"
+          "?ajax=true&_t=${Random.secure().nextDouble()}",
+          cache: false))
+      .error;
+
+  Future<Res<bool>> addFavorite(String comicId, String folderId) async {
+    var res = await post(
+        "$baseUrl/users-save_fav-id-$comicId.html", "favc_id=$folderId");
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    return const Res(true);
+  }
+
+  Future<Res<bool>> delFavorite(String favoriteId) async {
+    var res = await get(
+      "$baseUrl/users-fav_del-id-$favoriteId.html?"
+      "ajax=true&_t=${Random.secure().nextDouble()}",
+      cache: false,
+    );
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    return const Res(true);
+  }
+
+  ///获取收藏夹中的漫画
+  Future<Res<List<HtComicBrief>>> getFavoriteFolderComics(
+      String folderId, int page) async {
+    var res = await get(
+      "$baseUrl/users-users_fav-page-$page-c-$folderId.html",
+      cache: false,
+    );
+    if (res.error) {
+      return Res(null, errorMessage: res.errorMessage);
+    }
+    try {
+      var document = parse(res.data);
+      var comics = <HtComicBrief>[];
+      for (var comic in document.querySelectorAll("div.asTB")) {
+        var cover = comic
+            .querySelector("div.asTBcell.thumb > div > img")!
+            .attributes["src"]!;
+        cover = "https:$cover";
+        var time = comic
+            .querySelector("div.box_cel.u_listcon > p.l_catg > span")!
+            .text
+            .replaceAll("創建時間：", "");
+        var name =
+            comic.querySelector("div.box_cel.u_listcon > p.l_title > a")!.text;
+        var link = comic
+            .querySelector("div.box_cel.u_listcon > p.l_title > a")!
+            .attributes["href"]!;
+        var id = RegExp(r"(?<=-aid-)[0-9]+").firstMatch(link)![0]!;
+        var info =
+            comic.querySelector("div.box_cel.u_listcon > p.l_detla")!.text;
+        var pages = int.parse(RegExp(r"(?<=頁數：)[0-9]+").firstMatch(info)![0]!);
+        var delUrl = comic
+            .querySelector("div.box_cel.u_listcon > p.alopt > a")!
+            .attributes["onclick"]!;
+        var favoriteId = RegExp(r"(?<=del-id-)[0-9]+").firstMatch(delUrl)![0];
+        comics.add(
+            HtComicBrief(name, time, cover, id, pages, favoriteId: favoriteId));
+      }
+      int pages;
+      try {
+        var pagesLink = document.querySelectorAll("div.f_left.paginator > a");
+        pages = int.parse(pagesLink.last.text);
+      } catch (e) {
+        pages = page;
+      }
+      return Res(comics, subData: pages);
+    } catch (e, s) {
+      LogManager.addLog(LogLevel.error, "Data Analyse", "$e\n$s");
+      return Res(null, errorMessage: e.toString());
+    }
+  }
+}
