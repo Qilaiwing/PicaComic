@@ -172,6 +172,12 @@ class _MiuixTooltipBoxState extends State<MiuixTooltipBox>
     _entry = OverlayEntry(
       builder: (overlayContext) => MiuixTheme(
         data: theme,
+        // Overlay entries sit outside any Material: without this the text
+        // falls back to the debug style (yellow double underline).
+        child: Material(
+        type: MaterialType.transparency,
+        child: DefaultTextStyle(
+        style: theme.textStyles.body2,
         child: Directionality(
           textDirection: direction,
           child: Stack(
@@ -229,7 +235,7 @@ class _MiuixTooltipBoxState extends State<MiuixTooltipBox>
               ),
             ],
           ),
-        ),
+        ))),
       ),
     );
     overlay.insert(_entry!);

@@ -378,7 +378,7 @@ class _NaviPaneState extends State<NaviPane>
                             child: Align(
                               alignment: Alignment.topCenter,
                               heightFactor: (1 - value).clamp(0.0, 1.0),
-                              child: buildTop(),
+                              child: MiuixBarTextStyle(child: buildTop()),
                             ),
                           ),
                       ],

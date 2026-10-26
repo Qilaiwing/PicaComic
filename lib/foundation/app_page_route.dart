@@ -2,7 +2,10 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PredictiveBackEvent;
 import 'package:pica_comic/foundation/app.dart';
+
+part 'hyper_transition.dart';
 
 const double _kBackGestureWidth = 28.0;
 const int _kMaxDroppedSwipePageForwardAnimationTime = 800;
@@ -62,7 +65,10 @@ mixin _AppRouteTransitionMixin<T> on PageRoute<T> {
   Widget buildContent(BuildContext context);
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 300);
+  Duration get transitionDuration => const Duration(milliseconds: 380);
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 320);
 
   @override
   Color? get barrierColor => null;
@@ -146,12 +152,14 @@ mixin _AppRouteTransitionMixin<T> on PageRoute<T> {
             child: child)
         : child;
 
-    return Theme.of(context).pageTransitionsTheme.buildTransitions(
-      this,
-      context,
-      animation,
-      secondaryAnimation,
-      pageWithGesture,
+    return _PredictiveBackDetector(
+      route: this,
+      child: HyperPageTransition(
+        animation: animation,
+        secondaryAnimation: secondaryAnimation,
+        linear: navigator?.userGestureInProgress ?? false,
+        child: pageWithGesture,
+      ),
     );
   }
 

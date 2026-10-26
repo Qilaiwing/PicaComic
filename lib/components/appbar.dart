@@ -731,39 +731,25 @@ class _FilledTabBarState extends State<FilledTabBar> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            // HyperOS 风格胶囊：无描边；选中为主色实底，未选中为容器色浅底。
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
             decoration: ShapeDecoration(
-              shape: StadiumBorder(
-                side: BorderSide(
-                  color: isSelected
-                      ? primaryColor
-                      : (isDark
-                          ? const Color(0x1FFFFFFF)
-                          : const Color(0x12000000)),
-                  width: 0.8,
-                ),
-              ),
+              shape: const StadiumBorder(),
               color: isSelected
-                  ? primaryColor
-                  : (isDark
-                      ? const Color(0x18FFFFFF)
-                      : const Color(0x0C000000)),
+                  ? MiuixTheme.of(context).colors.primary
+                  : MiuixTheme.of(context).colors.surfaceContainerHigh,
             ),
             child: Text(
               text.isNotEmpty ? text : 'Tab ${i + 1}',
               style: TextStyle(
-                fontSize: 13.0,
+                fontSize: 14.0,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? Colors.white
-                    : (isDark
-                        ? const Color(0xDDFFFFFF)
-                        : const Color(0xCC000000)),
-                letterSpacing: -0.2,
-                height: 1.15,
+                    ? MiuixTheme.of(context).colors.onPrimary
+                    : MiuixTheme.of(context).colors.onSurfaceContainerHigh,
+                height: 1.2,
               ),
-            ),
-          )),
+            ),          )),
     );
   }
 }

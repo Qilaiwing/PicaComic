@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:pica_comic/base.dart';
 import 'package:pica_comic/comic_source/comic_source.dart';
@@ -9,6 +11,7 @@ import 'package:pica_comic/pages/category_comics_page.dart';
 import 'package:pica_comic/pages/search_result_page.dart';
 import 'package:pica_comic/tools/extensions.dart';
 import 'package:pica_comic/tools/translations.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -385,7 +388,12 @@ class _MixedExplorePageState
 Iterable<Widget> _buildExplorePagePart(
     ExplorePagePart part, String sourceKey) sync* {
   Widget buildTitle(ExplorePagePart part) {
-    return SliverToBoxAdapter(
+    // 分区标题吸顶：滚动到该分区时固定在内容顶部（顶栏下方），被下一分区标题推走。
+    return SliverPinnedHeader(
+      child: Builder(builder: (context) => ClipRect(child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+      child: ColoredBox(
+      color: MiuixTheme.of(context).colors.background.withValues(alpha: 0.82),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 14, 8),
         child: Row(
@@ -468,6 +476,7 @@ Iterable<Widget> _buildExplorePagePart(
           ],
         ),
       ),
+      )))),
     );
   }
 
@@ -475,6 +484,8 @@ Iterable<Widget> _buildExplorePagePart(
     return SliverGridComics(comics: part.comics, sourceKey: sourceKey);
   }
 
-  yield buildTitle(part);
-  yield buildComics(part);
+  yield MultiSliver(
+    pushPinnedChildren: true,
+    children: [buildTitle(part), buildComics(part)],
+  );
 }
