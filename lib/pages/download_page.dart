@@ -169,6 +169,9 @@ class DownloadPageLogic extends StateController {
   /// 下载页搜索框焦点，仅 searchInit 时请求聚焦
   final FocusNode searchFocusNode = FocusNode();
 
+  /// 下载页搜索框文本（唯一数据源）。
+  final TextEditingController searchController = TextEditingController();
+
   String keyword = "";
   String keyword_ = "";
 
@@ -645,38 +648,19 @@ class DownloadPage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 0, 0, 8),
         child: Padding(
           padding: const EdgeInsets.only(right: 20),
-          child: MiuixInputField(
-            // 与原 autofocus: searchInit 一致：仅在 searchInit 时聚焦
+          // 直接用 logic.searchController 作为唯一数据源；清空等改动只发生在事件回调中，
+          // 不会在构建期间改写输入框文本。
+          child: AppSearchField(
+            controller: logic.searchController,
             focusNode: logic.searchFocusNode,
-            query: logic.keyword,
-            label: "搜索已下载漫画".tl,
-            expanded: false,
-            onExpandedChange: (_) {},
-            onSearch: (_) {},
-            onQueryChange: (s) {
+            hint: "搜索已下载漫画".tl,
+            autofocus: false,
+            onSubmitted: (_) {},
+            onChanged: (s) {
               logic.keyword = s.toLowerCase();
               logic.searchInit = false;
               logic.update();
             },
-            leadingIcon: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: MiuixIcon(
-                vector: MiuixIcons.os4.search,
-                size: 17,
-              ),
-            ),
-            trailingIcon: logic.keyword.isNotEmpty
-                ? MiuixIconButton(
-                    onPressed: () {
-                      logic.keyword = "";
-                      logic.update();
-                    },
-                    child: MiuixIcon(
-                      vector: MiuixIcons.os4.close,
-                      size: 16,
-                    ),
-                  )
-                : null,
           ),
         ),
       );
@@ -880,6 +864,7 @@ class DownloadPage extends StatelessWidget {
               logic.searchInit = true;
               if (!logic.searchMode) {
                 logic.keyword = "";
+                logic.searchController.clear();
               }
               logic.update();
             },

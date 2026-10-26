@@ -332,7 +332,7 @@ class _NaviPaneState extends State<NaviPane>
         animation: controller,
         builder: (context, child) {
           final value = controller.value;
-          final scaffoldBg = Theme.of(context).scaffoldBackgroundColor;
+          final scaffoldBg = MiuixTheme.of(context).colors.background;
           return Material(
             color: scaffoldBg,
             child: Stack(
@@ -452,7 +452,7 @@ class _NaviPaneState extends State<NaviPane>
             return MiuixTopAppBar(
               key: ValueKey('top_bar_1_${fav.selectingFolder}_${fav.current}'),
               title: title,
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: MiuixTheme.of(context).colors.background,
               scrollBehavior: _behavior,
               blurred: true,
               blurRadius: 50,
@@ -500,7 +500,7 @@ class _NaviPaneState extends State<NaviPane>
       return MiuixTopAppBar(
         key: ValueKey('top_bar_2_${exploreLogic?.pages.length}_$hasTabs'),
         title: item.title ?? item.label,
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: MiuixTheme.of(context).colors.background,
         scrollBehavior: _behavior,
         blurred: true,
         blurRadius: 50,
@@ -536,7 +536,7 @@ class _NaviPaneState extends State<NaviPane>
       return MiuixTopAppBar(
         key: ValueKey('top_bar_3_${categoryLogic?.categories.length}_$hasTabs'),
         title: item.title ?? item.label,
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: MiuixTheme.of(context).colors.background,
         scrollBehavior: _behavior,
         blurred: true,
         blurRadius: 50,
@@ -571,7 +571,7 @@ class _NaviPaneState extends State<NaviPane>
     return MiuixTopAppBar(
       key: ValueKey('top_bar_$currentPage'),
       title: item.title ?? item.label,
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: MiuixTheme.of(context).colors.background,
       scrollBehavior: _behavior,
       blurred: true,
       blurRadius: 50,

@@ -60,12 +60,13 @@ class _HitomiSearchPageState extends State<HitomiSearchPage> {
   @override
   void initState() {
     keyword = widget.keyword;
+    // 只在初始化时写入；之后文本由用户输入驱动，构建期间不再改写 controller。
+    controller.text = keyword;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    controller.text = keyword;
     return SearchPageComicList(
       keyword: keyword,
       key: Key(keyword),
