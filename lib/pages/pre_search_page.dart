@@ -765,7 +765,10 @@ class PreSearchPage extends StatelessWidget {
               width: 16,
             ),
             Select(
-              initialValue: languages.indexOf(searchController.language ?? ""),
+              initialValue: (() {
+                final i = languages.indexOf(searchController.language ?? "");
+                return i < 0 ? 0 : i;
+              })(),
               onChange: (i) => searchController.language = languages[i],
               values: languages,
               outline: true,

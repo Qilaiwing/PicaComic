@@ -71,7 +71,7 @@ Widget buildExploreSettings(BuildContext context, bool popUp) {
             leading: const Icon(Icons.search),
             title: "默认搜索源".tl,
             values: searchSource,
-            initialValue: searchSource.indexOf(appdata.appSettings.initialSearchTarget),
+            initialValue: (() { final i = searchSource.indexOf(appdata.appSettings.initialSearchTarget); return i < 0 ? 0 : i; })(),
             onChanged: (i) {
               appdata.appSettings.initialSearchTarget = searchSource[i];
               appdata.updateSettings();

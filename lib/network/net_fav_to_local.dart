@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:pica_comic/base.dart';
 import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
-import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/foundation/local_favorites.dart';
 import 'package:pica_comic/network/base_comic.dart';
 import 'package:pica_comic/network/res.dart';
@@ -49,50 +48,52 @@ Future<List<T>> getFavorites<T extends Object>(BuildContext context,
     }
   }
 
-  await showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (context) => SimpleDialog(
-            title: const Text("Loading..."),
-            children: [
-              const SizedBox(
-                width: 400,
-              ),
-              const Center(
-                child: MiuixCircularProgressIndicator(),
-              ),
-              StreamBuilder<(int, int?)>(
-                  stream: load(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      Future.microtask(() {
-                        context.pop();
-                        if (kDebugMode) {
-                          print(snapshot.error);
-                          print(snapshot.stackTrace);
-                        }
-                        showToast(message: snapshot.error.toString());
-                      });
-                    }
-                    if (snapshot.hasData &&
-                        snapshot.data?.$1 == snapshot.data?.$2) {
-                      Future.delayed(
-                        const Duration(milliseconds: 200),
-                        context.pop,
-                      );
-                    }
-                    return Center(
-                      child: Text(
-                          "${snapshot.data?.$1}/${snapshot.data?.$2 ?? "?"}"),
-                    );
-                  }),
-              Center(
-                child: MiuixTextButton("取消".tl, onPressed: () {
-                    App.back(context);
-                  }),
-              )
-            ],
-          ));
+  await showMiuixDialog<void>(
+    context: context,
+    title: "Loading...".tl,
+    dismissible: false,
+    contentBuilder: (dialogContext, close) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          const Center(child: MiuixCircularProgressIndicator()),
+          const SizedBox(height: 12),
+          StreamBuilder<(int, int?)>(
+            stream: load(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                Future.microtask(() {
+                  close();
+                  if (kDebugMode) {
+                    print(snapshot.error);
+                    print(snapshot.stackTrace);
+                  }
+                  showToast(message: snapshot.error.toString());
+                });
+              }
+              if (snapshot.hasData &&
+                  snapshot.data?.$1 == snapshot.data?.$2) {
+                Future.delayed(
+                  const Duration(milliseconds: 200),
+                  () => close(),
+                );
+              }
+              return Center(
+                child: Text(
+                  "${snapshot.data?.$1}/${snapshot.data?.$2 ?? "?"}",
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: MiuixTextButton("取消".tl, onPressed: () => close()),
+          ),
+        ],
+      );
+    },
+  );
   return comics;
 }
 
