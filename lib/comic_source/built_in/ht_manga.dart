@@ -193,14 +193,17 @@ final htManga = ComicSource.named(
       },
     ),
   ],
+  idMatcher: RegExp(r'^(\d+|ht\d+|wnacg\d+)$', caseSensitive: false),
   searchPageData: SearchPageData.named(
     loadPage: (keyword, page, options) {
       return HtmangaNetwork().search(keyword, page);
     },
   ),
   comicPageBuilder: (context, id, cover) {
+    final cleanId =
+        id.replaceFirst(RegExp(r'^(ht|wnacg)', caseSensitive: false), '');
     return HtComicPage(
-      id,
+      cleanId,
       comicCover: cover,
     );
   },

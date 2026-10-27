@@ -105,8 +105,11 @@ class HtComicPage extends BaseComicPage<HtComicInfo> {
   String get tag => "Ht ComicPage $id";
 
   @override
-  Map<String, List<String>>? get tags =>
-      {"分类".tl: data!.category.toList(), "标签".tl: data!.tags.keys.toList()};
+  Map<String, List<String>>? get tags => {
+        "ID": data!.id.toList(),
+        "分类".tl: data!.category.toList(),
+        "标签".tl: data!.tags.keys.toList(),
+      };
 
   @override
   void tapOnTag(String tag, String key) => context.to(() => SearchResultPage(
