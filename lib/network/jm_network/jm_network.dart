@@ -53,7 +53,18 @@ extension _CachedNetwork on CachedNetwork {
     if (res.statusCode != 200) {
       return CachedNetworkRes(body, res.statusCode, res.realUri.toString());
     }
-    var json = const JsonDecoder().convert(body);
+    late final dynamic json;
+    try {
+      json = const JsonDecoder().convert(body);
+    } on FormatException catch (e) {
+      final peek = body.length > 240
+          ? '${body.substring(0, 120)}…${body.substring(body.length - 80)}'
+          : body;
+      LogManager.addLog(LogLevel.error, "Network",
+          "JM JSON parse failed: $e\nurl=$url\nbodyPeek=$peek");
+      throw FormatException(
+          "JM response is not JSON (check search_query encoding): $e");
+    }
     var data = json["data"];
     if (data is List && data.isEmpty) {
       throw Exception("Empty data");
@@ -544,8 +555,10 @@ class JmNetwork {
         "Search",
         "jm titlePlain=${isSearchTitlePlainText(rawKeyword)} "
             "raw=[$rawKeyword] sent=[$keyword]");
-    keyword = Uri.encodeComponent(keyword);
-    keyword = keyword.replaceAll('%20', '+');
+    // Dart Uri.encodeComponent leaves ()!~*' unencoded; bare () in the
+    // query string breaks JM (HTML/garbage body → FormatException on JSON).
+    keyword = jmEncodeSearchQuery(keyword);
+    LogManager.addLog(LogLevel.info, "Search", "jm encoded=[$keyword]");
     appdata.writeHistory();
     Res res;
     if (page != 1) {

@@ -134,3 +134,18 @@ String jmKeyword(String keyword) {
       .map((t) => t.startsWith('+') || t.startsWith('-') ? t : '+$t')
       .join(' ');
 }
+
+/// Encode a JM `search_query` value for the URL.
+///
+/// [Uri.encodeComponent] leaves `()!~*'` unencoded. Bare parentheses in
+/// titles like `(FF47) [骨頭蹦 (骨頭)] …` produce broken JM responses
+/// (non-JSON body → FormatException). Encode those too; spaces → `+`.
+String jmEncodeSearchQuery(String keyword) {
+  return Uri.encodeComponent(keyword)
+      .replaceAll('(', '%28')
+      .replaceAll(')', '%29')
+      .replaceAll('!', '%21')
+      .replaceAll('*', '%2A')
+      .replaceAll("'", '%27')
+      .replaceAll('%20', '+');
+}
