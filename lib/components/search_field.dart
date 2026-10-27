@@ -1,5 +1,13 @@
 part of 'components.dart';
 
+/// One search chip with a stable identity for Element reuse.
+class SearchChip {
+  SearchChip(this.text) : id = _nextId++;
+  static int _nextId = 0;
+  final int id;
+  final String text;
+}
+
 /// Text controller that turns finished words (followed by a space) into chips.
 /// [query] = chips + the word currently being typed (no trailing space needed).
 class SearchChipController extends TextEditingController {
@@ -8,12 +16,14 @@ class SearchChipController extends TextEditingController {
     _normalize();
   }
 
-  final List<String> chips = [];
+  final List<SearchChip> chips = [];
   bool _busy = false;
 
   /// Chips plus leftover typing — used as the real search keyword.
   String get query =>
-      [...chips, text.trim()].where((e) => e.isNotEmpty).join(' ');
+      [...chips.map((c) => c.text), text.trim()]
+          .where((e) => e.isNotEmpty)
+          .join(' ');
 
   void _normalize() {
     if (_busy) return;
@@ -23,7 +33,9 @@ class SearchChipController extends TextEditingController {
     final done = splitSearchTerms(t.substring(0, idx));
     final rest = t.substring(idx + 1);
     _busy = true;
-    chips.addAll(done);
+    for (final d in done) {
+      chips.add(SearchChip(d));
+    }
     value = TextEditingValue(
       text: rest,
       selection: TextSelection.collapsed(offset: rest.length),
@@ -34,12 +46,19 @@ class SearchChipController extends TextEditingController {
   void addChip(String chip) {
     final c = chip.trim();
     if (c.isEmpty) return;
-    chips.add(c);
+    chips.add(SearchChip(c));
     notifyListeners();
   }
 
   void removeChipAt(int i) {
     if (i < 0 || i >= chips.length) return;
+    chips.removeAt(i);
+    notifyListeners();
+  }
+
+  void removeChipById(int id) {
+    final i = chips.indexWhere((c) => c.id == id);
+    if (i < 0) return;
     chips.removeAt(i);
     notifyListeners();
   }
@@ -75,9 +94,13 @@ class AppSearchField extends StatefulWidget {
 
 class _AppSearchFieldState extends State<AppSearchField> {
   static const double _kHeight = 45;
+  static const double _kInputWidth = 120;
 
   final _chipScroll = ScrollController();
   int _lastChipCount = 0;
+
+  /// Stable field subtree — built once per deps change, never on chip updates.
+  Widget? _field;
 
   SearchChipController? get _chipController =>
       widget.controller is SearchChipController
@@ -92,6 +115,12 @@ class _AppSearchFieldState extends State<AppSearchField> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _field = _buildTextField(MiuixTheme.of(context));
+  }
+
+  @override
   void didUpdateWidget(covariant AppSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
@@ -101,6 +130,13 @@ class _AppSearchFieldState extends State<AppSearchField> {
       }
       _chipController?.addListener(_onChipCtrl);
       _lastChipCount = _chipController?.chips.length ?? 0;
+      _field = _buildTextField(MiuixTheme.of(context));
+    } else if (oldWidget.focusNode != widget.focusNode ||
+        oldWidget.hint != widget.hint ||
+        oldWidget.autofocus != widget.autofocus ||
+        oldWidget.onChanged != widget.onChanged ||
+        oldWidget.onSubmitted != widget.onSubmitted) {
+      _field = _buildTextField(MiuixTheme.of(context));
     }
   }
 
@@ -113,17 +149,22 @@ class _AppSearchFieldState extends State<AppSearchField> {
 
   void _onChipCtrl() {
     final n = _chipController?.chips.length ?? 0;
-    if (n != _lastChipCount) {
-      _lastChipCount = n;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_chipScroll.hasClients) return;
-        final max = _chipScroll.position.maxScrollExtent;
-        if ((_chipScroll.offset - max).abs() > 0.5) {
-          _chipScroll.jumpTo(max);
-        }
-      });
-    }
-    // No setState — chips rebuild via ListenableBuilder only.
+    if (n == _lastChipCount) return;
+    final grew = n > _lastChipCount;
+    _lastChipCount = n;
+    if (!grew) return;
+    // Scroll chips strip only (TextField is pinned outside) — no viewport flash.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_chipScroll.hasClients) return;
+      final max = _chipScroll.position.maxScrollExtent;
+      if (max <= 0) return;
+      if ((_chipScroll.offset - max).abs() < 1.0) return;
+      _chipScroll.animateTo(
+        max,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   Widget _buildTextField(MiuixThemeData theme) {
@@ -179,7 +220,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
     return field;
   }
 
-  Widget _buildChip(MiuixThemeData theme, String text, VoidCallback onRemove) {
+  Widget _buildChip(MiuixThemeData theme, SearchChip chip) {
     final primary = theme.colors.primary;
     return Container(
       margin: const EdgeInsets.only(right: 4),
@@ -190,7 +231,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(
-          text,
+          chip.text,
           softWrap: false,
           style: TextStyle(
             fontSize: 13,
@@ -202,7 +243,10 @@ class _AppSearchFieldState extends State<AppSearchField> {
         ),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: onRemove,
+          onTap: () {
+            _chipController?.removeChipById(chip.id);
+            widget.onChanged?.call(_chipController?.text ?? "");
+          },
           child: Padding(
             padding: const EdgeInsets.all(4),
             child: MiuixIcon(
@@ -253,11 +297,40 @@ class _AppSearchFieldState extends State<AppSearchField> {
     );
   }
 
+  /// Chips-only strip. Rebuilds on chip changes; TextField is a sibling outside.
+  Widget _chipsStrip(MiuixThemeData theme, SearchChipController chipCtrl) {
+    return ListenableBuilder(
+      listenable: chipCtrl,
+      builder: (context, _) {
+        final chips = chipCtrl.chips;
+        return ListView.builder(
+          controller: _chipScroll,
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          itemCount: chips.length,
+          findChildIndexCallback: (Key key) {
+            if (key is! ValueKey<int>) return null;
+            final id = key.value;
+            final i = chips.indexWhere((c) => c.id == id);
+            return i >= 0 ? i : null;
+          },
+          itemBuilder: (context, i) {
+            final chip = chips[i];
+            return KeyedSubtree(
+              key: ValueKey<int>(chip.id),
+              child: Center(child: _buildChip(theme, chip)),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = MiuixTheme.of(context);
     final chipCtrl = _chipController;
-    final field = _buildTextField(theme);
+    final field = _field ?? _buildTextField(theme);
 
     return SizedBox(
       height: _kHeight,
@@ -267,7 +340,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
           shape: const StadiumBorder(),
         ),
         child: Padding(
-          // No prefix search icon — only the separate 搜索 button outside.
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: chipCtrl == null
               ? Stack(
@@ -277,49 +349,26 @@ class _AppSearchFieldState extends State<AppSearchField> {
                     _hintOverlay(theme),
                   ],
                 )
-              : LayoutBuilder(
-                  builder: (context, cons) {
-                    final inputWidth =
-                        (cons.maxWidth * 0.42).clamp(88.0, 180.0);
-                    return SingleChildScrollView(
-                      controller: _chipScroll,
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Chips scroll independently — TextField never moves with them.
+                    Expanded(child: _chipsStrip(theme, chipCtrl)),
+                    SizedBox(
+                      width: _kInputWidth,
+                      height: _kHeight,
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
                         children: [
-                          ListenableBuilder(
-                            listenable: chipCtrl,
-                            builder: (context, _) => Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (var i = 0;
-                                    i < chipCtrl.chips.length;
-                                    i++)
-                                  _buildChip(theme, chipCtrl.chips[i], () {
-                                    chipCtrl.removeChipAt(i);
-                                    widget.onChanged?.call(chipCtrl.text);
-                                  }),
-                              ],
-                            ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: field,
                           ),
-                          SizedBox(
-                            width: inputWidth,
-                            height: _kHeight,
-                            child: Stack(
-                              alignment: Alignment.centerLeft,
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: field,
-                                ),
-                                _hintOverlay(theme),
-                              ],
-                            ),
-                          ),
+                          _hintOverlay(theme),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
         ),
       ),
