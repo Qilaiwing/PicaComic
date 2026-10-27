@@ -136,20 +136,29 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
       keys.sort();
     }
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       itemCount: profiles!.length,
       itemBuilder: (context, index) {
         var key = keys!.elementAt(index);
         var value = profiles![key]!;
-        return RadioListTile<String>(
-          title: Text(value),
-          value: key,
-          groupValue: appdata.settings[75],
-          onChanged: (value) async {
-            setState(() {
-              appdata.settings[75] = key;
-            });
-            appdata.updateSettings();
-          },
+        final selected = appdata.settings[75] == key;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: MiuixSettingsCard(
+            margin: EdgeInsets.zero,
+            children: [
+              MiuixRadioButtonPreference(
+                title: value,
+                selected: selected,
+                onClick: () {
+                  setState(() {
+                    appdata.settings[75] = key;
+                  });
+                  appdata.updateSettings();
+                },
+              ),
+            ],
+          ),
         );
       },
     );

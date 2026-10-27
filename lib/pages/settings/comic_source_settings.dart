@@ -116,11 +116,10 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
         MiuixSmallTitle(source.name),
         MiuixSettingsCard(
           children: [
-            MiuixArrowPreference(
+            MiuixBasicComponent(
               startAction: const Icon(Icons.info_outline),
               title: "版本".tl,
               summary: source.version,
-              onClick: () {},
             ),
             if (App.isDesktop)
               MiuixArrowPreference(

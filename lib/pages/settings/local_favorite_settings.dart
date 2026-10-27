@@ -18,9 +18,12 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
             SelectSetting(
               leading: const Icon(Icons.book),
               title: "快速收藏".tl,
-              initialValue: LocalFavoritesManager()
-                  .folderNames
-                  .indexOf(appdata.settings[51]),
+              initialValue: (() {
+                final names = LocalFavoritesManager().folderNames;
+                if (names.isEmpty) return 0;
+                final i = names.indexOf(appdata.settings[51]);
+                return i < 0 ? 0 : i;
+              })(),
               onChanged: (i) {
                 appdata.settings[51] =
                     LocalFavoritesManager().folderNames[i];
@@ -50,7 +53,8 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
               leading: const Icon(Icons.sync),
               title: "下拉更新拉取页数".tl,
               initialValue: ["1", "2", "3", "4", "5", "10", "99"]
-                  .indexOf(appdata.settings[71]),
+                  .indexOf(appdata.settings[71])
+                  .clamp(0, 6),
               values: const ["1", "2", "3", "4", "5", "10", "99"],
               onChanged: (i) {
                 appdata.settings[71] =

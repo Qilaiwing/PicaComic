@@ -383,9 +383,9 @@ class _SetExplorePagesState extends State<SetExplorePages> {
     );
 
     return Padding(
+      key: ValueKey<String>(i),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
-        key: Key(i),
         decoration: ShapeDecoration(
           color: Theme.of(context).brightness == Brightness.dark
               ? const Color(0xFF1C1C1E)

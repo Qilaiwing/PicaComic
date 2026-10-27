@@ -335,10 +335,11 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
           MiuixSmallTitle("主题与色彩".tl),
           MiuixSettingsCard(
             children: [
-              MiuixWindowDropdownPreference(
+              SelectSettingWithAppdata(
                 title: "主题选择".tl,
-                startAction: const Icon(Icons.color_lens),
-                items: [
+                icon: const Icon(Icons.color_lens),
+                settingsIndex: 27,
+                options: [
                   "动态色彩".tl,
                   "小米蓝".tl,
                   "玫瑰粉".tl,
@@ -353,26 +354,18 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
                   "琥珀".tl,
                   "珊瑚橙".tl,
                 ],
-                selectedIndex:
-                    (int.tryParse(appdata.settings[27]) ?? 0).clamp(0, 12),
-                onSelectedIndexChange: (i) {
-                  setState(() {
-                    appdata.settings[27] = i.toString();
-                  });
-                  appdata.updateSettings();
+                onChanged: () {
+                  setState(() {});
                   MyApp.updater?.call();
                 },
               ),
-              MiuixWindowDropdownPreference(
+              SelectSettingWithAppdata(
                 title: "深色模式".tl,
-                startAction: const Icon(Icons.dark_mode),
-                items: ["跟随系统".tl, "禁用".tl, "启用".tl],
-                selectedIndex: (int.tryParse(appdata.settings[32]) ?? 0).clamp(0, 2),
-                onSelectedIndexChange: (i) {
-                  setState(() {
-                    appdata.settings[32] = i.toString();
-                  });
-                  appdata.updateSettings();
+                icon: const Icon(Icons.dark_mode),
+                settingsIndex: 32,
+                options: ["跟随系统".tl, "禁用".tl, "启用".tl],
+                onChanged: () {
+                  setState(() {});
                   MyApp.updater?.call();
                 },
               ),
@@ -532,23 +525,26 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         MiuixSmallTitle("其它偏好".tl),
         MiuixSettingsCard(
           children: [
-            MiuixWindowDropdownPreference(
+            SelectSetting(
+              leading: const Icon(Icons.language),
               title: "语言".tl,
-              startAction: const Icon(Icons.language),
-              selectedIndex: ["", "cn", "tw", "en"].indexOf(appdata.settings[50]).clamp(0, 3),
-              items: const ["System", "中文(简体)", "中文(繁體)", "English"],
-              onSelectedIndexChange: (value) {
+              initialValue:
+                  ["", "cn", "tw", "en"].indexOf(appdata.settings[50]).clamp(0, 3),
+              values: const ["System", "中文(简体)", "中文(繁體)", "English"],
+              onChanged: (value) {
                 appdata.settings[50] = ["", "cn", "tw", "en"][value];
                 appdata.updateSettings();
                 MyApp.updater?.call();
               },
             ),
-            MiuixWindowDropdownPreference(
+            SelectSetting(
+              leading: const Icon(Icons.download),
               title: "下载并行".tl,
-              startAction: const Icon(Icons.download),
-              selectedIndex: ["1", "2", "4", "6", "8", "16"].indexOf(appdata.settings[79]).clamp(0, 5),
-              items: const ["1", "2", "4", "6", "8", "16"],
-              onSelectedIndexChange: (value) {
+              initialValue: ["1", "2", "4", "6", "8", "16"]
+                  .indexOf(appdata.settings[79])
+                  .clamp(0, 5),
+              values: const ["1", "2", "4", "6", "8", "16"],
+              onChanged: (value) {
                 appdata.settings[79] = ["1", "2", "4", "6", "8", "16"][value];
                 appdata.updateSettings();
               },
