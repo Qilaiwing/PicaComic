@@ -1253,41 +1253,26 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
     Widget buildItem(String title, dynamic icon, VoidCallback onTap,
         [VoidCallback? onLongPress]) {
-      final scheme = Theme.of(context).colorScheme;
-      final primary = scheme.primary;
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      // Light mode: tinted fill + primary border for contrast; dark keeps soft surface.
-      final bg = isDark
-          ? scheme.surfaceContainerHighest.withValues(alpha: 0.55)
-          : primary.withValues(alpha: 0.10);
-      final borderColor = isDark
-          ? scheme.outline.withValues(alpha: 0.22)
-          : primary.withValues(alpha: 0.42);
-      final shape = RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_kActionRadius),
-        side: BorderSide(color: borderColor, width: 1),
-      );
+      // Same secondary fill as 下载 / non-primary MiuixButton (no border).
+      final colors = MiuixButtonDefaults.buttonColors(context);
+      final primary = Theme.of(context).colorScheme.primary;
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2),
         child: GestureDetector(
           onLongPress: onLongPress,
-          child: MiuixPressable(
+          child: MiuixButton(
+            cornerRadius: _kActionRadius,
+            minWidth: 0,
+            minHeight: _kActionHeight,
+            colors: colors,
+            insideMargin: EdgeInsets.zero,
             onPressed: onTap,
-            feedbackType: MiuixPressFeedbackType.sink,
-            sinkAmount: 0.97,
-            shape: shape,
-            child: Container(
+            child: SizedBox(
               height: _kActionHeight,
-              alignment: Alignment.center,
-              decoration: ShapeDecoration(
-                color: bg,
-                shape: shape,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              width: double.infinity,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max,
                 children: [
                   if (icon is MiuixVectorIcon)
                     MiuixIcon(vector: icon, size: 18, tint: primary)
@@ -1303,7 +1288,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                       letterSpacing: -0.2,
                       height: 1.0,
                       leadingDistribution: TextLeadingDistribution.even,
-                      color: primary,
+                      color: colors.contentColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1316,7 +1301,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       );
     }
 
-    final width = MediaQuery.of(context).size.width;
+        final width = MediaQuery.of(context).size.width;
 
     final actionItems = <Widget>[
       if (logic.history != null && width >= 500)
