@@ -701,7 +701,7 @@ class PreSearchPage extends StatelessWidget {
       builder: (logic) {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           decoration: ShapeDecoration(
             shape: MiuixSquircleBorder(
               cornerRadius: 18,
@@ -752,25 +752,30 @@ class PreSearchPage extends StatelessWidget {
   Widget buildSearchOptions(BuildContext context) {
     Widget buildLangSelector() {
       const languages = ["chinese", "japanese", "english"];
+      final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+            height: 1.1,
+          );
       return Padding(
-        padding: const EdgeInsets.only(top: 8, left: 12, right: 12),
+        padding: const EdgeInsets.only(top: 4),
         child: Row(
           children: [
-            const SizedBox(
-              width: 8,
-            ),
-            Text("语言".tl),
-            const SizedBox(
-              width: 16,
-            ),
-            Select(
-              initialValue: (() {
-                final i = languages.indexOf(searchController.language ?? "");
-                return i < 0 ? 0 : i;
-              })(),
-              onChange: (i) => searchController.language = languages[i],
-              values: languages,
-              outline: true,
+            Text("语言".tl, style: labelStyle),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Select(
+                  initialValue: (() {
+                    final i = languages.indexOf(searchController.language ?? "");
+                    return i < 0 ? 0 : i;
+                  })(),
+                  width: 148,
+                  onChange: (i) => searchController.language = languages[i],
+                  values: languages,
+                  outline: false,
+                ),
+              ),
             ),
           ],
         ),

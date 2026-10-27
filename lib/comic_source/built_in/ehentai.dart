@@ -433,105 +433,157 @@ class _SearchOptionsState extends State<_SearchOptions> {
   @override
   Widget build(BuildContext context) {
     var isInDialog = context.findAncestorWidgetOfExactType<Dialog>() != null;
-    var width = context.width-16;
-    if(width > 500) {
+    final theme = Theme.of(context);
+    final labelStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w500,
+      height: 1.1,
+    );
+    var width = context.width - 16;
+    if (width > 500) {
       width = 500;
     }
+
+    Widget categoryWrap({required double maxWidth}) {
+      const minWidth = 72.0;
+      final items = (maxWidth ~/ minWidth).clamp(2, 5);
+      const gap = 6.0;
+      final chipW = (maxWidth - gap * (items - 1)) / items;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: List.generate(
+          categories.length,
+          (index) => buildCategoryItem(categories[index], index, chipW),
+        ),
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        MiuixBasicComponent(title: "高级选项".tl),
-        if(!isInDialog)
-          LayoutBuilder(
-            builder: (context, constrains) => Wrap(
-              children: List.generate(categories.length, (index) {
-                const minWidth = 86;
-                var items = constrains.maxWidth ~/ minWidth;
-                return buildCategoryItem(
-                  categories[index],
-                  index,
-                  constrains.maxWidth / items - items,
-                );
-              }),
+        Padding(
+          padding: EdgeInsets.fromLTRB(isInDialog ? 4 : 0, 0, 4, 6),
+          child: Text(
+            "高级选项".tl,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.1,
             ),
-          ).paddingHorizontal(12)
+          ),
+        ),
+        if (!isInDialog)
+          LayoutBuilder(
+            builder: (context, constrains) =>
+                categoryWrap(maxWidth: constrains.maxWidth),
+          )
         else
           SizedBox(
             width: width,
-            child: Wrap(
-              children: List.generate(categories.length, (index) {
-                const minWidth = 86;
-                var items = width ~/ minWidth;
-                return buildCategoryItem(
-                  categories[index],
-                  index,
-                  width / items - items,
-                );
-              }),
-            ),
-          ).paddingHorizontal(12),
-        const SizedBox(
-          height: 8,
+            child: categoryWrap(maxWidth: width),
+          ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text("浏览已删除的画廊".tl, style: labelStyle),
+              ),
+              MiuixSwitch(
+                value: ehExpunged == 1,
+                onChanged: (v) {
+                  setState(() {
+                    ehExpunged = v ? 1 : 0;
+                  });
+                  update();
+                },
+              ),
+            ],
+          ),
         ),
-        Row(
-          children: [
-            const SizedBox(
-              width: 8,
-            ),
-            Text("浏览已删除的画廊".tl),
-            const SizedBox(
-              width: 8,
-            ),
-            MiuixCheckbox(value: ehExpunged == 1, onChanged: (i) { setState(() { ehExpunged = i == true ? 1 : 0;
-                });
-                update();
-              },
-            ),
-          ],
-        ).paddingHorizontal(12),
-        Row(
-          children: [
-            const SizedBox(width: 8),
-            const Text("Pages From"),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 68,
-              child: MiuixTextField(onChanged: (s) { ehStartPage = int.tryParse(s.replaceAll(RegExp("[^0-9]"), "")); update(); }, keyboardType: TextInputType.number, singleLine: true),
-            ),
-            const SizedBox(width: 8),
-            const Text("To"),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 68,
-              child: MiuixTextField(onChanged: (s) { ehEndPage = int.tryParse(s.replaceAll(RegExp("[^0-9]"), "")); update(); }, keyboardType: TextInputType.number, singleLine: true),
-            ),
-          ],
-        ).paddingHorizontal(12),
-        const SizedBox(
-          height: 12,
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Text("Pages", style: labelStyle),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: MiuixTextField(
+                    label: "From",
+                    useLabelAsPlaceholder: true,
+                    singleLine: true,
+                    keyboardType: TextInputType.number,
+                    cornerRadius: 12,
+                    insideMargin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    textStyle: theme.textTheme.bodyMedium,
+                    onChanged: (s) {
+                      ehStartPage =
+                          int.tryParse(s.replaceAll(RegExp("[^0-9]"), ""));
+                      update();
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text("–", style: labelStyle),
+              ),
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: MiuixTextField(
+                    label: "To",
+                    useLabelAsPlaceholder: true,
+                    singleLine: true,
+                    keyboardType: TextInputType.number,
+                    cornerRadius: 12,
+                    insideMargin: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    textStyle: theme.textTheme.bodyMedium,
+                    onChanged: (s) {
+                      ehEndPage =
+                          int.tryParse(s.replaceAll(RegExp("[^0-9]"), ""));
+                      update();
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        Row(
-          children: [
-            const SizedBox(
-              width: 8,
-            ),
-            Text("最少星星".tl),
-            const SizedBox(
-              width: 16,
-            ),
-            Select(
-              initialValue: ehMinStars,
-              onChange: (i) {
-                ehMinStars = i;
-                update();
-              },
-              values: const ["0", "1", "2", "3", "4", "5"],
-              outline: true,
-            ),
-          ],
-        ).paddingHorizontal(12),
-        const SizedBox(height: 8)
+        Padding(
+          padding: const EdgeInsets.only(top: 2, bottom: 2),
+          child: Row(
+            children: [
+              Text("最少星星".tl, style: labelStyle),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Select(
+                    initialValue: ehMinStars,
+                    width: 132,
+                    onChange: (i) {
+                      ehMinStars = i;
+                      update();
+                    },
+                    values: const ["0", "1", "2", "3", "4", "5"],
+                    outline: false,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
       ],
     );
   }
@@ -551,32 +603,47 @@ class _SearchOptionsState extends State<_SearchOptions> {
 
   Widget buildCategoryItem(String title, int value, double width) {
     bool disabled = ehFCats & (1 << value) == 1 << value;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+    final scheme = Theme.of(context).colorScheme;
+    final active = !disabled;
+    return SizedBox(
       width: width,
-      height: 38,
-      decoration: BoxDecoration(
-        color: !disabled
-            ? App.colors(context).tertiaryContainer
-            : App.colors(context).tertiaryContainer.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, borderRadius: BorderRadius.circular(8), onPressed: () {
+      height: 32,
+      child: MiuixPressable(
+        feedbackType: MiuixPressFeedbackType.sink,
+        shape: const MiuixSquircleBorder(cornerRadius: 10),
+        onPressed: () {
           setState(() {
             disabled ? ehFCats -= (1 << value) : ehFCats += (1 << value);
           });
           update();
         },
-        child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          alignment: Alignment.center,
+          decoration: ShapeDecoration(
+            color: active
+                ? scheme.tertiaryContainer
+                : scheme.tertiaryContainer.withOpacity(0.18),
+            shape: const MiuixSquircleBorder(cornerRadius: 10),
+          ),
           child: Text(
             title,
-            style: const TextStyle(fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+              height: 1.0,
+              color: active
+                  ? scheme.onTertiaryContainer
+                  : scheme.onSurface.withOpacity(0.45),
+            ),
           ),
         ),
       ),
     );
   }
+
 }
 
 class _EhentaiGalleriesLoader {

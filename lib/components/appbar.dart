@@ -485,32 +485,30 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
       width: double.infinity,
       height: effectiveHeight,
+      alignment: Alignment.center,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-        AppTooltip(
-          message: "返回".tl,
-          child: MiuixIconButton(
-            minWidth: 36,
-            minHeight: 36,
-            onPressed: () => context.pop(),
-            child: MiuixIcon(
-              vector: MiuixIcons.extended.byName('chevronBackward') ??
-                  MiuixIcons.os4.back,
-              size: 20,
-              tint: isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
+          AppTooltip(
+            message: "返回".tl,
+            child: MiuixIconButton(
+              minWidth: 36,
+              minHeight: 36,
+              onPressed: () => context.pop(),
+              child: MiuixIcon(
+                vector: MiuixIcons.extended.byName('chevronBackward') ??
+                    MiuixIcons.os4.back,
+                size: 20,
+                tint: isDark ? const Color(0xEEFFFFFF) : const Color(0xDD000000),
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SizedBox(
-            height: 46,
+          const SizedBox(width: 4),
+          Expanded(
             child: AppSearchField(
               controller: widget.controller,
               hint: "Search",
@@ -519,9 +517,12 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
               onSubmitted: widget.onSearch,
             ),
           ),
-        ),
-        if (widget.trailing != null) widget.trailing!
-      ]),
+          if (widget.trailing != null) ...[
+            const SizedBox(width: 2),
+            widget.trailing!,
+          ],
+        ],
+      ),
     );
   }
 }

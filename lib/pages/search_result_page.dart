@@ -176,28 +176,31 @@ class _SearchResultPageState extends State<_SearchResultPage> {
   Widget build(BuildContext context) {
     Widget trailing;
     if (context.width < 400) {
-      trailing = Button.icon(
-        icon: MiuixIcon(vector: MiuixIcons.os4.more, size: 20),
+      trailing = MiuixIconButton(
+        minWidth: 36,
+        minHeight: 36,
         onPressed: more,
+        child: MiuixIcon(vector: MiuixIcons.os4.more, size: 20),
       );
     } else {
       trailing = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Button.icon(
-            icon: MiuixIcon(
+          MiuixIconButton(
+            minWidth: 36,
+            minHeight: 36,
+            onPressed: changeSource,
+            child: MiuixIcon(
               vector: MiuixIcons.extended.byName('all') ??
                   MiuixIcons.os4.settings,
               size: 20,
             ),
-            onPressed: changeSource,
           ),
-          const SizedBox(
-            width: 4,
-          ),
-          Button.icon(
-            icon: MiuixIcon(vector: MiuixIcons.os4.filter, size: 20),
+          MiuixIconButton(
+            minWidth: 36,
+            minHeight: 36,
             onPressed: showSearchOptions,
+            child: MiuixIcon(vector: MiuixIcons.os4.filter, size: 20),
           ),
         ],
       );
@@ -267,8 +270,8 @@ class _SearchResultPageState extends State<_SearchResultPage> {
           header: SliverPersistentHeader(
             pinned: true,
             delegate: _SliverAppBarDelegate(
-              minHeight: 60,
-              maxHeight: 60,
+              minHeight: 56,
+              maxHeight: 56,
               child: FrostedBackground(child: FloatingSearchBar(
                 onSearch: (s) {
                   suggestionsController.suggestions.clear();

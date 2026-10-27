@@ -79,7 +79,7 @@ class AppSearchField extends StatefulWidget {
 }
 
 class _AppSearchFieldState extends State<AppSearchField> {
-  static const double _kHeight = 45;
+  static const double _kHeight = 42;
 
   SearchChipController? get _chipController =>
       widget.controller is SearchChipController
@@ -166,7 +166,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
           shape: const StadiumBorder(),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
