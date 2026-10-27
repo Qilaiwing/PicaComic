@@ -37,25 +37,41 @@ class _ToastOverlay extends StatelessWidget {
         // Miuix 表面 + 阴影；透明 Material 只为 Text 提供默认文字样式。
         child: Material(
             type: MaterialType.transparency,
-            child: MiuixSurface(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              cornerRadius: 20,
-              shadowElevation: 3,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) icon!.paddingRight(8),
-                    Text(
-                      message,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w500),
-                      maxLines: 3,
+            child: ClipPath(
+              clipper: const ShapeBorderClipper(
+                shape: MiuixSquircleBorder(cornerRadius: 20),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: MiuixSurface(
+                  color: MiuixTheme.of(context)
+                      .colors
+                      .surfaceContainer
+                      .withValues(alpha: 0.88),
+                  cornerRadius: 20,
+                  shadowElevation: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 18),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (icon != null) icon!.paddingRight(8),
+                        Flexible(
+                          child: Text(
+                            message,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: MiuixTheme.of(context).colors.onBackground,
+                            ),
+                            maxLines: 3,
+                          ),
+                        ),
+                        if (trailing != null) trailing!.paddingLeft(8)
+                      ],
                     ),
-                    if (trailing != null) trailing!.paddingLeft(8)
-                  ],
+                  ),
                 ),
               ),
             )),

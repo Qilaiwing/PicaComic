@@ -477,6 +477,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                     const MiuixHorizontalDivider(),
                     Expanded(
                         child: MiuixPressable(
+                            borderRadius: BorderRadius.zero,
                             onPressed: () {
                               selectPage(logic);
                             },

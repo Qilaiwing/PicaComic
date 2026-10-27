@@ -1962,7 +1962,10 @@ class _FavoriteComicWidgetState extends State<FavoriteComicWidget> {
 
     Widget buildFolder(String name, String id, int p) {
       bool isSelected = selected.contains(id);
-      return MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, onPressed: () => setState(() {
+      return MiuixPressable(
+        feedbackType: MiuixPressFeedbackType.sink,
+        shape: const MiuixSquircleBorder(cornerRadius: 12),
+        onPressed: () => setState(() {
           page = p;
           if (isSelected) {
             selected.remove(id);

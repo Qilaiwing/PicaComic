@@ -290,7 +290,7 @@ class _EhLoginPageState extends State<EhLoginPage> {
       if (b) {
         context.pop();
         showToast(
-          message: "欢迎回来，@name".tlParams({"name": "ehentai".tl}),
+          message: "登录成功".tl,
           icon: const Icon(Icons.check),
         );
       } else {

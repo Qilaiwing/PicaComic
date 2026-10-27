@@ -685,7 +685,8 @@
         "滑动到底部时自动加载下一页并追加到末尾": "滑動到底部時自動載入下一頁並追加到末尾",
         "需要手动点击或翻页切换页面": "需要手動點擊或翻頁切換頁面",
         "欢迎回来，@name": "歡迎回來，@name",
-        "Loading...": "載入中..."
+        "Loading...": "載入中...",
+        "欢迎回到@name": "歡迎回到@name"
     },
     "en_US": {
         "有可用更新": "Updates available",
@@ -1374,6 +1375,7 @@
         "滑动到底部时自动加载下一页并追加到末尾": "Auto-load the next page when scrolling to the bottom",
         "需要手动点击或翻页切换页面": "Switch pages manually",
         "欢迎回来，@name": "Welcome back, @name",
-        "Loading...": "Loading..."
+        "Loading...": "Loading...",
+        "欢迎回到@name": "Welcome back to @name"
     }
 }

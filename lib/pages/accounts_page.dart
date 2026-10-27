@@ -157,9 +157,7 @@ class AccountsPage extends StatelessWidget {
                   showToast(message: res.errorMessage!);
                 } else {
                   showToast(
-                    message: "欢迎回来，@name".tlParams({
-                      "name": element.name.tl,
-                    }),
+                    message: "登录成功".tl,
                     icon: const Icon(Icons.check),
                   );
                 }
@@ -185,11 +183,17 @@ class AccountsPage extends StatelessWidget {
 
       yield Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: MiuixCard(
-          insideMargin: EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: cardChildren,
+        child: ClipPath(
+          clipper: const ShapeBorderClipper(
+            shape: MiuixSquircleBorder(cornerRadius: 16),
+          ),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          child: MiuixCard(
+            insideMargin: EdgeInsets.zero,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: cardChildren,
+            ),
           ),
         ),
       );
@@ -331,7 +335,7 @@ class _LoginPageState extends State<_LoginPage> {
         ),
         const SizedBox(height: 14),
         Text(
-          "欢迎回来，@name".tlParams({"name": widget.sourceName.tl}),
+          "欢迎回到@name".tlParams({"name": widget.sourceName.tl}),
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w700,
@@ -366,13 +370,13 @@ class _LoginPageState extends State<_LoginPage> {
               label: "用户名".tl,
               singleLine: true,
               insideMargin: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
+                horizontal: 18,
+                vertical: 14,
               ),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _passwordFocus.requestFocus(),
               leadingIcon: Padding(
-                padding: const EdgeInsets.only(left: 2, right: 8),
+                padding: const EdgeInsets.only(left: 16, right: 10),
                 child: MiuixIcon(
                   vector: MiuixIcons.os4.contacts,
                   size: 18,
@@ -388,33 +392,36 @@ class _LoginPageState extends State<_LoginPage> {
               singleLine: true,
               obscureText: _obscure,
               insideMargin: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
+                horizontal: 18,
+                vertical: 14,
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) {
                 if (_canSubmit) _login();
               },
               leadingIcon: Padding(
-                padding: const EdgeInsets.only(left: 2, right: 8),
+                padding: const EdgeInsets.only(left: 16, right: 10),
                 child: MiuixIcon(
                   vector: MiuixIcons.os4.lock,
                   size: 18,
                   tint: colors.onSurfaceVariantSummary,
                 ),
               ),
-              trailingIcon: MiuixIconButton(
-                minWidth: 36,
-                minHeight: 36,
-                onPressed: () {
-                  setState(() => _obscure = !_obscure);
-                },
-                child: MiuixIcon(
-                  vector: _obscure
-                      ? MiuixIcons.os4.show
-                      : MiuixIcons.os4.hide,
-                  size: 18,
-                  tint: colors.onSurfaceVariantSummary,
+              trailingIcon: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: MiuixIconButton(
+                  minWidth: 36,
+                  minHeight: 36,
+                  onPressed: () {
+                    setState(() => _obscure = !_obscure);
+                  },
+                  child: MiuixIcon(
+                    vector: _obscure
+                        ? MiuixIcons.os4.show
+                        : MiuixIcons.os4.hide,
+                    size: 18,
+                    tint: colors.onSurfaceVariantSummary,
+                  ),
                 ),
               ),
             ),
@@ -526,9 +533,7 @@ class _LoginPageState extends State<_LoginPage> {
     } else {
       setState(() => _loading = false);
       showToast(
-        message: "欢迎回来，@name".tlParams({
-          "name": widget.sourceName.tl,
-        }),
+        message: "登录成功".tl,
         icon: const Icon(Icons.check),
       );
       if (mounted) context.pop();

@@ -614,9 +614,9 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
             MiuixArrowPreference(
               startAction: const Icon(Icons.code),
               title: "项目地址 (GitHub)".tl,
-              summary: "https://github.com/Pacalini/PicaComic",
+              summary: "https://github.com/Qilaiwing/PicaComic_miuix",
               onClick: () => launchUrlString(
-                "https://github.com/Pacalini/PicaComic",
+                "https://github.com/Qilaiwing/PicaComic_miuix",
                 mode: LaunchMode.externalApplication,
               ),
             ),
@@ -625,7 +625,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               title: "问题反馈 (GitHub Issues)".tl,
               summary: "提交缺陷与功能建议".tl,
               onClick: () => launchUrlString(
-                "https://github.com/Pacalini/PicaComic/issues",
+                "https://github.com/Qilaiwing/PicaComic_miuix/issues",
                 mode: LaunchMode.externalApplication,
               ),
             ),

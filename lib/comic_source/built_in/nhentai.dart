@@ -88,7 +88,7 @@ final nhentai = ComicSource.named(
         source.data["account"] = 'ok';
         source.saveData();
         showToast(
-          message: "欢迎回来，@name".tlParams({"name": source.name.tl}),
+          message: "登录成功".tl,
           icon: const Icon(Icons.check),
         );
       }

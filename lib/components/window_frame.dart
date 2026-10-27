@@ -135,6 +135,7 @@ class WindowFrame extends StatelessWidget {
   Widget buildMenuButton(
       WindowFrameController controller, BuildContext context) {
     return MiuixPressable(
+        borderRadius: BorderRadius.circular(8),
         onPressed: () {
           controller.openSideBar();
         },

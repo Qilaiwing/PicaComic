@@ -431,10 +431,11 @@ class _HtSliderCaptchaDialogState extends State<HtSliderCaptchaDialog> {
             if (_loading)
               ColoredBox(
                 color: colors.background.withValues(alpha: 0.72),
-                child: const Center(
+                child: Center(
                   child: MiuixCircularProgressIndicator(
                     size: 26,
                     strokeWidth: 2.5,
+                    colors: MiuixProgressIndicatorDefaults.defaultColors(context),
                   ),
                 ),
               ),
@@ -484,9 +485,12 @@ class _HtSliderCaptchaDialogState extends State<HtSliderCaptchaDialog> {
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const MiuixCircularProgressIndicator(
+                          MiuixCircularProgressIndicator(
                             size: 15,
                             strokeWidth: 2,
+                            colors: MiuixProgressIndicatorDefaults.defaultColors(
+                              context,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -517,9 +521,11 @@ class _HtSliderCaptchaDialogState extends State<HtSliderCaptchaDialog> {
                     width: 44,
                     height: 44,
                     decoration: ShapeDecoration(
-                      color: enabled
-                          ? colors.primary
-                          : colors.disabledPrimaryButton,
+                      // Always theme primary (alpha when idle) so the handle
+                      // never flashes Material blue before the theme settles.
+                      color: colors.primary.withValues(
+                        alpha: enabled ? 1.0 : 0.45,
+                      ),
                       shape: const MiuixSquircleBorder(cornerRadius: 22),
                     ),
                     child: Center(

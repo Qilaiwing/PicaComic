@@ -635,13 +635,14 @@ class _NaviPaneState extends State<NaviPane>
           child: ClipRRect(
             borderRadius: BorderRadius.circular(31),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(31),
-                  color: isDark
-                      ? const Color(0xE61E1E22)
-                      : const Color(0xF2FFFFFF),
+                  color: MiuixTheme.of(context)
+                      .colors
+                      .background
+                      .withValues(alpha: frostTintAlpha(context) + 0.22),
                   border: Border.all(
                     color: isDark
                         ? const Color(0x24FFFFFF)
