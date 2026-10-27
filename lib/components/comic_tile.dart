@@ -60,65 +60,83 @@ abstract class ComicTile extends StatelessWidget {
           Widget child;
           if (!favorite) {
             child = ConstrainedBox(
+              key: const Key("1"),
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
-                key: const Key("1"),
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
                     child: SelectableText(
                       title.replaceAll("\n", ""),
-                      style: const TextStyle(fontSize: 22),
-                    ),
-                  ),
-                  const MiuixHorizontalDivider(),
-                  MiuixBasicComponent(
-                    startAction: const Icon(Icons.article),
-                    title: "查看详情".tl,
-                    onClick: () => close("view"),
-                  ),
-                  if (favoriteItem != null)
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.bookmark_rounded),
-                      title: "本地收藏".tl,
-                      onClick: () {
-                        setState(() {
-                          favorite = true;
-                        });
-                      },
-                    ),
-                  if (read != null)
-                    MiuixBasicComponent(
-                      startAction: const Icon(Icons.chrome_reader_mode),
-                      title: "阅读".tl,
-                      onClick: () => close("read"),
-                    ),
-                  MiuixBasicComponent(
-                    startAction: const Icon(Icons.search),
-                    title: "搜索".tl,
-                    onClick: () => close("search"),
-                  ),
-                  MiuixBasicComponent(
-                    startAction: const Icon(Icons.block),
-                    title: "屏蔽".tl,
-                    onClick: () => close("block"),
-                  ),
-                  if (addonMenuOptions != null)
-                    for (var option in addonMenuOptions!)
-                      MiuixBasicComponent(
-                        startAction: Icon(option.icon),
-                        title: option.title,
-                        onClick: () => option.onTap(comicID),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
                       ),
+                    ),
+                  ),
+                  // Options in a MiuixCard so press overlays clip to squircle
+                  // and the sheet matches settings-style HyperOS menus.
+                  MiuixCard(
+                    cornerRadius: 16,
+                    insideMargin: EdgeInsets.zero,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MiuixBasicComponent(
+                          startAction: const Icon(Icons.article),
+                          title: "查看详情".tl,
+                          onClick: () => close("view"),
+                        ),
+                        if (favoriteItem != null)
+                          MiuixBasicComponent(
+                            startAction: const Icon(Icons.bookmark_rounded),
+                            title: "本地收藏".tl,
+                            onClick: () {
+                              setState(() {
+                                favorite = true;
+                              });
+                            },
+                          ),
+                        if (read != null)
+                          MiuixBasicComponent(
+                            startAction: const Icon(Icons.chrome_reader_mode),
+                            title: "阅读".tl,
+                            onClick: () => close("read"),
+                          ),
+                        MiuixBasicComponent(
+                          startAction: const Icon(Icons.search),
+                          title: "搜索".tl,
+                          onClick: () => close("search"),
+                        ),
+                        MiuixBasicComponent(
+                          startAction: const Icon(Icons.block),
+                          title: "屏蔽".tl,
+                          onClick: () => close("block"),
+                        ),
+                        if (addonMenuOptions != null)
+                          for (var option in addonMenuOptions!)
+                            MiuixBasicComponent(
+                              startAction: Icon(option.icon),
+                              title: option.title,
+                              onClick: () => option.onTap(comicID),
+                            ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
           } else {
             child = KeyedSubtree(
               key: const Key("2"),
-              child: buildFavoriteDialog(context, () => close()),
+              child: MiuixCard(
+                cornerRadius: 16,
+                insideMargin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
+                child: buildFavoriteDialog(context, () => close()),
+              ),
             );
           }
           return AnimatedSwitcher(
@@ -342,31 +360,39 @@ abstract class ComicTile extends StatelessWidget {
 
   Widget _buildDetailedMode(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    const shape = MiuixSquircleBorder(cornerRadius: 16);
     return LayoutBuilder(builder: (context, constrains) {
       final height = constrains.maxHeight - 16;
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: ShapeDecoration(
-          shape: MiuixSquircleBorder(
-            cornerRadius: 16,
-            side: BorderSide(
-              color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
-              width: 0.6,
+      // DecoratedBox keeps shadow outside clip; ClipPath + Pressable shape
+      // keep the long-press mask rounded to the same squircle as the card.
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+            shape: MiuixSquircleBorder(
+              cornerRadius: 16,
+              side: BorderSide(
+                color:
+                    isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
+                width: 0.6,
+              ),
             ),
+            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+            shadows: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          shadows: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.25 : 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: GestureDetector(
-            onSecondaryTapDown: onSecondaryTap_,
-            child: MiuixPressable(
-                shape: const MiuixSquircleBorder(cornerRadius: 16),
+          child: ClipPath(
+            clipper: const ShapeBorderClipper(shape: shape),
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            child: GestureDetector(
+              onSecondaryTapDown: onSecondaryTap_,
+              child: MiuixPressable(
+                shape: shape,
                 onPressed: onTap_,
                 onLongPress: enableLongPressed ? onLongTap_ : null,
                 child: Padding(
@@ -377,8 +403,9 @@ abstract class ComicTile extends StatelessWidget {
                         width: height * 0.68,
                         height: double.infinity,
                         decoration: ShapeDecoration(
-                          color:
-                              Theme.of(context).colorScheme.secondaryContainer,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer,
                           shape: const MiuixSquircleBorder(cornerRadius: 12),
                         ),
                         clipBehavior: Clip.antiAlias,
@@ -400,7 +427,11 @@ abstract class ComicTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                ))),
+                ),
+              ),
+            ),
+          ),
+        ),
       );
     });
   }
@@ -458,7 +489,7 @@ abstract class ComicTile extends StatelessWidget {
                 child: GestureDetector(
                     onSecondaryTapDown: onSecondaryTap_,
                     child: MiuixPressable(
-                        borderRadius: BorderRadius.circular(8),
+                        shape: const MiuixSquircleBorder(cornerRadius: 12),
                         onPressed: onTap_,
                         onLongPress: enableLongPressed ? onLongTap_ : null,
                         child: const SizedBox.expand())),
