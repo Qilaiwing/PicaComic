@@ -224,7 +224,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
               ),
               child: MiuixPressable(
  onPressed: () {
-                    var s = controller.query;
+                    var s = controller.commitPending();
                     setState(() {
                       keyword = s;
                     });

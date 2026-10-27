@@ -50,6 +50,20 @@ class SearchChipController extends TextEditingController {
     notifyListeners();
   }
 
+  /// On search submit: turn leftover typing into a chip, then return [query].
+  String commitPending() {
+    final t = text.trim();
+    if (t.isEmpty) return query;
+    _busy = true;
+    chips.add(SearchChip(t));
+    value = const TextEditingValue(
+      text: '',
+      selection: TextSelection.collapsed(offset: 0),
+    );
+    _busy = false;
+    return query;
+  }
+
   void removeChipAt(int i) {
     if (i < 0 || i >= chips.length) return;
     chips.removeAt(i);
@@ -187,7 +201,8 @@ class _AppSearchFieldState extends State<AppSearchField> {
       style: style,
       cursorColor: theme.colors.primary,
       onChanged: widget.onChanged,
-      onSubmitted: (s) => widget.onSubmitted(chipCtrl?.query ?? s),
+      onSubmitted: (s) =>
+          widget.onSubmitted(chipCtrl?.commitPending() ?? s),
       decoration: const InputDecoration(
         isDense: true,
         hintText: null,

@@ -74,7 +74,7 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
           return MiuixPressable(
             onPressed: () {
               final q = widget.controller is SearchChipController
-                  ? (widget.controller as SearchChipController).query
+                  ? (widget.controller as SearchChipController).commitPending()
                   : widget.controller.text;
               widget.onFinish(q);
             },
