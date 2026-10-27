@@ -585,7 +585,7 @@ void importDataSetting(BuildContext context) {
           ]);
 }
 
-void syncDataSettings(BuildContext context) {
+Future<void> syncDataSettings(BuildContext context) async {
   var configs = ["", "", "", ""];
   if (appdata.settings[45] != "") {
     configs = appdata.settings[45].split(';');
@@ -595,7 +595,7 @@ void syncDataSettings(BuildContext context) {
   String pwd = configs[2];
   String path = configs[3];
   int value = 0;
-  showMiuixDialog(
+  await showMiuixDialog(
     context: context,
     title: "Webdav",
     contentBuilder: (context, close) => Column(

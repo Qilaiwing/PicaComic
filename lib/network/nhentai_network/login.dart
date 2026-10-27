@@ -14,9 +14,20 @@ void nhLogin(void Function() onFinished) async{
     var webview = DesktopWebview(
       initialUrl: "${NhentaiNetwork().baseUrl}/login/?next=/",
       onTitleChange: (title, controller) async{
-        print(title);
-        if(title == "nhentai.net")  return;
-        if (!title.contains("Login") && !title.contains("Register") && title.contains("nhentai")) {
+        final tl = title.toLowerCase();
+        if (tl == "nhentai.net" ||
+            tl.contains("login") ||
+            tl.contains("register") ||
+            !tl.contains("nhentai")) {
+          return;
+        }
+        {
+          final cookiesProbe = await controller.getCookies("${NhentaiNetwork().baseUrl}/");
+          final hasSession = cookiesProbe.keys
+              .any((k) => k.toLowerCase() == "sessionid");
+          if (!hasSession) return;
+        }
+        {
           var ua = controller.userAgent;
           if(ua != null){
             appdata.implicitData[3] = ua;
@@ -47,32 +58,46 @@ void nhLogin(void Function() onFinished) async{
       initialUrl: "${NhentaiNetwork().baseUrl}/login/?next=/",
       singlePage: true,
       onTitleChange: (title, controller) async{
-        if (!title.contains("Login") && !title.contains("Register") && title.contains("nhentai")) {
-          var ua = await controller.getUA();
-          if(ua != null){
-            appdata.implicitData[3] = ua;
-            appdata.writeImplicitData();
-          }
-          var cookies = await controller.getCookies("${NhentaiNetwork().baseUrl}/") ?? {};
-          List<io.Cookie> cookiesList = [];
-          cookies.forEach((key, value) {
-            var cookie = io.Cookie(key, value);
-            if(key == "sessionid" || key == "XSRF-TOKEN"){
-              NhentaiNetwork().logged = true;
-            }
-            cookie.domain = ".nhentai.net";
-            if (key != "cf_clearance") {
-              cookiesList.add(cookie);
-            }
-          });
-          NhentaiNetwork().cookieJar!.saveFromResponse(
-              Uri.parse(NhentaiNetwork().baseUrl), cookiesList);
-          onFinished();
-          App.globalBack();
+        // Ignore bare domain / login / register titles so the webview does not
+        // immediately "succeed" and bounce back to accounts.
+        final t = title.toLowerCase();
+        if (t == "nhentai.net" ||
+            t.contains("login") ||
+            t.contains("register") ||
+            !t.contains("nhentai")) {
+          return;
         }
+        var cookies =
+            await controller.getCookies("${NhentaiNetwork().baseUrl}/") ?? {};
+        final hasSession =
+            cookies.keys.any((k) => k.toLowerCase() == "sessionid");
+        if (!hasSession) {
+          return;
+        }
+        var ua = await controller.getUA();
+        if (ua != null) {
+          appdata.implicitData[3] = ua;
+          appdata.writeImplicitData();
+        }
+        List<io.Cookie> cookiesList = [];
+        cookies.forEach((key, value) {
+          var cookie = io.Cookie(key, value);
+          if (key == "sessionid" || key == "XSRF-TOKEN") {
+            NhentaiNetwork().logged = true;
+          }
+          cookie.domain = ".nhentai.net";
+          if (key != "cf_clearance") {
+            cookiesList.add(cookie);
+          }
+        });
+        if (!NhentaiNetwork().logged) return;
+        NhentaiNetwork().cookieJar!.saveFromResponse(
+            Uri.parse(NhentaiNetwork().baseUrl), cookiesList);
+        onFinished();
+        App.globalBack();
       },
     ));
-  } else {
+    } else {
     showToast(message: "当前设备不支持".tl);
   }
 }

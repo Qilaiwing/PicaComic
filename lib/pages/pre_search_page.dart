@@ -895,6 +895,8 @@ class PreSearchPage extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 history,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 16),
               ),
             ),
@@ -1157,14 +1159,22 @@ class PreSearchPage extends StatelessWidget {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        history,
-                                        style: TextStyle(
-                                          fontSize: 13,
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              MediaQuery.sizeOf(context).width * 0.62,
+                                        ),
+                                        child: Text(
+                                          history,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
                                           color: isDark
                                               ? const Color(0xDDFFFFFF)
                                               : const Color(0xDD000000),
                                         ),
+                                      ),
                                       ),
                                       const SizedBox(width: 4),
                                       GestureDetector(

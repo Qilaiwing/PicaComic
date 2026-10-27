@@ -446,6 +446,7 @@ class _LoginPageState extends State<_LoginPage> {
         child: _loading
             ? Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   MiuixCircularProgressIndicator(
                     size: 16,
@@ -459,10 +460,22 @@ class _LoginPageState extends State<_LoginPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text("登录中".tl),
+                  Text(
+                    "登录中".tl,
+                    style: TextStyle(
+                      color: MiuixTheme.of(context).colors.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               )
-            : Text("登录".tl),
+            : Text(
+                "登录".tl,
+                style: TextStyle(
+                  color: MiuixTheme.of(context).colors.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }

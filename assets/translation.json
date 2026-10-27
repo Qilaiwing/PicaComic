@@ -686,7 +686,20 @@
         "需要手动点击或翻页切换页面": "需要手動點擊或翻頁切換頁面",
         "欢迎回来，@name": "歡迎回來，@name",
         "Loading...": "載入中...",
-        "欢迎回到@name": "歡迎回到@name"
+        "欢迎回到@name": "歡迎回到@name",
+        "Fork": "Fork",
+        "未启用": "未啟用",
+        "已启用": "已啟用",
+        "无法打开系统设置": "無法開啟系統設定",
+        "暂无日志": "暫無日誌",
+        "复制设备信息": "複製裝置資訊",
+        "打印漫画源列表": "列印漫畫源列表",
+        "写入一条测试日志": "寫入一條測試日誌",
+        "显示调试横幅状态": "顯示除錯橫幅狀態",
+        "当前为 Debug 构建": "目前為 Debug 建置",
+        "当前为 Profile/Release 构建": "目前為 Profile/Release 建置",
+        "无漫画源": "無漫畫源",
+        "已写入": "已寫入"
     },
     "en_US": {
         "有可用更新": "Updates available",
@@ -822,7 +835,7 @@
         "账号": "Account",
         "密码": "Password",
         "您的登录密码": "Your login password",
-        "登录中": "Logging in",
+        "登录中": "Signing in…",
         "登录失败": "Login Failed",
         "两次输入的密码不一致": "Passwords entered do not match",
         "密码至少8位": "Password must be at least 8 characters",
@@ -1376,6 +1389,19 @@
         "需要手动点击或翻页切换页面": "Switch pages manually",
         "欢迎回来，@name": "Welcome back, @name",
         "Loading...": "Loading...",
-        "欢迎回到@name": "Welcome back to @name"
+        "欢迎回到@name": "Welcome back to @name",
+        "Fork": "Fork",
+        "未启用": "Disabled",
+        "已启用": "Enabled",
+        "无法打开系统设置": "Unable to open system settings",
+        "暂无日志": "No logs yet",
+        "复制设备信息": "Copy device info",
+        "打印漫画源列表": "Print comic sources",
+        "写入一条测试日志": "Write a test log",
+        "显示调试横幅状态": "Show debug banner status",
+        "当前为 Debug 构建": "Running a Debug build",
+        "当前为 Profile/Release 构建": "Running Profile/Release",
+        "无漫画源": "No comic sources",
+        "已写入": "Written"
     }
 }

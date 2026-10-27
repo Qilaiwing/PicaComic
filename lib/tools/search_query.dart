@@ -65,8 +65,13 @@ int lastSearchBoundary(String s) {
 /// PicACG's keyword search is a MongoDB text search: plain space-separated
 /// words are OR'ed. Quoting every term makes each one required (AND).
 String picacgKeyword(String keyword) {
-  final terms = splitSearchTerms(keyword);
-  if (terms.length <= 1) return keyword.trim();
+  final raw = keyword.trim();
+  // Pasted comic titles: search as one required phrase, do not AND-split.
+  if (isSearchTitlePlainText(raw)) {
+    return raw.startsWith('"') ? raw : '"$raw"';
+  }
+  final terms = splitSearchTerms(raw);
+  if (terms.length <= 1) return raw;
   return terms
       .map((t) => t.startsWith('"') || t.startsWith('-') ? t : '"$t"')
       .join(' ');
@@ -75,8 +80,13 @@ String picacgKeyword(String keyword) {
 /// JM search: space-separated words are OR'ed; a leading `+` makes a word
 /// required. Prefix every plain term with `+` so all terms must match.
 String jmKeyword(String keyword) {
-  final terms = splitSearchTerms(keyword);
-  if (terms.length <= 1) return keyword.trim();
+  final raw = keyword.trim();
+  // Pasted comic titles: keep as one query string (no per-word +AND).
+  if (isSearchTitlePlainText(raw)) {
+    return raw;
+  }
+  final terms = splitSearchTerms(raw);
+  if (terms.length <= 1) return raw;
   return terms
       .map((t) => t.startsWith('+') || t.startsWith('-') ? t : '+$t')
       .join(' ');

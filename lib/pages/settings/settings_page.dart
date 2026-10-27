@@ -495,7 +495,16 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
             MiuixArrowPreference(
               startAction: const Icon(Icons.sync),
               title: "数据同步".tl,
-              onClick: () => syncDataSettings(context),
+              summary: () {
+                final raw = appdata.settings[45];
+                if (raw.isEmpty) return "未启用".tl;
+                final url = raw.split(';').first;
+                return url.isEmpty ? "未启用".tl : "已启用".tl;
+              }(),
+              onClick: () async {
+                await syncDataSettings(context);
+                if (mounted) setState(() {});
+              },
             ),
           ],
         ),
@@ -554,8 +563,13 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
                 title: "应用链接".tl,
                 summary: "在系统设置中管理APP支持的链接".tl,
                 startAction: const Icon(Icons.link),
-                onClick: () {
-                  const MethodChannel("pica_comic/settings").invokeMethod("link");
+                onClick: () async {
+                  try {
+                    await const MethodChannel("pica_comic/settings")
+                        .invokeMethod("link");
+                  } catch (e) {
+                    showToast(message: "无法打开系统设置".tl);
+                  }
                 },
               ),
             if (kDebugMode)
@@ -617,6 +631,15 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               summary: "https://github.com/Qilaiwing/PicaComic_miuix",
               onClick: () => launchUrlString(
                 "https://github.com/Qilaiwing/PicaComic_miuix",
+                mode: LaunchMode.externalApplication,
+              ),
+            ),
+            MiuixArrowPreference(
+              startAction: const Icon(Icons.account_tree_outlined),
+              title: "Fork".tl,
+              summary: "https://github.com/Pacalini/PicaComic",
+              onClick: () => launchUrlString(
+                "https://github.com/Pacalini/PicaComic",
                 mode: LaunchMode.externalApplication,
               ),
             ),

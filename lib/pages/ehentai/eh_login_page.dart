@@ -93,62 +93,107 @@ class _EhLoginPageState extends State<EhLoginPage> {
                           setState(() {});
                         },),
                     ),
-                    const SizedBox(height: 8,),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                        child: !logging
-                            ? MiuixButton(colors: MiuixButtonDefaults.buttonColorsPrimary(context),
-                                child: Text("登录".tl),
-                                onPressed: () {
-                                  if (c1.text == "" || c2.text == "") {
-                                    showToast(message: "请填写完整".tl);
-                                  } else {
-                                    login(c1.text, c2.text, c3.text, c4.text);
-                                  }
-                                },
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: MiuixButton(
+                        colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                        cornerRadius: 16,
+                        minHeight: 48,
+                        minWidth: double.infinity,
+                        enabled: !logging,
+                        onPressed: logging
+                            ? null
+                            : () {
+                                if (c1.text == "" || c2.text == "") {
+                                  showToast(message: "请填写完整".tl);
+                                } else {
+                                  login(c1.text, c2.text, c3.text, c4.text);
+                                }
+                              },
+                        child: logging
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  MiuixCircularProgressIndicator(
+                                    size: 16,
+                                    strokeWidth: 2,
+                                    colors: MiuixProgressIndicatorColors(
+                                      foregroundColor: MiuixTheme.of(context)
+                                          .colors
+                                          .onPrimary,
+                                      disabledForegroundColor:
+                                          MiuixTheme.of(context)
+                                              .colors
+                                              .onPrimary,
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "登录中".tl,
+                                    style: TextStyle(
+                                      color: MiuixTheme.of(context)
+                                          .colors
+                                          .onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               )
-                            : const MiuixInfiniteProgressIndicator(),
+                            : Text(
+                                "登录".tl,
+                                style: TextStyle(
+                                  color: MiuixTheme.of(context)
+                                      .colors
+                                      .onPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    Center(
-                      child: SizedBox(
-                        height: 40,
-                        child: MiuixButton(onPressed: loginWithWebview,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text("在Webview中登录".tl),
-                              const Icon(
-                                Icons.arrow_outward,
-                                size: 15,
-                              )
-                            ],
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: MiuixButton(
+                        cornerRadius: 14,
+                        minHeight: 44,
+                        minWidth: double.infinity,
+                        onPressed: loginWithWebview,
+                        child: Text(
+                          "在Webview中登录".tl,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: MiuixTheme.of(context).colors.onBackground,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 5,
-                    ),
+                    const SizedBox(height: 8),
                     Center(
-                      child: SizedBox(
-                        height: 40,
-                        child: MiuixButton(onPressed: () => launchUrlString(
-                              "https://forums.e-hentai.org/index.php?act=Reg&CODE=00",
-                              mode: LaunchMode.externalApplication),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text("注册".tl),
-                              const Icon(
-                                Icons.arrow_outward,
-                                size: 15,
-                              )
-                            ],
+                      child: MiuixButton(
+                        cornerRadius: 14,
+                        colors: MiuixButtonColors(
+                          color: Colors.transparent,
+                          disabledColor: Colors.transparent,
+                          contentColor: MiuixTheme.of(context).colors.primary,
+                          disabledContentColor: MiuixTheme.of(context)
+                              .colors
+                              .onSurfaceVariantSummary,
+                        ),
+                        onPressed: () => launchUrlString(
+                          "https://forums.e-hentai.org/index.php?act=Reg&CODE=00",
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        child: Text(
+                          "注册".tl,
+                          style: TextStyle(
+                            color: MiuixTheme.of(context).colors.primary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),

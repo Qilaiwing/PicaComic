@@ -85,12 +85,30 @@ class MainActivity: FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,"pica_comic/settings").setMethodCallHandler{
                 call, res ->
             if(call.method == "link") {
-                val intent = Intent(
-                    android.provider.Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
-                    Uri.parse("package:com.picacomic_miuix"),
-                )
-                startActivity(intent)
-                res.success(null)
+                try {
+                    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Intent(
+                            android.provider.Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
+                            Uri.parse("package:com.picacomic_miuix"),
+                        )
+                    } else {
+                        Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:com.picacomic_miuix")
+                        }
+                    }
+                    startActivity(intent)
+                    res.success(null)
+                } catch (e: Exception) {
+                    try {
+                        val fallback = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.parse("package:com.picacomic_miuix")
+                        }
+                        startActivity(fallback)
+                        res.success(null)
+                    } catch (e2: Exception) {
+                        res.error("link", e2.message, null)
+                    }
+                }
             } else if(call.method == "files") {
                 val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
