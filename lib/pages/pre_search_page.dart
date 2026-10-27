@@ -41,7 +41,9 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14) +
           const EdgeInsets.only(top: 8, bottom: 4),
-      child: Row(children: [
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
         MiuixTooltipBox(
           tooltip: (_, scope) =>
               MiuixPlainTooltip(scope: scope, child: Text("返回".tl)),

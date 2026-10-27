@@ -515,7 +515,9 @@ class _FloatingSearchBarState extends State<FloatingSearchBar> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       width: double.infinity,
       height: effectiveHeight,
-      child: Row(children: [
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
         AppTooltip(
           message: "返回".tl,
           child: MiuixIconButton(

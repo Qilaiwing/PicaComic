@@ -51,7 +51,7 @@ class SearchChipController extends TextEditingController {
   }
 }
 
-class AppSearchField extends StatelessWidget {
+class AppSearchField extends StatefulWidget {
   const AppSearchField({
     super.key,
     required this.controller,
@@ -69,15 +69,64 @@ class AppSearchField extends StatelessWidget {
   final void Function(String) onSubmitted;
   final bool autofocus;
 
+  @override
+  State<AppSearchField> createState() => _AppSearchFieldState();
+}
+
+class _AppSearchFieldState extends State<AppSearchField> {
+  static const double _kHeight = 45;
+
+  final _chipScroll = ScrollController();
+  int _lastChipCount = 0;
+
   SearchChipController? get _chipController =>
-      controller is SearchChipController
-          ? controller as SearchChipController
+      widget.controller is SearchChipController
+          ? widget.controller as SearchChipController
           : null;
+
+  @override
+  void initState() {
+    super.initState();
+    _chipController?.addListener(_onChipCtrl);
+    _lastChipCount = _chipController?.chips.length ?? 0;
+  }
+
+  @override
+  void didUpdateWidget(covariant AppSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      if (oldWidget.controller is SearchChipController) {
+        (oldWidget.controller as SearchChipController)
+            .removeListener(_onChipCtrl);
+      }
+      _chipController?.addListener(_onChipCtrl);
+      _lastChipCount = _chipController?.chips.length ?? 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _chipController?.removeListener(_onChipCtrl);
+    _chipScroll.dispose();
+    super.dispose();
+  }
+
+  void _onChipCtrl() {
+    final n = _chipController?.chips.length ?? 0;
+    if (n != _lastChipCount) {
+      _lastChipCount = n;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_chipScroll.hasClients) return;
+        _chipScroll.jumpTo(_chipScroll.position.maxScrollExtent);
+      });
+    }
+    if (mounted) setState(() {});
+  }
 
   Widget _buildChip(MiuixThemeData theme, String text, VoidCallback onRemove) {
     final primary = theme.colors.primary;
     return Container(
-      margin: const EdgeInsets.only(right: 4, top: 2, bottom: 2),
+      margin: const EdgeInsets.only(right: 4),
       padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
       decoration: ShapeDecoration(
         color: primary.withOpacity(0.14),
@@ -89,7 +138,7 @@ class AppSearchField extends StatelessWidget {
           softWrap: false,
           style: TextStyle(
             fontSize: 13,
-            height: 1.2,
+            height: 1.15,
             fontWeight: FontWeight.w500,
             color: primary,
           ),
@@ -110,23 +159,28 @@ class AppSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = MiuixTheme.of(context);
-    final style = theme.textStyles.main
-        .copyWith(fontWeight: FontWeight.w500, color: theme.colors.onSurface);
+    final style = theme.textStyles.main.copyWith(
+      fontWeight: FontWeight.w500,
+      color: theme.colors.onSurface,
+      height: 1.2,
+    );
     final chipCtrl = _chipController;
+    final showHint = chipCtrl == null || chipCtrl.chips.isEmpty;
 
     Widget field = TextField(
-      controller: controller,
-      focusNode: focusNode,
-      autofocus: autofocus,
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
       maxLines: 1,
+      textAlignVertical: TextAlignVertical.center,
       textInputAction: TextInputAction.search,
       style: style,
       cursorColor: theme.colors.primary,
-      onChanged: onChanged,
-      onSubmitted: (s) => onSubmitted(chipCtrl?.query ?? s),
+      onChanged: widget.onChanged,
+      onSubmitted: (s) => widget.onSubmitted(chipCtrl?.query ?? s),
       decoration: InputDecoration(
         isDense: true,
-        hintText: (chipCtrl?.chips.isNotEmpty ?? false) ? null : hint,
+        hintText: showHint ? widget.hint : null,
         hintStyle: style.copyWith(color: theme.colors.onSurfaceContainerHigh),
         contentPadding: EdgeInsets.zero,
         border: InputBorder.none,
@@ -146,7 +200,7 @@ class AppSearchField extends StatelessWidget {
               chipCtrl.text.isEmpty &&
               chipCtrl.chips.isNotEmpty) {
             chipCtrl.removeChipAt(chipCtrl.chips.length - 1);
-            onChanged?.call("");
+            widget.onChanged?.call("");
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;
@@ -155,59 +209,55 @@ class AppSearchField extends StatelessWidget {
       );
     }
 
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: theme.colors.surfaceContainerHigh,
-        shape: const StadiumBorder(),
-      ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 10, right: 6),
-          child: MiuixIcon(vector: MiuixIcons.os4.search, size: 18),
+    return SizedBox(
+      height: _kHeight,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: theme.colors.surfaceContainerHigh,
+          shape: const StadiumBorder(),
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(right: 12, top: 6, bottom: 6),
-            child: chipCtrl == null
-                ? ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 33),
-                    child: Center(child: field),
-                  )
-                : LayoutBuilder(
-                    builder: (context, cons) => ListenableBuilder(
-                      listenable: chipCtrl,
-                      builder: (context, _) {
-                        // Chips wrap onto new lines so none are clipped;
-                        // leftover typing sits after the last chip.
-                        return Wrap(
-                          spacing: 0,
-                          runSpacing: 2,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            for (var i = 0; i < chipCtrl.chips.length; i++)
-                              _buildChip(theme, chipCtrl.chips[i], () {
-                                chipCtrl.removeChipAt(i);
-                                onChanged?.call(chipCtrl.text);
-                              }),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minWidth: 72,
-                                maxWidth: cons.maxWidth,
-                                minHeight: 33,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(width: 10),
+            MiuixIcon(vector: MiuixIcons.os4.search, size: 18),
+            const SizedBox(width: 6),
+            Expanded(
+              child: chipCtrl == null
+                  ? Align(alignment: Alignment.centerLeft, child: field)
+                  : LayoutBuilder(
+                      builder: (context, cons) {
+                        final inputWidth =
+                            (cons.maxWidth * 0.42).clamp(88.0, 180.0);
+                        return SingleChildScrollView(
+                          controller: _chipScroll,
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              for (var i = 0; i < chipCtrl.chips.length; i++)
+                                _buildChip(theme, chipCtrl.chips[i], () {
+                                  chipCtrl.removeChipAt(i);
+                                  widget.onChanged?.call(chipCtrl.text);
+                                }),
+                              SizedBox(
+                                width: inputWidth,
+                                height: _kHeight,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: field,
+                                ),
                               ),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: field,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         );
                       },
                     ),
-                  ),
-          ),
+            ),
+          ],
         ),
-      ]),
+      ),
     );
   }
 }
