@@ -169,7 +169,8 @@ class PreSearchPage extends StatelessWidget {
   final FocusNode _focusNode = FocusNode();
 
   void search([String? s, String? type]) {
-    var keyword = (s ?? controller.query).trim();
+    // When no explicit keyword, flush leftover typing into a chip first.
+    var keyword = (s ?? controller.commitPending()).trim();
 
     if (searchController.language != null &&
         searchController.searchPageData.enableLanguageFilter) {
@@ -418,8 +419,8 @@ class PreSearchPage extends StatelessWidget {
           bool showTranslation = App.locale.languageCode == "zh";
           Widget buildItem(Pair<String, TranslationType> value) {
             if (value.left == "**URL**") {
-              return MiuixArrowPreference(
-                startAction: const Icon(Icons.link),
+              return _buildMiuixSuggestTile(
+                context: context,
                 title: "打开链接".tl,
                 summary: controller.text,
                 onClick: () {
@@ -434,8 +435,8 @@ class PreSearchPage extends StatelessWidget {
               if (comicSource == null) {
                 return const SizedBox();
               }
-              return MiuixArrowPreference(
-                startAction: const Icon(Icons.link),
+              return _buildMiuixSuggestTile(
+                context: context,
                 title: "${"打开漫画".tl}: ${comicSource.name}",
                 summary: controller.text,
                 onClick: () {
@@ -495,48 +496,76 @@ class PreSearchPage extends StatelessWidget {
             );
           }
 
-          widget = Column(
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                child: Row(
-                  children: [
-                    Text(
-                      "建议".tl,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+          widget = Container(
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+            decoration: ShapeDecoration(
+              shape: MiuixSquircleBorder(
+                cornerRadius: 18,
+                side: BorderSide(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0x18FFFFFF)
+                      : const Color(0x0A000000),
+                  width: 0.6,
+                ),
+              ),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF222226)
+                  : Colors.white,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(14, 10, 8, 4),
+                  child: Row(
+                    children: [
+                      MiuixIcon(
+                        vector: MiuixIcons.os4.info,
+                        size: 16,
+                        tint: Theme.of(context).colorScheme.primary,
                       ),
-                    ),
-                    const Spacer(),
-                    MiuixPressable(
- onPressed: () {
+                      const SizedBox(width: 6),
+                      Text(
+                        "建议".tl,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const Spacer(),
+                      MiuixPressable(
+                        onPressed: () {
                           searchController.suggestions.clear();
                           logic.update([100]);
                         },
- feedbackType: MiuixPressFeedbackType.sink,
- child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 18,
+                        feedbackType: MiuixPressFeedbackType.sink,
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: MiuixIcon(
+                            vector: MiuixIcons.os4.close,
+                            size: 16,
+                            tint: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.55),
                           ),
                         ),
-),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: searchController.suggestions.length,
-                  itemBuilder: (context, index) =>
-                      buildItem(searchController.suggestions[index]),
-                ),
-              )
-            ],
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+                    itemCount: searchController.suggestions.length,
+                    itemBuilder: (context, index) =>
+                        buildItem(searchController.suggestions[index]),
+                  ),
+                )
+              ],
+            ),
           );
         }
         return widget;
@@ -545,7 +574,87 @@ class PreSearchPage extends StatelessWidget {
     );
   }
 
-  Widget buildTargetSelector(BuildContext context) {
+
+  Widget _buildMiuixSuggestTile({
+    required BuildContext context,
+    required String title,
+    required String summary,
+    required VoidCallback onClick,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      child: MiuixPressable(
+        onPressed: onClick,
+        feedbackType: MiuixPressFeedbackType.sink,
+        sinkAmount: 1.02,
+        shape: const MiuixSquircleBorder(cornerRadius: 14),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+          decoration: ShapeDecoration(
+            shape: const MiuixSquircleBorder(cornerRadius: 14),
+            color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFF0F1F5),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  shape: const StadiumBorder(),
+                  color: scheme.primary.withValues(alpha: 0.14),
+                ),
+                child: MiuixIcon(
+                  vector: MiuixIcons.os4.link,
+                  size: 18,
+                  tint: scheme.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.15,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      summary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.1,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              MiuixIcon(
+                vector: MiuixIcons.os4.forward,
+                size: 16,
+                tint: scheme.onSurface.withValues(alpha: 0.35),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+    Widget buildTargetSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
 

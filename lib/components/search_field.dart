@@ -57,6 +57,7 @@ class SearchChipController extends TextEditingController {
   String commitPending() {
     final t = text.trim();
     if (t.isEmpty) return query;
+    // Only skip auto-chip for title-like plain text; short keywords always chip.
     if (isSearchTitlePlainText(t)) return query;
     _busy = true;
     chips.add(SearchChip(t));
@@ -65,7 +66,43 @@ class SearchChipController extends TextEditingController {
       selection: TextSelection.collapsed(offset: 0),
     );
     _busy = false;
+    // value= already notified; ensure chip listeners see the new chip list.
+    notifyListeners();
     return query;
+  }
+
+  /// Restore a query string into chips (short tags) or plain text (titles).
+  void applyQuery(String keyword) {
+    final t = keyword.trim();
+    chips.clear();
+    if (t.isEmpty) {
+      _busy = true;
+      value = const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
+      );
+      _busy = false;
+      return;
+    }
+    if (isSearchTitlePlainText(t)) {
+      _busy = true;
+      value = TextEditingValue(
+        text: t,
+        selection: TextSelection.collapsed(offset: t.length),
+      );
+      _busy = false;
+      return;
+    }
+    for (final term in splitSearchTerms(t)) {
+      chips.add(SearchChip(term));
+    }
+    _busy = true;
+    value = const TextEditingValue(
+      text: '',
+      selection: TextSelection.collapsed(offset: 0),
+    );
+    _busy = false;
+    notifyListeners();
   }
 
   void removeChipAt(int i) {
@@ -112,13 +149,9 @@ class AppSearchField extends StatefulWidget {
 
 class _AppSearchFieldState extends State<AppSearchField> {
   static const double _kHeight = 45;
-  static const double _kInputWidth = 120;
 
   final _chipScroll = ScrollController();
   int _lastChipCount = 0;
-
-  /// Stable field subtree — built once per deps change, never on chip updates.
-  Widget? _field;
 
   SearchChipController? get _chipController =>
       widget.controller is SearchChipController
@@ -133,12 +166,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _field = _buildTextField(MiuixTheme.of(context));
-  }
-
-  @override
   void didUpdateWidget(covariant AppSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
@@ -148,13 +175,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
       }
       _chipController?.addListener(_onChipCtrl);
       _lastChipCount = _chipController?.chips.length ?? 0;
-      _field = _buildTextField(MiuixTheme.of(context));
-    } else if (oldWidget.focusNode != widget.focusNode ||
-        oldWidget.hint != widget.hint ||
-        oldWidget.autofocus != widget.autofocus ||
-        oldWidget.onChanged != widget.onChanged ||
-        oldWidget.onSubmitted != widget.onSubmitted) {
-      _field = _buildTextField(MiuixTheme.of(context));
     }
   }
 
@@ -171,7 +191,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
     final grew = n > _lastChipCount;
     _lastChipCount = n;
     if (!grew) return;
-    // Scroll chips strip only (TextField is pinned outside) — no viewport flash.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_chipScroll.hasClients) return;
       final max = _chipScroll.position.maxScrollExtent;
@@ -183,6 +202,32 @@ class _AppSearchFieldState extends State<AppSearchField> {
         curve: Curves.easeOutCubic,
       );
     });
+  }
+
+  /// Soft fade at horizontal edges instead of hard clip.
+  Widget _edgeFade({
+    required Widget child,
+    bool left = true,
+    bool right = true,
+  }) {
+    if (!left && !right) return child;
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (rect) {
+        return LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            left ? Colors.transparent : Colors.black,
+            Colors.black,
+            Colors.black,
+            right ? Colors.transparent : Colors.black,
+          ],
+          stops: const [0.0, 0.08, 0.92, 1.0],
+        ).createShader(rect);
+      },
+      child: child,
+    );
   }
 
   Widget _buildTextField(MiuixThemeData theme) {
@@ -200,13 +245,16 @@ class _AppSearchFieldState extends State<AppSearchField> {
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
       maxLines: 1,
+      textAlign: TextAlign.start,
       textAlignVertical: TextAlignVertical.center,
       textInputAction: TextInputAction.search,
       style: style,
       cursorColor: theme.colors.primary,
       onChanged: widget.onChanged,
-      onSubmitted: (s) =>
-          widget.onSubmitted(chipCtrl?.commitPending() ?? s),
+      onSubmitted: (s) {
+        final q = chipCtrl?.commitPending() ?? s;
+        widget.onSubmitted(q);
+      },
       decoration: const InputDecoration(
         isDense: true,
         hintText: null,
@@ -215,6 +263,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
         disabledBorder: InputBorder.none,
+        alignLabelWithHint: true,
       ),
     );
 
@@ -284,6 +333,18 @@ class _AppSearchFieldState extends State<AppSearchField> {
       height: 1.0,
       leadingDistribution: TextLeadingDistribution.even,
     );
+    final hint = IgnorePointer(
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          widget.hint,
+          style: style,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.start,
+        ),
+      ),
+    );
     if (chipCtrl == null) {
       return ListenableBuilder(
         listenable: widget.controller,
@@ -291,12 +352,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
           if (widget.controller.text.isNotEmpty) {
             return const SizedBox.shrink();
           }
-          return IgnorePointer(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(widget.hint, style: style, maxLines: 1),
-            ),
-          );
+          return hint;
         },
       );
     }
@@ -306,42 +362,41 @@ class _AppSearchFieldState extends State<AppSearchField> {
         if (chipCtrl.chips.isNotEmpty || chipCtrl.text.isNotEmpty) {
           return const SizedBox.shrink();
         }
-        return IgnorePointer(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(widget.hint, style: style, maxLines: 1),
-          ),
+        return hint;
+      },
+    );
+  }
+
+  Widget _chipsList(MiuixThemeData theme, SearchChipController chipCtrl) {
+    final chips = chipCtrl.chips;
+    return ListView.builder(
+      controller: _chipScroll,
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.zero,
+      itemCount: chips.length,
+      findChildIndexCallback: (Key key) {
+        if (key is! ValueKey<int>) return null;
+        final id = key.value;
+        final i = chips.indexWhere((c) => c.id == id);
+        return i >= 0 ? i : null;
+      },
+      itemBuilder: (context, i) {
+        final chip = chips[i];
+        return KeyedSubtree(
+          key: ValueKey<int>(chip.id),
+          child: Center(child: _buildChip(theme, chip)),
         );
       },
     );
   }
 
-  /// Chips-only strip. Rebuilds on chip changes; TextField is a sibling outside.
-  Widget _chipsStrip(MiuixThemeData theme, SearchChipController chipCtrl) {
-    return ListenableBuilder(
-      listenable: chipCtrl,
-      builder: (context, _) {
-        final chips = chipCtrl.chips;
-        return ListView.builder(
-          controller: _chipScroll,
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
-          itemCount: chips.length,
-          findChildIndexCallback: (Key key) {
-            if (key is! ValueKey<int>) return null;
-            final id = key.value;
-            final i = chips.indexWhere((c) => c.id == id);
-            return i >= 0 ? i : null;
-          },
-          itemBuilder: (context, i) {
-            final chip = chips[i];
-            return KeyedSubtree(
-              key: ValueKey<int>(chip.id),
-              child: Center(child: _buildChip(theme, chip)),
-            );
-          },
-        );
-      },
+  Widget _inputStack(MiuixThemeData theme, Widget field) {
+    return Stack(
+      alignment: Alignment.centerLeft,
+      children: [
+        Align(alignment: Alignment.centerLeft, child: field),
+        _hintOverlay(theme),
+      ],
     );
   }
 
@@ -349,7 +404,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
   Widget build(BuildContext context) {
     final theme = MiuixTheme.of(context);
     final chipCtrl = _chipController;
-    final field = _field ?? _buildTextField(theme);
+    final field = _buildTextField(theme);
 
     return SizedBox(
       height: _kHeight,
@@ -361,33 +416,34 @@ class _AppSearchFieldState extends State<AppSearchField> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: chipCtrl == null
-              ? Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Align(alignment: Alignment.centerLeft, child: field),
-                    _hintOverlay(theme),
-                  ],
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Chips scroll independently — TextField never moves with them.
-                    Expanded(child: _chipsStrip(theme, chipCtrl)),
-                    SizedBox(
-                      width: _kInputWidth,
-                      height: _kHeight,
-                      child: Stack(
-                        alignment: Alignment.centerLeft,
-                        children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: field,
+              ? _edgeFade(child: _inputStack(theme, field))
+              : ListenableBuilder(
+                  listenable: chipCtrl,
+                  builder: (context, _) {
+                    final hasChips = chipCtrl.chips.isNotEmpty;
+                    // Empty: input takes full width, left-aligned (fixes mid/right cursor).
+                    // With chips: chips scroll on the left, input fills the rest (also LTR).
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (hasChips)
+                          Expanded(
+                            flex: 3,
+                            child: _edgeFade(
+                              child: _chipsList(theme, chipCtrl),
+                            ),
                           ),
-                          _hintOverlay(theme),
-                        ],
-                      ),
-                    ),
-                  ],
+                        Expanded(
+                          flex: hasChips ? 2 : 1,
+                          child: _edgeFade(
+                            left: hasChips,
+                            right: true,
+                            child: _inputStack(theme, field),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
         ),
       ),

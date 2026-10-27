@@ -114,7 +114,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
 
   @override
   void initState() {
-    controller.text = keyword.trim();
+    controller.applyQuery(keyword);
     if (!keyword.contains('language') &&
         ComicSource.find(sourceKey)?.searchPageData?.enableLanguageFilter ==
             true) {
