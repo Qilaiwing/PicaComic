@@ -29,7 +29,6 @@ import 'package:pica_comic/pages/pre_search_page.dart';
 import 'package:pica_comic/pages/reader/comic_reading_page.dart';
 import 'package:pica_comic/pages/show_image_page.dart';
 import 'package:pica_comic/tools/extensions.dart';
-import 'package:pica_comic/tools/search_query.dart';
 import 'package:pica_comic/tools/tags_translation.dart';
 import 'package:pica_comic/tools/translations.dart';
 import 'package:flutter_miuix/miuix.dart' hide MiuixTooltipBox, MiuixScaffold;

@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:pica_comic/tools/search_query.dart';
 import 'package:pica_comic/comic_source/built_in/picacg.dart';
 import 'package:pica_comic/network/cache_network.dart';
 import 'dart:convert' as convert;
@@ -279,14 +278,11 @@ class PicacgNetwork {
   Future<Res<List<ComicItemBrief>>> search(
       String keyWord, String sort, int page,
       {bool addToHistory = false}) async {
-    final sentKeyword = picacgKeyword(keyWord);
-    LogManager.addLog(
-        LogLevel.info,
-        "Search",
-        "picacg titlePlain=${isSearchTitlePlainText(keyWord)} "
-            "raw=[${keyWord.trim()}] sent=[$sentKeyword]");
+    // Upstream: send keyword as-is (no AND/phrase rewriting).
+    LogManager.addLog(LogLevel.info, "Search",
+        "picacg raw=[${keyWord.trim()}]");
     var response = await post('$apiUrl/comics/advanced-search?page=$page',
-        {"keyword": sentKeyword, "sort": sort});
+        {"keyword": keyWord, "sort": sort});
     if (page == 1 && addToHistory && keyWord != "") {
       appdata.searchHistory.remove(keyWord);
       appdata.searchHistory.add(keyWord);

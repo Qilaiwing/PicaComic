@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:pica_comic/tools/search_query.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
@@ -63,7 +62,7 @@ extension _CachedNetwork on CachedNetwork {
       LogManager.addLog(LogLevel.error, "Network",
           "JM JSON parse failed: $e\nurl=$url\nbodyPeek=$peek");
       throw FormatException(
-          "JM response is not JSON (check search_query encoding): $e");
+          "JM response is not JSON: $e");
     }
     var data = json["data"];
     if (data is List && data.isEmpty) {
@@ -548,16 +547,16 @@ class JmNetwork {
       String keyword, int page, ComicsOrder order) async {
     appdata.searchHistory.remove(keyword);
     appdata.searchHistory.add(keyword);
-    final rawKeyword = keyword.trim();
-    keyword = jmKeyword(rawKeyword);
-    LogManager.addLog(
-        LogLevel.info,
-        "Search",
-        "jm titlePlain=${isSearchTitlePlainText(rawKeyword)} "
-            "raw=[$rawKeyword] sent=[$keyword]");
-    // Dart Uri.encodeComponent leaves ()!~*' unencoded; bare () in the
-    // query string breaks JM (HTML/garbage body → FormatException on JSON).
-    keyword = jmEncodeSearchQuery(keyword);
+    // Upstream Pacalini: trim + collapse double spaces + encodeComponent + %20→+.
+    // No keyword rewriting (no AND/+ quoting). Extra: encode () so titles with
+    // parentheses do not return non-JSON bodies (FormatException).
+    keyword = keyword.trim();
+    keyword = keyword.replaceAll('  ', ' ');
+    LogManager.addLog(LogLevel.info, "Search", "jm raw=[$keyword]");
+    keyword = Uri.encodeComponent(keyword)
+        .replaceAll('(', '%28')
+        .replaceAll(')', '%29')
+        .replaceAll('%20', '+');
     LogManager.addLog(LogLevel.info, "Search", "jm encoded=[$keyword]");
     appdata.writeHistory();
     Res res;
