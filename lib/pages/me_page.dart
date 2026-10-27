@@ -131,23 +131,19 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
     return value < 0 ? "-$buffer" : buffer.toString();
   }
 
-  /// 前台使用时长的紧凑文案
+  /// 前台使用时长的紧凑文案（拉丁缩写，与语言无关）
   String _formatUsage(Duration d) {
     final minutes = d.inMinutes;
-    if (minutes < 1) return "<1${"分钟".tl}";
-    if (minutes < 60) return "$minutes${"分钟".tl}";
+    if (minutes < 1) return "<1m";
+    if (minutes < 60) return "${minutes}m";
     final hours = d.inHours;
     final remMin = minutes % 60;
     if (hours < 24) {
-      return remMin == 0
-          ? "$hours${"小时".tl}"
-          : "$hours${"小时".tl}$remMin${"分".tl}";
+      return remMin == 0 ? "${hours}h" : "${hours}h ${remMin}m";
     }
     final days = d.inDays;
     final remHours = hours % 24;
-    return remHours == 0
-        ? "$days${"天".tl}"
-        : "$days${"天".tl}$remHours${"小时".tl}";
+    return remHours == 0 ? "${days}d" : "${days}d ${remHours}h";
   }
 
   Widget buildProfile() {

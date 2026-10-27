@@ -106,7 +106,7 @@ class CategoryPage extends StatelessWidget {
         _categorySection(
           "热门推荐".tl,
            Padding(
-            padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
             child: Wrap(
               children: [
                 if (data.enableRankingPage)
@@ -126,37 +126,33 @@ class CategoryPage extends StatelessWidget {
     for (var part in data.categories) {
       if (part.enableRandom) {
         children.add(StatefulBuilder(builder: (context, updater) {
-          return MultiSliver(pushPinnedChildren: true, children: [
-            StickySectionHeader(
-              title: part.title.tl,
-              trailing: MiuixIconButton(
-                onPressed: () => updater(() {}),
-                minWidth: 32,
-                minHeight: 32,
-                child: const Icon(Icons.refresh, size: 18),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: buildTagsWithParams(
-                part.categories,
-                part.categoryParams,
+          return _categorySection(
+            part.title,
+            buildTagsWithParams(
+              part.categories,
+              part.categoryParams,
+              part.title,
+              (key, param) => handleClick(
+                key,
+                param,
+                part.categoryType,
                 part.title,
-                (key, param) => handleClick(
-                  key,
-                  param,
-                  part.categoryType,
-                  part.title,
-                  category,
-                ),
+                category,
               ),
             ),
-          ]);
+            trailing: MiuixIconButton(
+              onPressed: () => updater(() {}),
+              minWidth: 32,
+              minHeight: 32,
+              child: const Icon(Icons.refresh, size: 18),
+            ),
+          );
         }));
       } else {
         children.add(
           _categorySection(
             part.title,
-             buildTagsWithParams(
+            buildTagsWithParams(
               part.categories,
               part.categoryParams,
               part.title,
@@ -227,7 +223,7 @@ class CategoryPage extends StatelessWidget {
     ClickTagCallback onClick,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       child: Wrap(
         children: List<Widget>.generate(
           tags.length,
@@ -288,9 +284,9 @@ class CategoryPage extends StatelessWidget {
 }
 
 /// Sticky frosted header + the group's card body.
-Widget _categorySection(String title, Widget body) {
+Widget _categorySection(String title, Widget body, {Widget? trailing}) {
   return MultiSliver(pushPinnedChildren: true, children: [
-    StickySectionHeader(title: title.tl),
+    StickySectionHeader(title: title.tl, trailing: trailing),
     SliverToBoxAdapter(
       child: _CategoryGroupCard(title: title, showTitle: false, child: body),
     ),
