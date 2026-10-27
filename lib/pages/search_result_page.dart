@@ -103,7 +103,7 @@ class _SearchResultPage extends StatefulWidget {
 }
 
 class _SearchResultPageState extends State<_SearchResultPage> {
-  var controller = TextEditingController();
+  var controller = SearchChipController();
   bool _showFab = true;
   late String keyword = widget.keyword;
 
@@ -136,6 +136,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
   }
 
   void onChanged(String s) {
+    suggestionsController.sourceKey = sourceKey;
     suggestionsController.findSuggestions();
     if (suggestionOverlay != null) {
       if (suggestionsController.suggestions.isEmpty) {
@@ -164,9 +165,9 @@ class _SearchResultPageState extends State<_SearchResultPage> {
   }
 
   void update() {
-    if (controller.text != keyword) {
+    if (controller.query != keyword) {
       setState(() {
-        keyword = controller.text;
+        keyword = controller.query;
       });
     }
   }
@@ -223,7 +224,7 @@ class _SearchResultPageState extends State<_SearchResultPage> {
               ),
               child: MiuixPressable(
  onPressed: () {
-                    var s = controller.text;
+                    var s = controller.query;
                     setState(() {
                       keyword = s;
                     });
@@ -423,11 +424,17 @@ class _SuggestionsController {
 
   var suggestions = <Pair<String, TranslationType>>[];
 
+  String sourceKey = '';
+
   void findSuggestions() {
     var text = controller.text.split(" ").last;
     var suggestions = this.suggestions;
 
     suggestions.clear();
+    if (ComicSource.find(sourceKey)?.searchPageData?.enableTagsSuggestions !=
+        true) {
+      return;
+    }
 
     bool check(String text, String key, String value) {
       if (text.removeAllBlank == "") {
@@ -616,7 +623,17 @@ class _SuggestionsState extends State<_Suggestions> {
       controller.text =
           controller.text.replaceLast(words[words.length - 1], "");
     }
-    if (type != null) {
+    final source = widget.controller.sourceKey;
+    if (text.contains(" ")) {
+      if (source == 'nhentai' &&
+          ["male", "female", "language"].contains(type?.name)) {
+        text = "${type?.name}:${text.replaceAll(" ", '_')}";
+        type = null;
+      } else {
+        text = "\"$text\"";
+      }
+    }
+    if (source == 'ehentai' && type != null) {
       controller.text += "${type.name}:$text ";
     } else {
       controller.text += "$text ";

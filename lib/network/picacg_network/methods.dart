@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:pica_comic/tools/search_query.dart';
 import 'package:pica_comic/comic_source/built_in/picacg.dart';
 import 'package:pica_comic/network/cache_network.dart';
 import 'dart:convert' as convert;
@@ -279,7 +280,7 @@ class PicacgNetwork {
       String keyWord, String sort, int page,
       {bool addToHistory = false}) async {
     var response = await post('$apiUrl/comics/advanced-search?page=$page',
-        {"keyword": keyWord, "sort": sort});
+        {"keyword": picacgKeyword(keyWord), "sort": sort});
     if (page == 1 && addToHistory && keyWord != "") {
       appdata.searchHistory.remove(keyWord);
       appdata.searchHistory.add(keyWord);

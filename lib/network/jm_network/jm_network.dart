@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:pica_comic/tools/search_query.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
@@ -536,8 +537,7 @@ class JmNetwork {
       String keyword, int page, ComicsOrder order) async {
     appdata.searchHistory.remove(keyword);
     appdata.searchHistory.add(keyword);
-    keyword = keyword.trim();
-    keyword = keyword.replaceAll('  ', ' ');
+    keyword = jmKeyword(keyword.trim());
     keyword = Uri.encodeComponent(keyword);
     keyword = keyword.replaceAll('%20', '+');
     appdata.writeHistory();

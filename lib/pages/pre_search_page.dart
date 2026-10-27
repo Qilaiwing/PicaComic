@@ -128,9 +128,9 @@ class PreSearchController extends StateController {
 
 class PreSearchPage extends StatelessWidget {
   PreSearchPage({String initialValue = "", super.key})
-      : controller = TextEditingController(text: initialValue);
+      : controller = SearchChipController(text: initialValue);
 
-  final TextEditingController controller;
+  final SearchChipController controller;
 
   final searchController = StateController.put(PreSearchController());
 
@@ -140,7 +140,7 @@ class PreSearchPage extends StatelessWidget {
   final FocusNode _focusNode = FocusNode();
 
   void search([String? s, String? type]) {
-    var keyword = (s ?? controller.text).trim();
+    var keyword = (s ?? controller.query).trim();
 
     if (searchController.language != null &&
         searchController.searchPageData.enableLanguageFilter) {
@@ -351,7 +351,7 @@ class PreSearchPage extends StatelessWidget {
                 controller.text.replaceLast(words[words.length - 1], "");
           }
           if (text.contains(" ")) {
-            if (logic.target == '3' &&
+            if (logic.target == 'nhentai' &&
                 ["male", "female", "language"].contains(type?.name)) {
               text = text.replaceAll(" ", '_');
               text = "${type?.name}:$text";
@@ -359,7 +359,7 @@ class PreSearchPage extends StatelessWidget {
               text = "\"$text\"";
             }
           }
-          if (logic.target == '1') {
+          if (logic.target == 'ehentai') {
             if (type != null) {
               controller.text += "${type.name}:$text ";
             } else {
