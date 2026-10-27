@@ -421,15 +421,23 @@ class _BuiltInSourcesState extends State<_BuiltInSources> {
   }
 
   bool isLoading = false;
+  String? loadingKey;
 
   Widget buildTile(int index) {
     var key = builtInSources[index];
     return MiuixSwitchPreference(
       title: ComicSource.builtIn.firstWhere((e) => e.key == key).name.tl,
       value: appdata.appSettings.isComicSourceEnabled(key),
+      enabled: !isLoading,
+      endActions: loadingKey == key
+          ? const [MiuixInfiniteProgressIndicator(size: 20)]
+          : null,
       onChanged: (v) async {
         if (isLoading) return;
-        isLoading = true;
+        setState(() {
+          isLoading = true;
+          loadingKey = key;
+        });
         appdata.appSettings.setComicSourceEnabled(key, v);
         await appdata.updateSettings();
         if (!v) {
@@ -442,6 +450,7 @@ class _BuiltInSourcesState extends State<_BuiltInSources> {
           _addAllPagesWithComicSource(source);
         }
         isLoading = false;
+        loadingKey = null;
         if (mounted) {
           setState(() {});
           context

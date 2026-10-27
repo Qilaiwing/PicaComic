@@ -15,6 +15,15 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
         MiuixSmallTitle("本地收藏管理".tl),
         MiuixSettingsCard(
           children: [
+            if (LocalFavoritesManager().folderNames.isEmpty)
+              MiuixArrowPreference(
+                startAction: const Icon(Icons.book),
+                title: "快速收藏".tl,
+                summary: "暂无收藏夹".tl,
+                onClick: () =>
+                    showToast(message: "请先创建本地收藏夹".tl),
+              )
+            else
             SelectSetting(
               leading: const Icon(Icons.book),
               title: "快速收藏".tl,

@@ -20,8 +20,13 @@ class MiuixSettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(cornerRadius),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: MiuixSquircleBorder(
+            cornerRadius: cornerRadius,
+            enabled: cornerRadius > 0,
+          ),
+        ),
         // antiAliasWithSaveLayer 保证圆角边缘平滑，不会留下淡淡的直角残影
         clipBehavior: Clip.antiAliasWithSaveLayer,
         child: MiuixCard(
