@@ -636,7 +636,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
             ),
             MiuixArrowPreference(
               startAction: const Icon(Icons.account_tree_outlined),
-              title: "Fork".tl,
+              title: "上游地址（GitHub）".tl,
               summary: "https://github.com/Pacalini/PicaComic",
               onClick: () => launchUrlString(
                 "https://github.com/Pacalini/PicaComic",

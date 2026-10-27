@@ -66,9 +66,10 @@ int lastSearchBoundary(String s) {
 /// words are OR'ed. Quoting every term makes each one required (AND).
 String picacgKeyword(String keyword) {
   final raw = keyword.trim();
-  // Pasted comic titles: search as one required phrase, do not AND-split.
+  // Pasted comic titles: send as-is. Wrapping the whole title in quotes
+  // makes PicACG phrase-search and usually returns no results.
   if (isSearchTitlePlainText(raw)) {
-    return raw.startsWith('"') ? raw : '"$raw"';
+    return raw;
   }
   final terms = splitSearchTerms(raw);
   if (terms.length <= 1) return raw;

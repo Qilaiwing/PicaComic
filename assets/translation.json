@@ -699,7 +699,10 @@
         "当前为 Debug 构建": "目前為 Debug 建置",
         "当前为 Profile/Release 构建": "目前為 Profile/Release 建置",
         "无漫画源": "無漫畫源",
-        "已写入": "已寫入"
+        "已写入": "已寫入",
+        "上游地址（GitHub）": "上游地址（GitHub）",
+        "使用 Cookie 登录 E-Hentai": "使用 Cookie 登入 E-Hentai",
+        "在浏览器中登录": "在瀏覽器中登入"
     },
     "en_US": {
         "有可用更新": "Updates available",
@@ -1402,6 +1405,9 @@
         "当前为 Debug 构建": "Running a Debug build",
         "当前为 Profile/Release 构建": "Running Profile/Release",
         "无漫画源": "No comic sources",
-        "已写入": "Written"
+        "已写入": "Written",
+        "上游地址（GitHub）": "Upstream (GitHub)",
+        "使用 Cookie 登录 E-Hentai": "Sign in to E-Hentai with cookies",
+        "在浏览器中登录": "Sign in with browser"
     }
 }

@@ -537,7 +537,10 @@ class JmNetwork {
       String keyword, int page, ComicsOrder order) async {
     appdata.searchHistory.remove(keyword);
     appdata.searchHistory.add(keyword);
-    keyword = jmKeyword(keyword.trim());
+    final rawKeyword = keyword.trim();
+    keyword = jmKeyword(rawKeyword);
+    LogManager.addLog(LogLevel.info, "Search",
+        "jm keyword raw=[$rawKeyword] sent=[$keyword]");
     keyword = Uri.encodeComponent(keyword);
     keyword = keyword.replaceAll('%20', '+');
     appdata.writeHistory();
