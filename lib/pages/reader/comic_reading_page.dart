@@ -1,5 +1,7 @@
 library pica_reader;
 
+import 'package:pica_comic/pages/settings/settings_page.dart' show SelectSetting;
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;

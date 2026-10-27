@@ -275,11 +275,11 @@ class _ReadingSettingsState extends State<ReadingSettings> {
                 ),
               if (App.isAndroid) ...[
                 _buildDivider(isDark),
-                MiuixWindowDropdownPreference(startAction: const Icon(Icons.screen_lock_rotation_outlined), title: "固定屏幕方向".tl, items: [
+                SelectSetting(leading: const Icon(Icons.screen_lock_rotation_outlined), title: "固定屏幕方向".tl, values: [
                       "禁用".tl,
                       "横屏".tl,
                       "竖屏".tl,
-                    ], selectedIndex: int.parse(appdata.settings[76]), onSelectedIndexChange: (int i) {
+                    ], initialValue: int.parse(appdata.settings[76]), onChanged: (int i) {
                       appdata.settings[76] = i.toString();
                       logic.update();
                       appdata.updateSettings();
@@ -309,7 +309,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             children: [
               if (logic.readingMethod !=
                   ReadingMethod.topToBottomContinuously) ...[
-                MiuixWindowDropdownPreference(startAction: const Icon(Icons.fit_screen_outlined), title: "图片缩放".tl, items: ["容纳".tl, "适应宽度".tl, "适应高度".tl], selectedIndex: int.parse(appdata.settings[41]), onSelectedIndexChange: (int i) {
+                SelectSetting(leading: const Icon(Icons.fit_screen_outlined), title: "图片缩放".tl, values: ["容纳".tl, "适应宽度".tl, "适应高度".tl], initialValue: int.parse(appdata.settings[41]), onChanged: (int i) {
                       appdata.settings[41] = i.toString();
                       appdata.updateSettings();
                       logic.photoViewController.resetWithNewBoxFit(switch (i) {
