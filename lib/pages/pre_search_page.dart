@@ -541,6 +541,7 @@ class PreSearchPage extends StatelessWidget {
                           logic.update([100]);
                         },
                         feedbackType: MiuixPressFeedbackType.sink,
+                        shape: const CircleBorder(),
                         child: Padding(
                           padding: const EdgeInsets.all(6),
                           child: MiuixIcon(

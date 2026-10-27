@@ -106,7 +106,7 @@ class HtComicPage extends BaseComicPage<HtComicInfo> {
 
   @override
   Map<String, List<String>>? get tags => {
-        "ID": data!.id.toList(),
+        "ID": "HT${data!.id}".toList(),
         "分类".tl: data!.category.toList(),
         "标签".tl: data!.tags.keys.toList(),
       };
