@@ -9,6 +9,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pica_comic/base.dart';
 import 'package:pica_comic/components/window_frame.dart';
 import 'package:pica_comic/foundation/app.dart';
+import 'package:pica_comic/foundation/app_usage.dart';
 import 'package:pica_comic/foundation/app_page_route.dart';
 import 'package:pica_comic/foundation/log.dart';
 import 'package:pica_comic/init.dart';
@@ -99,6 +100,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    AppUsageTracker.instance.handleLifecycle(state);
     bool enableAuth = appdata.settings[13] == "1";
     if (App.isAndroid && appdata.settings[38] == "1") {
       try {

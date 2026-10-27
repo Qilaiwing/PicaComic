@@ -29,6 +29,7 @@ import 'comic_source/built_in/jm.dart';
 import 'comic_source/built_in/nhentai.dart';
 import 'comic_source/built_in/picacg.dart';
 import 'foundation/app.dart';
+import 'foundation/app_usage.dart';
 import 'network/nhentai_network/nhentai_main_network.dart';
 
 Future<void> init() async {
@@ -84,6 +85,7 @@ Future<void> init() async {
       LocalFavoritesManager().init(),
       HistoryManager().init(),
       AppTranslation.init(),
+      AppUsageTracker.instance.init(),
     ]);
     CacheManager().setLimitSize(appdata.appSettings.cacheLimit);
   } catch (e, s) {
