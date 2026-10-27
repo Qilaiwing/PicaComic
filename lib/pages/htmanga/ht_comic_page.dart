@@ -153,7 +153,7 @@ class HtComicPage extends BaseComicPage<HtComicInfo> {
                         style: const TextStyle(
                             fontSize: 15, fontWeight: FontWeight.w600),
                       ),
-                      Text("投稿作品${data!.uploadNum}部")
+                      Text("投稿作品 @num 部".tlParams({"num": data!.uploadNum.toString()}))
                     ],
                   ),
                 ),

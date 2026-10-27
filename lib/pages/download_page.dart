@@ -901,7 +901,7 @@ class DownloadPage extends StatelessWidget {
                     SizedBox(
                       height: 9,
                     ),
-                    Text("打包中")
+                    Text("打包中".tl)
                   ],
                 ),
               ),
@@ -918,7 +918,7 @@ class DownloadPage extends StatelessWidget {
     String? folder;
     showMiuixDialog(
         context: context,
-        title: "复制到...",
+        title: "复制到...".tl,
         contentBuilder: (context, close) => SizedBox(
                   width: 400,
                   height: 132,

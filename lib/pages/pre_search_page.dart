@@ -437,7 +437,7 @@ class PreSearchPage extends StatelessWidget {
               }
               return _buildMiuixSuggestTile(
                 context: context,
-                title: "${"打开漫画".tl}: ${comicSource.name}",
+                title: "${"打开漫画".tl}: ${comicSource.name.tl}",
                 summary: controller.text,
                 onClick: () {
                   context.to(
