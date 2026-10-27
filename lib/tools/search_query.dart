@@ -5,37 +5,59 @@
 /// are usually longer.
 const int kSearchChipMaxChars = 24;
 
-final _cjkRe = RegExp(r'[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]');
-final _titleMarkRe = RegExp(r'[\[\]【】\(\)（）]');
+// Non-raw strings so \uXXXX escapes become real code points for RegExp.
+final _cjkRe =
+    RegExp('[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]');
+final _titleMarkRe = RegExp('[\[\]【】()（）]');
 final _spaceRe = RegExp(r'\s+');
+final _openMarkRe = RegExp('[(\[【（]');
+
+/// True when [s] contains title brackets/parens — never treat as multi-tag chips.
+bool hasSearchTitleMarks(String s) => _titleMarkRe.hasMatch(s);
 
 /// Auto-chip only short keyword tags. Pasted comic titles stay plain text —
 /// neither space-splitting nor submit [commitPending] should turn them into chips.
 ///
 /// Rule (any condition => plain text / one keyword, do not chip):
 /// 1. trimmed length > [kSearchChipMaxChars] (24), or
-/// 2. length > 16 AND 3+ whitespace-separated tokens, or
-/// 3. 2+ tokens AND title markers like []【】()（）.
+/// 2. has whitespace AND contains ()[]【】 (any length title fragment), or
+/// 3. 2+ tokens AND title markers, or
+/// 4. length > 12 AND 2+ tokens AND CJK with an opening ( [ 【 （, or
+/// 5. length > 16 AND 3+ whitespace-separated tokens.
+///
+/// Pure short multi-tags without marks (e.g. 全彩 蔚蓝档案) stay multi-term.
 bool isSearchTitlePlainText(String s) {
   final t = s.trim();
   if (t.isEmpty) return false;
   if (t.length > kSearchChipMaxChars) return true;
   final terms = splitSearchTerms(t);
+  final hasSpace = terms.length >= 2 ||
+      s.contains(' ') ||
+      s.contains('\t') ||
+      s.contains('\u3000');
+  // Spaced + ()[]【】 => title fragment, e.g. 粉幼檔案5 (ブルーアーカイブ)
+  if (hasSpace && hasSearchTitleMarks(t)) return true;
+  if (terms.length >= 2 && hasSearchTitleMarks(t)) return true;
+  if (terms.length >= 2 &&
+      t.length > 12 &&
+      _cjkRe.hasMatch(t) &&
+      _openMarkRe.hasMatch(t)) {
+    return true;
+  }
   if (t.length > 16 && terms.length >= 3) return true;
-  if (terms.length >= 2 && _titleMarkRe.hasMatch(t)) return true;
   return false;
 }
 
 /// Whether pending input should be turned into chip(s).
-/// Single short keyword alone stays plain text; only multi-term / combining chips.
-/// Titles still blocked by [isSearchTitlePlainText].
+/// Titles / anything with ()[]【】 never auto-chip (editing pasted titles).
 bool shouldAutoChipPending(String pending, {required int existingChipCount}) {
   final t = pending.trim();
   if (t.isEmpty) return false;
   if (isSearchTitlePlainText(t)) return false;
+  if (hasSearchTitleMarks(t)) return false;
   final terms = splitSearchTerms(t);
-  if (existingChipCount > 0) return true; // combining with existing chips
-  return terms.length >= 2; // only chip when multiple terms
+  if (existingChipCount > 0) return true;
+  return terms.length >= 2;
 }
 
 /// Split [s] on whitespace (ASCII + ideographic), keeping "quoted phrases" together.
@@ -70,15 +92,9 @@ int lastSearchBoundary(String s) {
 }
 
 /// Turn a pasted comic title into **one** network keyword.
-///
-/// PicACG / JM both treat raw spaces as term separators (OR / AND). That breaks
-/// pasted titles like `甜美夢境 [Starship …] [DL版]`. Spaces must not act as
-/// separators on the wire:
-/// - CJK titles: strip all whitespace (indexed as contiguous text).
-/// - Latin titles: wrap as one `"phrase"` so spaces stay inside one term.
+/// CJK: strip whitespace. Latin: one "phrase".
 String titleAsSingleKeyword(String raw) {
   var t = raw.trim();
-  // Drop wrapping quotes; neutralize inner quotes so we own phrasing.
   if (t.length >= 2 && t.startsWith('"') && t.endsWith('"')) {
     t = t.substring(1, t.length - 1);
   }
@@ -90,13 +106,12 @@ String titleAsSingleKeyword(String raw) {
   return '"$t"';
 }
 
-/// PicACG's keyword search is a MongoDB text search: plain space-separated
-/// words are OR'ed. Quoting every term makes each one required (AND).
+/// PicACG MongoDB text: spaces OR; quoted terms AND.
 String picacgKeyword(String keyword) {
   final raw = keyword.trim();
   if (raw.isEmpty) return raw;
-  // Pasted comic titles: one keyword — spaces must not split server-side.
-  if (isSearchTitlePlainText(raw)) {
+  if (isSearchTitlePlainText(raw) ||
+      (splitSearchTerms(raw).length >= 2 && hasSearchTitleMarks(raw))) {
     return titleAsSingleKeyword(raw);
   }
   final terms = splitSearchTerms(raw);
@@ -106,13 +121,12 @@ String picacgKeyword(String keyword) {
       .join(' ');
 }
 
-/// JM search: space-separated words are OR'ed; a leading `+` makes a word
-/// required. Prefix every plain term with `+` so all terms must match.
+/// JM: spaces OR; leading + required.
 String jmKeyword(String keyword) {
   final raw = keyword.trim();
   if (raw.isEmpty) return raw;
-  // Pasted comic titles: one keyword — no per-word +AND / space OR.
-  if (isSearchTitlePlainText(raw)) {
+  if (isSearchTitlePlainText(raw) ||
+      (splitSearchTerms(raw).length >= 2 && hasSearchTitleMarks(raw))) {
     return titleAsSingleKeyword(raw);
   }
   final terms = splitSearchTerms(raw);

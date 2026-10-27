@@ -29,7 +29,7 @@ class SearchChipController extends TextEditingController {
     if (_busy) return;
     final t = text;
     // Pasted / long comic titles stay plain text (see isSearchTitlePlainText).
-    if (isSearchTitlePlainText(t)) return;
+    if (isSearchTitlePlainText(t) || hasSearchTitleMarks(t)) return;
     final idx = lastSearchBoundary(t);
     if (idx < 0) return;
     final done = splitSearchTerms(t.substring(0, idx));
@@ -97,7 +97,7 @@ class SearchChipController extends TextEditingController {
       return;
     }
     // Single keyword or title → plain text; multi-term short tags → chips.
-    if (isSearchTitlePlainText(t) || splitSearchTerms(t).length <= 1) {
+    if (isSearchTitlePlainText(t) || hasSearchTitleMarks(t) || splitSearchTerms(t).length <= 1) {
       _busy = true;
       value = TextEditingValue(
         text: t,
