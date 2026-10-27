@@ -171,6 +171,7 @@ class _MultiFolderFavoritesPageState extends State<_MultiFolderFavoritesPage> {
                             });
                       },
  feedbackType: MiuixPressFeedbackType.sink,
+ shape: const StadiumBorder(),
  child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 10),
@@ -234,6 +235,7 @@ class _FolderTile extends StatelessWidget {
       child: MiuixPressable(
  onPressed: onTap,
  feedbackType: MiuixPressFeedbackType.sink,
+ shape: const MiuixSquircleBorder(cornerRadius: 14),
  child: Container(
             decoration: ShapeDecoration(
               shape: MiuixSquircleBorder(

@@ -326,6 +326,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
               }
             },
  feedbackType: MiuixPressFeedbackType.sink,
+ shape: const MiuixSquircleBorder(cornerRadius: 12),
  child: SizedBox(
               height: _kSecondaryTopBarHeight,
               child: Row(children: [
@@ -434,6 +435,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                 appdata.writeImplicitData();
               },
  feedbackType: MiuixPressFeedbackType.sink,
+ shape: const MiuixSquircleBorder(cornerRadius: 14),
  child: Container(
                 decoration: ShapeDecoration(
                   shape: MiuixSquircleBorder(
@@ -521,6 +523,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
                   appdata.writeImplicitData();
                 },
  feedbackType: MiuixPressFeedbackType.sink,
+ shape: const MiuixSquircleBorder(cornerRadius: 14),
  child: Container(
                   decoration: ShapeDecoration(
                     shape: MiuixSquircleBorder(
@@ -608,6 +611,7 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
           child: MiuixPressable(
  onPressed: onTap,
  feedbackType: MiuixPressFeedbackType.sink,
+ shape: const MiuixSquircleBorder(cornerRadius: 14),
  child: Container(
                 height: 44,
                 decoration: ShapeDecoration(
@@ -1016,9 +1020,9 @@ class _ComicsPageViewState extends StateWithController<ComicsPageView> {
                               .surfaceContainerHighest;
                         }
                         return AnimatedContainer(
-                          decoration: BoxDecoration(
+                          decoration: ShapeDecoration(
                             color: color,
-                            borderRadius: BorderRadius.circular(12),
+                            shape: const MiuixSquircleBorder(cornerRadius: 14),
                           ),
                           margin: const EdgeInsets.symmetric(
                               vertical: 2, horizontal: 4),

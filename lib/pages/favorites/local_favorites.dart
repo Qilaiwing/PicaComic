@@ -565,84 +565,138 @@ class LocalFavoriteTile extends ComicTile {
     }
   }
 
-  void showMenu() {
-    showMiuixDialog(
-        context: App.globalContext!,
-        contentBuilder: (context, close) => Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-                  child: SelectableText(
-                    title.replaceAll("\n", ""),
-                    style: const TextStyle(fontSize: 22),
+  Widget _favLongPressCapsule({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final primary = Theme.of(context).colorScheme.primary;
+    const shape = StadiumBorder();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: MiuixPressable(
+        onPressed: onTap,
+        feedbackType: MiuixPressFeedbackType.sink,
+        sinkAmount: 1.05,
+        shape: shape,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: ShapeDecoration(
+            shape: shape,
+            color: primary.withOpacity(0.14),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: primary,
                   ),
                 ),
-                const MiuixHorizontalDivider(),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.article),
-                  title: "查看详情".tl,
-                  onClick: () {
-                    App.back(context);
-                    showInfo();
-                  },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void showMenu() {
+    showMiuixDialog(
+      context: App.globalContext!,
+      contentBuilder: (context, close) => ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
+              child: SelectableText(
+                title.replaceAll("\n", ""),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  height: 1.25,
                 ),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.bookmark_remove),
-                  title: "取消收藏".tl,
-                  onClick: () {
-                    App.globalBack();
-                    LocalFavoritesManager().deleteComic(folderName, comic);
-                    onDelete();
-                  },
-                ),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.chrome_reader_mode_rounded),
-                  title: "阅读".tl,
-                  onClick: () {
-                    App.globalBack();
-                    read();
-                  },
-                ),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.copy),
-                  title: "复制到".tl,
-                  onClick: () {
-                    App.globalBack();
-                    copyTo();
-                  },
-                ),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.edit_note),
-                  title: "编辑标签".tl,
-                  onClick: () {
-                    App.globalBack();
-                    editTags();
-                  },
-                ),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.download),
-                  title: "下载".tl,
-                  onClick: () {
-                    App.globalBack();
-                    comic.addDownload();
-                    showToast(message: "已添加下载任务".tl);
-                  },
-                ),
-                MiuixBasicComponent(
-                  startAction: const Icon(Icons.update),
-                  title: "更新漫画信息".tl,
-                  onClick: () {
-                    App.globalBack();
-                    UpdateFavoritesInfoDialog.show([comic], folderName);
-                  },
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-              ],
-            ));
+              ),
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.article,
+              label: "查看详情".tl,
+              onTap: () {
+                close();
+                showInfo();
+              },
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.bookmark_remove,
+              label: "取消收藏".tl,
+              onTap: () {
+                close();
+                LocalFavoritesManager().deleteComic(folderName, comic);
+                onDelete();
+              },
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.chrome_reader_mode_rounded,
+              label: "阅读".tl,
+              onTap: () {
+                close();
+                read();
+              },
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.copy,
+              label: "复制到".tl,
+              onTap: () {
+                close();
+                copyTo();
+              },
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.edit_note,
+              label: "编辑标签".tl,
+              onTap: () {
+                close();
+                editTags();
+              },
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.download,
+              label: "下载".tl,
+              onTap: () {
+                close();
+                comic.addDownload();
+                showToast(message: "已添加下载任务".tl);
+              },
+            ),
+            _favLongPressCapsule(
+              context: context,
+              icon: Icons.update,
+              label: "更新漫画信息".tl,
+              onTap: () {
+                close();
+                UpdateFavoritesInfoDialog.show([comic], folderName);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void readComic() async {
