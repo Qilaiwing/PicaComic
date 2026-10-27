@@ -1,5 +1,24 @@
 /// Helpers for multi-keyword search queries.
 
+/// Max length ([String.length]) for an auto-chip token / pending input.
+/// Short tags like 全彩 / 蔚蓝档案 stay at or below this; pasted comic titles
+/// are usually longer.
+const int kSearchChipMaxChars = 24;
+
+/// Auto-chip only short keyword tags. Pasted comic titles stay plain text —
+/// neither space-splitting nor submit [commitPending] should turn them into chips.
+///
+/// Rule (either condition => plain text, do not chip):
+/// 1. trimmed length > [kSearchChipMaxChars] (24), or
+/// 2. length > 16 AND 3+ whitespace-separated tokens (English-style title).
+bool isSearchTitlePlainText(String s) {
+  final t = s.trim();
+  if (t.isEmpty) return false;
+  if (t.length > kSearchChipMaxChars) return true;
+  if (t.length > 16 && splitSearchTerms(t).length >= 3) return true;
+  return false;
+}
+
 /// Split [s] on whitespace, keeping "quoted phrases" together.
 List<String> splitSearchTerms(String s) {
   final res = <String>[];

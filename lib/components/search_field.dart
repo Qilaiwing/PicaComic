@@ -28,6 +28,8 @@ class SearchChipController extends TextEditingController {
   void _normalize() {
     if (_busy) return;
     final t = text;
+    // Pasted / long comic titles stay plain text (see isSearchTitlePlainText).
+    if (isSearchTitlePlainText(t)) return;
     final idx = lastSearchBoundary(t);
     if (idx < 0) return;
     final done = splitSearchTerms(t.substring(0, idx));
@@ -51,9 +53,11 @@ class SearchChipController extends TextEditingController {
   }
 
   /// On search submit: turn leftover typing into a chip, then return [query].
+  /// Long / title-like pending text is left as plain text (still in [query]).
   String commitPending() {
     final t = text.trim();
     if (t.isEmpty) return query;
+    if (isSearchTitlePlainText(t)) return query;
     _busy = true;
     chips.add(SearchChip(t));
     value = const TextEditingValue(
