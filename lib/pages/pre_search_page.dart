@@ -70,11 +70,32 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
           ),
         ),
         const SizedBox(width: 6),
-        MiuixButton(
-          colors: MiuixButtonDefaults.buttonColorsPrimary(context),
-          onPressed: () => widget.onFinish(widget.controller.text),
-          child: Text("搜索".tl),
-        ),
+        Builder(builder: (context) {
+          final scheme = Theme.of(context).colorScheme;
+          return MiuixButton(
+            colors: MiuixButtonColors(
+              color: scheme.primary,
+              disabledColor: scheme.primary.withValues(alpha: 0.4),
+              contentColor: scheme.onPrimary,
+              disabledContentColor: scheme.onPrimary.withValues(alpha: 0.5),
+            ),
+            minWidth: 52,
+            minHeight: 36,
+            cornerRadius: 18,
+            insideMargin:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            onPressed: () {
+              final q = widget.controller is SearchChipController
+                  ? (widget.controller as SearchChipController).query
+                  : widget.controller.text;
+              widget.onFinish(q);
+            },
+            child: Text(
+              "搜索".tl,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          );
+        }),
       ]),
     );
   }
@@ -161,6 +182,16 @@ class PreSearchPage extends StatelessWidget {
     );
   }
 
+  /// Long-press a favorite tag: append its keyword as a chip (stay on page).
+  void insertFavoriteChip(String keyword) {
+    final k = keyword.trim();
+    if (k.isEmpty) return;
+    controller.addChip(k);
+    findSuggestions();
+    searchController.update([1, 100]);
+    _focusNode.requestFocus();
+  }
+
   void findSuggestions() {
     var text = controller.text.split(" ").last;
     var suggestions = searchController.suggestions;
@@ -233,8 +264,7 @@ class PreSearchPage extends StatelessWidget {
             builder: (context) => _FloatingSearchBar(
               supportingText: '${'搜索'.tl} / ${'链接'.tl} / ID',
               onFinish: (s) {
-                // if (s == "") return;
-                search();
+                search(s);
               },
               controller: controller,
               onChanged: (s) {
@@ -517,9 +547,11 @@ class PreSearchPage extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: MiuixPressable(
- onPressed: () => logic.updateTarget(id),
- feedbackType: MiuixPressFeedbackType.sink,
- child: AnimatedContainer(
+            onPressed: () => logic.updateTarget(id),
+            feedbackType: MiuixPressFeedbackType.sink,
+            sinkAmount: 1.05,
+            shape: const StadiumBorder(),
+            child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
               padding:
@@ -753,8 +785,9 @@ class PreSearchPage extends StatelessWidget {
   }
 
   Widget buildFavoriteItem(String tag, PreSearchController logic) {
+    final keyword = tag.substring(tag.indexOf(':') + 1);
     return Flyout(
-      enableLongPress: true,
+      enableLongPress: false,
       enableSecondaryTap: true,
       navigator: App.navigatorKey.currentState,
       flyoutBuilder: (context) {
@@ -784,22 +817,24 @@ class PreSearchPage extends StatelessWidget {
           ],
         );
       },
-      child: MiuixBasicComponent(
-        title: tag.substring(tag.indexOf(':') + 1),
-        summary: tag.split(':').first,
-        onClick: () {
-          String type = switch (tag.split(':').first) {
-            "Picacg" => 'picacg',
-            "EHentai" => 'ehentai',
-            "JMComic" => 'jm',
-            "hitomi" => 'hitomi',
-            "HtComic" => 'htmanga',
-            "Nhentai" => 'nhentai',
-            _ => tag.split(':').first
-          };
-          final keyword = tag.substring(tag.indexOf(':') + 1);
-          search(keyword, type);
-        },
+      child: GestureDetector(
+        onLongPress: () => insertFavoriteChip(keyword),
+        child: MiuixBasicComponent(
+          title: keyword,
+          summary: tag.split(':').first,
+          onClick: () {
+            String type = switch (tag.split(':').first) {
+              "Picacg" => 'picacg',
+              "EHentai" => 'ehentai',
+              "JMComic" => 'jm',
+              "hitomi" => 'hitomi',
+              "HtComic" => 'htmanga',
+              "Nhentai" => 'nhentai',
+              _ => tag.split(':').first
+            };
+            search(keyword, type);
+          },
+        ),
       ),
     );
   }
@@ -1147,7 +1182,7 @@ class PreSearchPage extends StatelessWidget {
                             final source = tag.split(':').first;
                             final keyword = tag.substring(tag.indexOf(':') + 1);
                             return MiuixPressable(
- onPressed: () {
+                              onPressed: () {
                                   String type = switch (source) {
                                     "Picacg" => 'picacg',
                                     "EHentai" => 'ehentai',
@@ -1159,8 +1194,11 @@ class PreSearchPage extends StatelessWidget {
                                   };
                                   search(keyword, type);
                                 },
- feedbackType: MiuixPressFeedbackType.sink,
- child: Container(
+                              onLongPress: () => insertFavoriteChip(keyword),
+                              feedbackType: MiuixPressFeedbackType.sink,
+                              sinkAmount: 1.05,
+                              shape: const StadiumBorder(),
+                              child: Container(
                                   padding:
                                       const EdgeInsets.fromLTRB(6, 4, 8, 4),
                                   decoration: ShapeDecoration(

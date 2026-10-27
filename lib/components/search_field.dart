@@ -1,7 +1,7 @@
 part of 'components.dart';
 
 /// Text controller that turns finished words (followed by a space) into chips.
-/// [query] = chips + the word currently being typed.
+/// [query] = chips + the word currently being typed (no trailing space needed).
 class SearchChipController extends TextEditingController {
   SearchChipController({super.text}) {
     addListener(_normalize);
@@ -11,6 +11,7 @@ class SearchChipController extends TextEditingController {
   final List<String> chips = [];
   bool _busy = false;
 
+  /// Chips plus leftover typing — used as the real search keyword.
   String get query =>
       [...chips, text.trim()].where((e) => e.isNotEmpty).join(' ');
 
@@ -28,6 +29,13 @@ class SearchChipController extends TextEditingController {
       selection: TextSelection.collapsed(offset: rest.length),
     );
     _busy = false;
+  }
+
+  void addChip(String chip) {
+    final c = chip.trim();
+    if (c.isEmpty) return;
+    chips.add(c);
+    notifyListeners();
   }
 
   void removeChipAt(int i) {
@@ -69,8 +77,8 @@ class AppSearchField extends StatelessWidget {
   Widget _buildChip(MiuixThemeData theme, String text, VoidCallback onRemove) {
     final primary = theme.colors.primary;
     return Container(
-      margin: const EdgeInsets.only(right: 4),
-      padding: const EdgeInsets.fromLTRB(10, 3, 3, 3),
+      margin: const EdgeInsets.only(right: 4, top: 2, bottom: 2),
+      padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
       decoration: ShapeDecoration(
         color: primary.withOpacity(0.14),
         shape: const StadiumBorder(),
@@ -78,6 +86,7 @@ class AppSearchField extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(
           text,
+          softWrap: false,
           style: TextStyle(
             fontSize: 13,
             height: 1.2,
@@ -90,7 +99,8 @@ class AppSearchField extends StatelessWidget {
           onTap: onRemove,
           child: Padding(
             padding: const EdgeInsets.all(4),
-            child: MiuixIcon(vector: MiuixIcons.os4.close, size: 10, tint: primary),
+            child: MiuixIcon(
+                vector: MiuixIcons.os4.close, size: 10, tint: primary),
           ),
         ),
       ]),
@@ -127,7 +137,6 @@ class AppSearchField extends StatelessWidget {
     );
 
     if (chipCtrl != null) {
-      // Hardware/IME backspace on empty input removes the last chip.
       field = Focus(
         canRequestFocus: false,
         skipTraversal: true,
@@ -151,58 +160,52 @@ class AppSearchField extends StatelessWidget {
         color: theme.colors.surfaceContainerHigh,
         shape: const StadiumBorder(),
       ),
-      child: Row(children: [
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.only(left: 10, right: 6),
           child: MiuixIcon(vector: MiuixIcons.os4.search, size: 18),
         ),
         Expanded(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 45),
-            child: Center(
-              child: chipCtrl == null
-                  ? field
-                  : LayoutBuilder(
-                      builder: (context, cons) => ListenableBuilder(
-                        listenable: chipCtrl,
-                        builder: (context, _) => Row(children: [
-                          if (chipCtrl.chips.isNotEmpty)
+          child: Padding(
+            padding: const EdgeInsets.only(right: 12, top: 6, bottom: 6),
+            child: chipCtrl == null
+                ? ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 33),
+                    child: Center(child: field),
+                  )
+                : LayoutBuilder(
+                    builder: (context, cons) => ListenableBuilder(
+                      listenable: chipCtrl,
+                      builder: (context, _) {
+                        // Chips wrap onto new lines so none are clipped;
+                        // leftover typing sits after the last chip.
+                        return Wrap(
+                          spacing: 0,
+                          runSpacing: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            for (var i = 0; i < chipCtrl.chips.length; i++)
+                              _buildChip(theme, chipCtrl.chips[i], () {
+                                chipCtrl.removeChipAt(i);
+                                onChanged?.call(chipCtrl.text);
+                              }),
                             ConstrainedBox(
-                              constraints:
-                                  BoxConstraints(maxWidth: cons.maxWidth * 0.7),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                reverse: true,
-                                child: Row(children: [
-                                  for (var i = 0; i < chipCtrl.chips.length; i++)
-                                    _buildChip(theme, chipCtrl.chips[i], () {
-                                      chipCtrl.removeChipAt(i);
-                                      onChanged?.call(chipCtrl.text);
-                                    }),
-                                ]),
+                              constraints: BoxConstraints(
+                                minWidth: 72,
+                                maxWidth: cons.maxWidth,
+                                minHeight: 33,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: field,
                               ),
                             ),
-                          Expanded(child: field),
-                        ]),
-                      ),
+                          ],
+                        );
+                      },
                     ),
-            ),
+                  ),
           ),
-        ),
-        ListenableBuilder(
-          listenable: controller,
-          builder: (context, _) => controller.text.isEmpty &&
-                  !(chipCtrl?.chips.isNotEmpty ?? false)
-              ? const SizedBox(width: 12)
-              : MiuixIconButton(
-                  minWidth: 32,
-                  minHeight: 32,
-                  onPressed: () {
-                    controller.clear();
-                    onChanged?.call("");
-                  },
-                  child: MiuixIcon(vector: MiuixIcons.os4.close, size: 14),
-                ),
         ),
       ]),
     );
