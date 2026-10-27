@@ -885,7 +885,7 @@ class DownloadPage extends StatelessWidget {
         () => showMiuixDialog(
           context: App.globalContext!,
           dismissible: false,
-          contentBuilder: (context, close) => const SizedBox(
+          contentBuilder: (context, close) => SizedBox(
             width: 200,
             height: 200,
             child: Center(
