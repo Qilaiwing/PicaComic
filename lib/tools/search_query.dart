@@ -92,21 +92,19 @@ int lastSearchBoundary(String s) {
 }
 
 /// Turn a pasted comic title into **one** network keyword.
-/// CJK: strip whitespace. Latin: one "phrase".
+/// Keep spaces (titles are indexed with spaces). Wrap as one "phrase"
+/// so PicACG/JM do not OR/AND-split on whitespace.
 String titleAsSingleKeyword(String raw) {
   var t = raw.trim();
   if (t.length >= 2 && t.startsWith('"') && t.endsWith('"')) {
     t = t.substring(1, t.length - 1);
   }
+  // Neutralize inner quotes; collapse runs of whitespace — do NOT delete spaces.
   t = t.replaceAll('"', ' ').replaceAll(_spaceRe, ' ').trim();
   if (t.isEmpty) return raw.trim();
-  if (_cjkRe.hasMatch(t)) {
-    return t.replaceAll(_spaceRe, '');
-  }
   return '"$t"';
 }
 
-/// PicACG MongoDB text: spaces OR; quoted terms AND.
 String picacgKeyword(String keyword) {
   final raw = keyword.trim();
   if (raw.isEmpty) return raw;
