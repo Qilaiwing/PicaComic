@@ -200,10 +200,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
 
     Widget buildStat({
       required String title,
-      required String summary,
       required String value,
       required bool highlight,
-      double valueSize = 22,
       VoidCallback? onTap,
     }) {
       final body = Container(
@@ -212,29 +210,14 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: onCard.withOpacity(0.6),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  summary,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: onCard.withOpacity(0.45),
-                  ),
-                ),
-              ],
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: onCard.withOpacity(0.6),
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -242,7 +225,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: valueSize,
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
                 height: 1.1,
                 color: highlight ? primary : onCard,
@@ -341,7 +324,6 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
             children: [
               buildStat(
                 title: "漫画源".tl,
-                summary: "已登录".tl,
                 value: accounts.toString(),
                 highlight: accounts > 0,
                 onTap: () async {
@@ -351,18 +333,15 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
               ),
               const SizedBox(width: 10),
               buildStat(
-                title: "浏览".tl,
-                summary: "累计".tl,
+                title: "浏览数".tl,
                 value: historyCount.toString(),
                 highlight: historyCount > 0,
               ),
               const SizedBox(width: 10),
               buildStat(
-                title: "使用".tl,
-                summary: "前台".tl,
+                title: "使用时长".tl,
                 value: usageText,
                 highlight: AppUsageTracker.instance.totalMilliseconds > 0,
-                valueSize: 16,
               ),
             ],
           ),

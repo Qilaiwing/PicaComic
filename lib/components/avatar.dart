@@ -47,11 +47,15 @@ class Avatar extends StatelessWidget {
                 height: avatarSize,
                 filterQuality: FilterQuality.medium,
               )
-            : Image(
-                image: const AssetImage("images/avatar_small.png"),
-                fit: BoxFit.cover,
-                width: avatarSize,
-                height: avatarSize,
+            : ColoredBox(
+                color: theme.colorScheme.primary.withOpacity(0.12),
+                child: Center(
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: avatarSize * 0.55,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
               ),
       ),
     );
@@ -79,11 +83,15 @@ class Avatar extends StatelessWidget {
                         height: frameAvatarSize,
                         filterQuality: FilterQuality.medium,
                       )
-                    : Image(
-                        image: const AssetImage("images/avatar_small.png"),
-                        fit: BoxFit.cover,
-                        width: frameAvatarSize,
-                        height: frameAvatarSize,
+                    : ColoredBox(
+                        color: theme.colorScheme.primary.withOpacity(0.12),
+                        child: Center(
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: frameAvatarSize * 0.55,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
                       ),
               ),
             ),
@@ -101,9 +109,9 @@ class Avatar extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: theme.brightness == Brightness.dark
-              ? const Color(0x40FFFFFF)
-              : const Color(0x1F000000),
+          color: theme.colorScheme.primary.withOpacity(
+            theme.brightness == Brightness.dark ? 0.28 : 0.16,
+          ),
         ),
         child: avatarCircle,
       );

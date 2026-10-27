@@ -242,12 +242,15 @@ class DownloadPage extends StatelessWidget {
 );
           } else {
             return MiuixScaffold(
-              topBar: buildAppbar(context, logic),
               floatingActionButton: buildFAB(context, logic),
-              content: (padding) => SmoothCustomScrollView(
+              content: (_) => SmoothCustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(child: SizedBox(height: padding.top)),
-                  buildComics(context, logic)
+                  buildAppbar(context, logic),
+                  buildComics(context, logic),
+                  SliverPadding(
+                    padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom + 16),
+                  ),
                 ],
               ),
             );
@@ -672,14 +675,13 @@ class DownloadPage extends StatelessWidget {
   }
 
   Widget buildAppbar(BuildContext context, DownloadPageLogic logic) {
-    return MiuixTopAppBar(
-      blurred: true,
-      blurRadius: 0,
-      blurTintAlpha: 0,
-      color: logic.selecting
-        ? Theme.of(context).colorScheme.primaryContainer
-        : null,
-      navigationIcon: logic.selecting
+    final selecting = logic.selecting;
+    final searching = logic.searchMode && !selecting;
+    return SliverAppbar(
+      color: selecting
+          ? Theme.of(context).colorScheme.primaryContainer
+          : null,
+      leading: selecting
           ? MiuixIconButton(
               onPressed: () {
                 logic.selecting = false;
@@ -694,20 +696,18 @@ class DownloadPage extends StatelessWidget {
                 size: 20,
               ),
             )
-          : (Navigator.of(context).canPop()
-              ? MiuixIconButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  child: MiuixIcon(vector: MiuixIcons.os4.back, size: 20),
-                )
-              : null),
-      title: logic.selecting
-          ? "已选择 @num 个项目".tlParams({"num": logic.selectedNum.toString()})
-          : "已下载".tl,
-      largeTitle: (logic.selecting || logic.searchMode) ? null : "已下载".tl,
-      // 搜索模式下搜索框放在 bottomContent
-      bottomContent: (logic.searchMode && !logic.selecting)
-          ? buildTitle(context, logic)
           : null,
+      title: Text(
+        selecting
+            ? "已选择 @num 个项目"
+                .tlParams({"num": logic.selectedNum.toString()})
+            : "已下载".tl,
+      ),
+      largeTitle: (selecting || logic.searchMode)
+          ? null
+          : Text("已下载".tl),
+      bottom: searching ? buildTitle(context, logic) : null,
+      bottomHeight: searching ? 46 : 0,
       actions: buildActions(context, logic),
     );
   }

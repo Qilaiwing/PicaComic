@@ -49,16 +49,128 @@ class _DownloadingPageState extends State<DownloadingPage> {
 
   var key = GlobalKey<_DownloadingTileState>();
 
+  Widget _buildStatusHeader(BuildContext context) {
+    String downloadStatus;
+    if (downloadManager.isDownloading) {
+      downloadStatus = " 下载中".tl;
+    } else if (downloadManager.downloading.isNotEmpty) {
+      downloadStatus = " 已暂停".tl;
+    } else {
+      downloadStatus = "";
+    }
+
+    String downloadTaskText = "@length 项下载任务".tlParams(
+        {"length": downloadManager.downloading.length.toString()});
+
+    String displayText = downloadManager.error
+        ? "下载出错".tl
+        : downloadTaskText + downloadStatus;
+
+    final primary = Theme.of(context).colorScheme.primary;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final error = Theme.of(context).colorScheme.error;
+
+    final active = downloadManager.isDownloading;
+    final hasError = downloadManager.error;
+    final tint = hasError ? error : (active ? primary : onSurface.withOpacity(0.55));
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+      child: MiuixCard(
+        cornerRadius: 16,
+        insideMargin: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                shape: const MiuixSquircleBorder(cornerRadius: 12),
+                color: tint.withOpacity(0.14),
+              ),
+              child: MiuixIcon(
+                vector: active
+                    ? (MiuixIcons.extended.byName('download') ??
+                        MiuixIcons.os4.download)
+                    : (hasError
+                        ? MiuixIcons.os4.close
+                        : MiuixIcons.os4.pause),
+                size: 18,
+                tint: tint,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                displayText,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: onSurface,
+                ),
+              ),
+            ),
+            if (downloadManager.downloading.isNotEmpty)
+              MiuixPressable(
+                shape: const StadiumBorder(),
+                feedbackType: MiuixPressFeedbackType.sink,
+                onPressed: () {
+                  downloadManager.isDownloading
+                      ? downloadManager.pause()
+                      : downloadManager.start();
+                  setState(() {});
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: primary.withOpacity(0.14),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MiuixIcon(
+                        vector: downloadManager.isDownloading
+                            ? MiuixIcons.os4.pause
+                            : (hasError
+                                ? (MiuixIcons.extended.byName('refresh') ??
+                                    MiuixIcons.os4.sort)
+                                : MiuixIcons.os4.play),
+                        size: 14,
+                        tint: primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        downloadManager.isDownloading
+                            ? "暂停".tl
+                            : (hasError ? "重试".tl : "继续".tl),
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    var widgets = <Widget>[];
+    final tiles = <Widget>[];
     for (var i in comics) {
-      var key = Key(i.id);
+      var tileKey = Key(i.id);
       if (i == comics.first) {
-        key = this.key;
+        tileKey = key;
       }
-
-      widgets.add(_DownloadingTile(
+      tiles.add(_DownloadingTile(
         comic: i,
         cancel: () {
           showConfirmDialog(context, "取消".tl, "取消下载任务?".tl, () {
@@ -68,135 +180,31 @@ class _DownloadingPageState extends State<DownloadingPage> {
           });
         },
         onComicPositionChange: rebuild,
-        key: key,
+        key: tileKey,
       ));
     }
 
-    final body = ListView.builder(
-        itemCount: downloadManager.downloading.length + 1,
-        padding: EdgeInsets.zero,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            String downloadStatus;
-            if (downloadManager.isDownloading) {
-              downloadStatus = " 下载中".tl;
-            } else if (downloadManager.downloading.isNotEmpty) {
-              downloadStatus = " 已暂停".tl;
-            } else {
-              downloadStatus = "";
-            }
-
-            String downloadTaskText = "@length 项下载任务".tlParams(
-                {"length": downloadManager.downloading.length.toString()});
-
-            String displayText = downloadManager.error
-                ? "下载出错".tl
-                : downloadTaskText + downloadStatus;
-
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            final primary = Theme.of(context).colorScheme.primary;
-
-            return Container(
-              margin: const EdgeInsets.fromLTRB(14, 8, 14, 6),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: ShapeDecoration(
-                shape: const MiuixSquircleBorder(cornerRadius: 14),
-                color:
-                    isDark ? const Color(0xFF222226) : const Color(0xFFF4F4F6),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: ShapeDecoration(
-                      shape: const MiuixSquircleBorder(cornerRadius: 10),
-                      color: downloadManager.isDownloading
-                          ? primary.withOpacity(isDark ? 0.25 : 0.12)
-                          : (downloadManager.error
-                              ? Colors.red.withOpacity(isDark ? 0.25 : 0.12)
-                              : const Color(0x18000000)),
-                    ),
-                    child: MiuixIcon(
-                      vector: downloadManager.isDownloading
-                          ? (MiuixIcons.extended.byName('download') ??
-                              MiuixIcons.os4.download)
-                          : (downloadManager.error
-                              ? MiuixIcons.os4.close
-                              : MiuixIcons.os4.pause),
-                      size: 17,
-                      tint: downloadManager.isDownloading
-                          ? primary
-                          : (downloadManager.error ? Colors.red : Colors.grey),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      displayText,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (downloadManager.downloading.isNotEmpty)
-                    MiuixPressable(
-                        shape: const StadiumBorder(),
-                        borderRadius: BorderRadius.circular(20),
-                        onPressed: () {
-                          downloadManager.isDownloading
-                              ? downloadManager.pause()
-                              : downloadManager.start();
-                          setState(() {});
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: ShapeDecoration(
-                            shape: const StadiumBorder(),
-                            color: primary.withOpacity(isDark ? 0.25 : 0.12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              MiuixIcon(
-                                vector: downloadManager.isDownloading
-                                    ? MiuixIcons.os4.pause
-                                    : (downloadManager.error
-                                        ? MiuixIcons.os4.sort
-                                        : MiuixIcons.os4.play),
-                                size: 14,
-                                tint: primary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                downloadManager.isDownloading
-                                    ? "暂停".tl
-                                    : (downloadManager.error
-                                        ? "重试".tl
-                                        : "继续".tl),
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                ],
-              ),
-            );
-          } else {
-            return widgets[index - 1];
-          }
-        });
-
-    return PopUpWidgetScaffold(
-      title: "下载管理器".tl,
-      body: body,
+    return MiuixScaffold(
+      content: (_) => SmoothCustomScrollView(
+        slivers: [
+          SliverAppbar(
+            title: Text("下载管理器".tl),
+            largeTitle: Text("下载管理器".tl),
+          ),
+          SliverToBoxAdapter(child: _buildStatusHeader(context)),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => tiles[index],
+              childCount: tiles.length,
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 20,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -210,9 +218,7 @@ class _DownloadingTile extends StatefulWidget {
   });
 
   final DownloadingItem comic;
-
   final void Function() cancel;
-
   final void Function() onComicPositionChange;
 
   @override
@@ -228,7 +234,7 @@ class _DownloadingTileState extends State<_DownloadingTile> {
   int? speed;
 
   @override
-  initState() {
+  void initState() {
     super.initState();
     comic = widget.comic;
     updateStatistic();
@@ -268,78 +274,76 @@ class _DownloadingTileState extends State<_DownloadingTile> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 14),
-      child: Container(
-        height: 114,
-        padding: const EdgeInsets.all(8),
-        decoration: ShapeDecoration(
-          shape: MiuixSquircleBorder(
-            cornerRadius: 16,
-            side: BorderSide(
-              color: isDark ? const Color(0x18FFFFFF) : const Color(0x0A000000),
-              width: 0.6,
-            ),
-          ),
-          color: isDark ? const Color(0xFF222226) : const Color(0xFFF7F7F9),
-        ),
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+      child: MiuixCard(
+        cornerRadius: 16,
+        insideMargin: const EdgeInsets.all(10),
         child: Row(
           children: [
-            Container(
-              width: 74,
-              height: double.infinity,
-              decoration: const ShapeDecoration(
-                shape: MiuixSquircleBorder(cornerRadius: 10),
+            ClipPath(
+              clipper: const ShapeBorderClipper(
+                shape: MiuixSquircleBorder(cornerRadius: 12),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: AnimatedImage(
-                image: CachedImageProvider(comic.cover,
-                    headers: {"User-Agent": webUA}),
-                width: 74,
-                height: double.infinity,
-                fit: BoxFit.cover,
+              child: SizedBox(
+                width: 72,
+                height: 96,
+                child: AnimatedImage(
+                  image: CachedImageProvider(comic.cover,
+                      headers: {"User-Agent": webUA}),
+                  width: 72,
+                  height: 96,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    comic.title,
-                    style: const TextStyle(
-                        fontSize: 13.5, fontWeight: FontWeight.w600),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  Text(
-                    getProgressText(),
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+              child: SizedBox(
+                height: 96,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      comic.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: onSurface,
+                        height: 1.25,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: MiuixLinearProgressIndicator(
-                      progress: value,
-                      height: 5,
-                      colors: MiuixProgressIndicatorColors(
-                        foregroundColor: primary,
-                        disabledForegroundColor: primary,
-                        backgroundColor: isDark
-                            ? const Color(0x22FFFFFF)
-                            : const Color(0x18000000),
+                    const Spacer(),
+                    Text(
+                      getProgressText(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: muted,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                ],
+                    const SizedBox(height: 8),
+                    ClipPath(
+                      clipper: const ShapeBorderClipper(
+                        shape: StadiumBorder(),
+                      ),
+                      child: MiuixLinearProgressIndicator(
+                        progress: value.clamp(0.0, 1.0),
+                        height: 6,
+                        colors: MiuixProgressIndicatorColors(
+                          foregroundColor: primary,
+                          disabledForegroundColor: primary,
+                          backgroundColor: primary.withOpacity(0.14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 4),
@@ -349,11 +353,12 @@ class _DownloadingTileState extends State<_DownloadingTile> {
                 AppTooltip(
                   message: "置顶".tl,
                   child: MiuixIconButton(
-                    minWidth: 34,
-                    minHeight: 34,
-                    child: const Icon(
+                    minWidth: 36,
+                    minHeight: 36,
+                    child: Icon(
                       Icons.vertical_align_top_rounded,
                       size: 19,
+                      color: onSurface.withOpacity(0.75),
                     ),
                     onPressed: () {
                       DownloadManager().moveToFirst(comic);
@@ -364,11 +369,12 @@ class _DownloadingTileState extends State<_DownloadingTile> {
                 AppTooltip(
                   message: "取消".tl,
                   child: MiuixIconButton(
-                    minWidth: 34,
-                    minHeight: 34,
+                    minWidth: 36,
+                    minHeight: 36,
                     child: MiuixIcon(
                       vector: MiuixIcons.os4.close,
                       size: 18,
+                      tint: onSurface.withOpacity(0.75),
                     ),
                     onPressed: widget.cancel,
                   ),

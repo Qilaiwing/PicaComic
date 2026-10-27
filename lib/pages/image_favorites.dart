@@ -47,6 +47,10 @@ class _ImageFavoritesPageState extends State<ImageFavoritesPage> {
                 gridDelegate:
                     SliverGridDelegateWithComics(true, appdata.settings[74]),
               ),
+              SliverPadding(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 16),
+              ),
             ],
           ),
         );
