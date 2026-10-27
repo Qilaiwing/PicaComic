@@ -117,57 +117,26 @@ class _AppSearchFieldState extends State<AppSearchField> {
       _lastChipCount = n;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_chipScroll.hasClients) return;
-        _chipScroll.jumpTo(_chipScroll.position.maxScrollExtent);
+        final max = _chipScroll.position.maxScrollExtent;
+        if ((_chipScroll.offset - max).abs() > 0.5) {
+          _chipScroll.jumpTo(max);
+        }
       });
     }
-    if (mounted) setState(() {});
+    // No setState — chips rebuild via ListenableBuilder only.
   }
 
-  Widget _buildChip(MiuixThemeData theme, String text, VoidCallback onRemove) {
-    final primary = theme.colors.primary;
-    return Container(
-      margin: const EdgeInsets.only(right: 4),
-      padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
-      decoration: ShapeDecoration(
-        color: primary.withOpacity(0.14),
-        shape: const StadiumBorder(),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text(
-          text,
-          softWrap: false,
-          style: TextStyle(
-            fontSize: 13,
-            height: 1.15,
-            fontWeight: FontWeight.w500,
-            color: primary,
-          ),
-        ),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onRemove,
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: MiuixIcon(
-                vector: MiuixIcons.os4.close, size: 10, tint: primary),
-          ),
-        ),
-      ]),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = MiuixTheme.of(context);
+  Widget _buildTextField(MiuixThemeData theme) {
     final style = theme.textStyles.main.copyWith(
       fontWeight: FontWeight.w500,
       color: theme.colors.onSurface,
-      height: 1.2,
+      height: 1.0,
+      leadingDistribution: TextLeadingDistribution.even,
     );
     final chipCtrl = _chipController;
-    final showHint = chipCtrl == null || chipCtrl.chips.isEmpty;
 
     Widget field = TextField(
+      key: const ValueKey('app_search_text_field'),
       controller: widget.controller,
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
@@ -178,10 +147,9 @@ class _AppSearchFieldState extends State<AppSearchField> {
       cursorColor: theme.colors.primary,
       onChanged: widget.onChanged,
       onSubmitted: (s) => widget.onSubmitted(chipCtrl?.query ?? s),
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         isDense: true,
-        hintText: showHint ? widget.hint : null,
-        hintStyle: style.copyWith(color: theme.colors.onSurfaceContainerHigh),
+        hintText: null,
         contentPadding: EdgeInsets.zero,
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
@@ -208,6 +176,88 @@ class _AppSearchFieldState extends State<AppSearchField> {
         child: field,
       );
     }
+    return field;
+  }
+
+  Widget _buildChip(MiuixThemeData theme, String text, VoidCallback onRemove) {
+    final primary = theme.colors.primary;
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
+      decoration: ShapeDecoration(
+        color: primary.withValues(alpha: 0.14),
+        shape: const StadiumBorder(),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(
+          text,
+          softWrap: false,
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.0,
+            leadingDistribution: TextLeadingDistribution.even,
+            fontWeight: FontWeight.w500,
+            color: primary,
+          ),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onRemove,
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: MiuixIcon(
+                vector: MiuixIcons.os4.close, size: 10, tint: primary),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _hintOverlay(MiuixThemeData theme) {
+    final chipCtrl = _chipController;
+    final style = theme.textStyles.main.copyWith(
+      fontWeight: FontWeight.w500,
+      color: theme.colors.onSurfaceContainerHigh,
+      height: 1.0,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+    if (chipCtrl == null) {
+      return ListenableBuilder(
+        listenable: widget.controller,
+        builder: (context, _) {
+          if (widget.controller.text.isNotEmpty) {
+            return const SizedBox.shrink();
+          }
+          return IgnorePointer(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(widget.hint, style: style, maxLines: 1),
+            ),
+          );
+        },
+      );
+    }
+    return ListenableBuilder(
+      listenable: chipCtrl,
+      builder: (context, _) {
+        if (chipCtrl.chips.isNotEmpty || chipCtrl.text.isNotEmpty) {
+          return const SizedBox.shrink();
+        }
+        return IgnorePointer(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(widget.hint, style: style, maxLines: 1),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = MiuixTheme.of(context);
+    final chipCtrl = _chipController;
+    final field = _buildTextField(theme);
 
     return SizedBox(
       height: _kHeight,
@@ -216,46 +266,61 @@ class _AppSearchFieldState extends State<AppSearchField> {
           color: theme.colors.surfaceContainerHigh,
           shape: const StadiumBorder(),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(width: 10),
-            MiuixIcon(vector: MiuixIcons.os4.search, size: 18),
-            const SizedBox(width: 6),
-            Expanded(
-              child: chipCtrl == null
-                  ? Align(alignment: Alignment.centerLeft, child: field)
-                  : LayoutBuilder(
-                      builder: (context, cons) {
-                        final inputWidth =
-                            (cons.maxWidth * 0.42).clamp(88.0, 180.0);
-                        return SingleChildScrollView(
-                          controller: _chipScroll,
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              for (var i = 0; i < chipCtrl.chips.length; i++)
-                                _buildChip(theme, chipCtrl.chips[i], () {
-                                  chipCtrl.removeChipAt(i);
-                                  widget.onChanged?.call(chipCtrl.text);
-                                }),
-                              SizedBox(
-                                width: inputWidth,
-                                height: _kHeight,
-                                child: Align(
+        child: Padding(
+          // No prefix search icon — only the separate 搜索 button outside.
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: chipCtrl == null
+              ? Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    Align(alignment: Alignment.centerLeft, child: field),
+                    _hintOverlay(theme),
+                  ],
+                )
+              : LayoutBuilder(
+                  builder: (context, cons) {
+                    final inputWidth =
+                        (cons.maxWidth * 0.42).clamp(88.0, 180.0);
+                    return SingleChildScrollView(
+                      controller: _chipScroll,
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          ListenableBuilder(
+                            listenable: chipCtrl,
+                            builder: (context, _) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (var i = 0;
+                                    i < chipCtrl.chips.length;
+                                    i++)
+                                  _buildChip(theme, chipCtrl.chips[i], () {
+                                    chipCtrl.removeChipAt(i);
+                                    widget.onChanged?.call(chipCtrl.text);
+                                  }),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            width: inputWidth,
+                            height: _kHeight,
+                            child: Stack(
+                              alignment: Alignment.centerLeft,
+                              children: [
+                                Align(
                                   alignment: Alignment.centerLeft,
                                   child: field,
                                 ),
-                              ),
-                            ],
+                                _hintOverlay(theme),
+                              ],
+                            ),
                           ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
         ),
       ),
     );

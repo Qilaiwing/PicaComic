@@ -60,9 +60,6 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
         ),
         const SizedBox(width: 4),
         Expanded(
-          // 直接把外部 controller 交给 TextField（唯一数据源），不再在 build 中
-          // 把文本同步进 MiuixInputField 的内部 controller——那会在构建期间触发
-          // EditableText/选区 Overlay 的 markNeedsBuild。
           child: AppSearchField(
             controller: widget.controller,
             focusNode: widget.focusNode,
@@ -74,27 +71,36 @@ class _FloatingSearchBarState extends State<_FloatingSearchBar> {
         const SizedBox(width: 6),
         Builder(builder: (context) {
           final scheme = Theme.of(context).colorScheme;
-          return MiuixButton(
-            colors: MiuixButtonColors(
-              color: scheme.primary,
-              disabledColor: scheme.primary.withValues(alpha: 0.4),
-              contentColor: scheme.onPrimary,
-              disabledContentColor: scheme.onPrimary.withValues(alpha: 0.5),
-            ),
-            minWidth: 52,
-            minHeight: 36,
-            cornerRadius: 18,
-            insideMargin:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          return MiuixPressable(
             onPressed: () {
               final q = widget.controller is SearchChipController
                   ? (widget.controller as SearchChipController).query
                   : widget.controller.text;
               widget.onFinish(q);
             },
-            child: Text(
-              "搜索".tl,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            feedbackType: MiuixPressFeedbackType.sink,
+            sinkAmount: 0.96,
+            shape: const StadiumBorder(),
+            child: Container(
+              height: 36,
+              constraints: const BoxConstraints(minWidth: 52),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: scheme.primary,
+                shape: const StadiumBorder(),
+              ),
+              child: Text(
+                "搜索".tl,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.0,
+                  leadingDistribution: TextLeadingDistribution.even,
+                  color: scheme.onPrimary,
+                ),
+              ),
             ),
           );
         }),
@@ -188,10 +194,9 @@ class PreSearchPage extends StatelessWidget {
   void insertFavoriteChip(String keyword) {
     final k = keyword.trim();
     if (k.isEmpty) return;
+    // Only mutate chips — AppSearchField listens via ListenableBuilder.
+    // Avoid findSuggestions/update/requestFocus which rebuild the page and flash.
     controller.addChip(k);
-    findSuggestions();
-    searchController.update([1, 100]);
-    _focusNode.requestFocus();
   }
 
   void findSuggestions() {
