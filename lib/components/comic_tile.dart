@@ -51,6 +51,50 @@ abstract class ComicTile extends StatelessWidget {
     );
   }
 
+
+  Widget _longPressOptionCapsule({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final primary = Theme.of(context).colorScheme.primary;
+    const shape = StadiumBorder();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: MiuixPressable(
+        onPressed: onTap,
+        feedbackType: MiuixPressFeedbackType.sink,
+        sinkAmount: 1.05,
+        shape: shape,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: ShapeDecoration(
+            shape: shape,
+            color: primary.withOpacity(0.14),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void onLongTap_() async {
     bool favorite = false;
     final action = await showMiuixDialog<String>(
@@ -77,55 +121,50 @@ abstract class ComicTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Options in a MiuixCard so press overlays clip to squircle
-                  // and the sheet matches settings-style HyperOS menus.
-                  MiuixCard(
-                    cornerRadius: 16,
-                    insideMargin: EdgeInsets.zero,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MiuixBasicComponent(
-                          startAction: const Icon(Icons.article),
-                          title: "查看详情".tl,
-                          onClick: () => close("view"),
-                        ),
-                        if (favoriteItem != null)
-                          MiuixBasicComponent(
-                            startAction: const Icon(Icons.bookmark_rounded),
-                            title: "本地收藏".tl,
-                            onClick: () {
-                              setState(() {
-                                favorite = true;
-                              });
-                            },
-                          ),
-                        if (read != null)
-                          MiuixBasicComponent(
-                            startAction: const Icon(Icons.chrome_reader_mode),
-                            title: "阅读".tl,
-                            onClick: () => close("read"),
-                          ),
-                        MiuixBasicComponent(
-                          startAction: const Icon(Icons.search),
-                          title: "搜索".tl,
-                          onClick: () => close("search"),
-                        ),
-                        MiuixBasicComponent(
-                          startAction: const Icon(Icons.block),
-                          title: "屏蔽".tl,
-                          onClick: () => close("block"),
-                        ),
-                        if (addonMenuOptions != null)
-                          for (var option in addonMenuOptions!)
-                            MiuixBasicComponent(
-                              startAction: Icon(option.icon),
-                              title: option.title,
-                              onClick: () => option.onTap(comicID),
-                            ),
-                      ],
-                    ),
+                  _longPressOptionCapsule(
+                    context: context,
+                    icon: Icons.article,
+                    label: "查看详情".tl,
+                    onTap: () => close("view"),
                   ),
+                  if (favoriteItem != null)
+                    _longPressOptionCapsule(
+                      context: context,
+                      icon: Icons.bookmark_rounded,
+                      label: "本地收藏".tl,
+                      onTap: () {
+                        setState(() {
+                          favorite = true;
+                        });
+                      },
+                    ),
+                  if (read != null)
+                    _longPressOptionCapsule(
+                      context: context,
+                      icon: Icons.chrome_reader_mode,
+                      label: "阅读".tl,
+                      onTap: () => close("read"),
+                    ),
+                  _longPressOptionCapsule(
+                    context: context,
+                    icon: Icons.search,
+                    label: "搜索".tl,
+                    onTap: () => close("search"),
+                  ),
+                  _longPressOptionCapsule(
+                    context: context,
+                    icon: Icons.block,
+                    label: "屏蔽".tl,
+                    onTap: () => close("block"),
+                  ),
+                  if (addonMenuOptions != null)
+                    for (var option in addonMenuOptions!)
+                      _longPressOptionCapsule(
+                        context: context,
+                        icon: option.icon,
+                        label: option.title,
+                        onTap: () => option.onTap(comicID),
+                      ),
                 ],
               ),
             );

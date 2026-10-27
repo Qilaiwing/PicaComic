@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:pica_comic/tools/search_query.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
@@ -547,16 +548,14 @@ class JmNetwork {
       String keyword, int page, ComicsOrder order) async {
     appdata.searchHistory.remove(keyword);
     appdata.searchHistory.add(keyword);
-    // Upstream Pacalini: trim + collapse double spaces + encodeComponent + %20→+.
-    // No keyword rewriting (no AND/+ quoting). Extra: encode () so titles with
-    // parentheses do not return non-JSON bodies (FormatException).
-    keyword = keyword.trim();
-    keyword = keyword.replaceAll('  ', ' ');
-    LogManager.addLog(LogLevel.info, "Search", "jm raw=[$keyword]");
-    keyword = Uri.encodeComponent(keyword)
-        .replaceAll('(', '%28')
-        .replaceAll(')', '%29')
-        .replaceAll('%20', '+');
+    final rawKeyword = keyword.trim().replaceAll('  ', ' ');
+    keyword = jmKeyword(rawKeyword);
+    LogManager.addLog(
+        LogLevel.info,
+        "Search",
+        "jm titlePlain=${isSearchTitlePlainText(rawKeyword)} "
+            "raw=[$rawKeyword] sent=[$keyword]");
+    keyword = jmEncodeSearchQuery(keyword);
     LogManager.addLog(LogLevel.info, "Search", "jm encoded=[$keyword]");
     appdata.writeHistory();
     Res res;

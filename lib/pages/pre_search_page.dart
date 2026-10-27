@@ -121,7 +121,6 @@ class PreSearchController extends StateController {
 
   String? language;
 
-  bool limitHistory = true;
 
   void updateOptions() {
     for (var source in ComicSource.sources) {
@@ -1072,178 +1071,79 @@ class PreSearchPage extends StatelessWidget {
       child: StateBuilder<PreSearchController>(
         id: "history",
         builder: (logic) {
-          final isEmpty = appdata.searchHistory.isEmpty;
-          var length = appdata.searchHistory.length;
-          if (length < 12) {
-            logic.limitHistory = false;
-          }
-          final showCount = logic.limitHistory ? length.clamp(0, 12) : length;
-
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            decoration: ShapeDecoration(
-              shape: MiuixSquircleBorder(
-                cornerRadius: 18,
-                side: BorderSide(
-                  color: isDark
-                      ? const Color(0x18FFFFFF)
-                      : const Color(0x0A000000),
-                  width: 0.6,
-                ),
-              ),
-              color: isDark ? const Color(0xFF222226) : Colors.white,
+          final histories = List<String>.from(appdata.searchHistory.reversed);
+          return _SwipePagedChipsCard(
+            title: "历史搜索".tl,
+            leading: MiuixIcon(
+              vector: MiuixIcons.extended.byName('recent') ??
+                  MiuixIcons.os4.settings,
+              size: 16,
+              tint: primaryColor,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    MiuixIcon(
-                      vector: MiuixIcons.extended.byName('recent') ??
-                          MiuixIcons.os4.settings,
-                      size: 16,
-                      tint: primaryColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      "历史搜索".tl,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: primaryColor,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (!isEmpty) buildClearHistoryButton(logic),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                if (isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      "暂无搜索历史".tl,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark
-                            ? const Color(0x66FFFFFF)
-                            : const Color(0x66000000),
-                      ),
-                    ),
-                  )
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+            trailing: histories.isEmpty ? null : buildClearHistoryButton(logic),
+            emptyText: "暂无搜索历史".tl,
+            isDark: isDark,
+            primaryColor: primaryColor,
+            pageSize: 10,
+            itemCount: histories.length,
+            itemBuilder: (context, i) {
+              final history = histories[i];
+              return MiuixPressable(
+                onPressed: () => search(history),
+                feedbackType: MiuixPressFeedbackType.sink,
+                sinkAmount: 1.05,
+                shape: const StadiumBorder(),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(13, 6, 8, 6),
+                  decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: isDark
+                        ? const Color(0xFF2A2A2E)
+                        : const Color(0xFFF0F1F5),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (int i = 0; i < showCount; i++) ...[
-                        Builder(
-                          builder: (context) {
-                            final history = appdata.searchHistory[
-                                appdata.searchHistory.length - i - 1];
-                            return MiuixPressable(
-                              onPressed: () => search(history),
-                              feedbackType: MiuixPressFeedbackType.sink,
-                              sinkAmount: 1.05,
-                              shape: const StadiumBorder(),
-                              child: Container(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(13, 6, 8, 6),
-                                  decoration: ShapeDecoration(
-                                    shape: const StadiumBorder(),
-                                    color: isDark
-                                        ? const Color(0xFF2A2A2E)
-                                        : const Color(0xFFF0F1F5),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          maxWidth:
-                                              MediaQuery.sizeOf(context).width * 0.62,
-                                        ),
-                                        child: Text(
-                                          history,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                          color: isDark
-                                              ? const Color(0xDDFFFFFF)
-                                              : const Color(0xDD000000),
-                                        ),
-                                      ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () {
-                                          appdata.searchHistory.remove(history);
-                                          logic.update(["history"]);
-                                          appdata.writeHistory();
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(2),
-                                          child: MiuixIcon(
-                                            vector: MiuixIcons.basic.close,
-                                            size: 12,
-                                            tint: isDark
-                                                ? const Color(0x88FFFFFF)
-                                                : const Color(0x77000000),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-);
-                          },
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.sizeOf(context).width * 0.62,
                         ),
-                      ],
-                      if (length > 12)
-                        MiuixPressable(
- onPressed: () {
-                              logic.limitHistory = !logic.limitHistory;
-                              logic.update(["history"]);
-                            },
-                            feedbackType: MiuixPressFeedbackType.sink,
-                            sinkAmount: 1.05,
-                            shape: const StadiumBorder(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: ShapeDecoration(
-                                shape: const StadiumBorder(),
-                                color: primaryColor.withOpacity(0.12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    logic.limitHistory ? "展开更多".tl : "收起".tl,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: primaryColor,
-                                    ),
-                                  ),
-                                  Icon(
-                                    logic.limitHistory
-                                        ? Icons.keyboard_arrow_down_rounded
-                                        : Icons.keyboard_arrow_up_rounded,
-                                    size: 16,
-                                    color: primaryColor,
-                                  ),
-                                ],
-                              ),
-                            ),
-),
+                        child: Text(
+                          history,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark
+                                ? const Color(0xDDFFFFFF)
+                                : const Color(0xDD000000),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          appdata.searchHistory.remove(history);
+                          logic.update(["history"]);
+                          appdata.writeHistory();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: MiuixIcon(
+                            vector: MiuixIcons.basic.close,
+                            size: 12,
+                            tint: isDark
+                                ? const Color(0x88FFFFFF)
+                                : const Color(0x77000000),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-              ],
-            ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -1252,156 +1152,274 @@ class PreSearchPage extends StatelessWidget {
     yield SliverToBoxAdapter(
       child: StateBuilder<PreSearchController>(
         builder: (logic) {
-          final isEmpty = appdata.favoriteTags.isEmpty;
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            decoration: ShapeDecoration(
-              shape: MiuixSquircleBorder(
-                cornerRadius: 18,
-                side: BorderSide(
-                  color: isDark
-                      ? const Color(0x18FFFFFF)
-                      : const Color(0x0A000000),
-                  width: 0.6,
-                ),
-              ),
-              color: isDark ? const Color(0xFF222226) : Colors.white,
+          final tags = appdata.favoriteTags.toList();
+          return _SwipePagedChipsCard(
+            title: "收藏标签".tl,
+            leading: MiuixIcon(
+              vector: MiuixIcons.os4.favorites,
+              size: 16,
+              tint: primaryColor,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    MiuixIcon(
-                      vector: MiuixIcons.os4.favorites,
-                      size: 16,
-                      tint: primaryColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      "收藏标签".tl,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: primaryColor,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (!isEmpty) buildClearFavoriteButton(logic),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                if (isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      "暂无收藏标签".tl,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark
-                            ? const Color(0x66FFFFFF)
-                            : const Color(0x66000000),
-                      ),
-                    ),
-                  )
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+            trailing: tags.isEmpty ? null : buildClearFavoriteButton(logic),
+            emptyText: "暂无收藏标签".tl,
+            isDark: isDark,
+            primaryColor: primaryColor,
+            pageSize: 10,
+            itemCount: tags.length,
+            itemBuilder: (context, i) {
+              final tag = tags[i];
+              final source = tag.split(':').first;
+              final keyword = tag.substring(tag.indexOf(':') + 1);
+              return MiuixPressable(
+                onPressed: () {
+                  String type = switch (source) {
+                    "Picacg" => 'picacg',
+                    "EHentai" => 'ehentai',
+                    "JMComic" => 'jm',
+                    "hitomi" => 'hitomi',
+                    "HtComic" => 'htmanga',
+                    "Nhentai" => 'nhentai',
+                    _ => source
+                  };
+                  search(keyword, type);
+                },
+                onLongPress: () => insertFavoriteChip(keyword),
+                feedbackType: MiuixPressFeedbackType.sink,
+                sinkAmount: 1.05,
+                shape: const StadiumBorder(),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(6, 4, 8, 4),
+                  decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: isDark
+                        ? const Color(0xFF2A2A2E)
+                        : const Color(0xFFF0F1F5),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (var tag in appdata.favoriteTags) ...[
-                        Builder(
-                          builder: (context) {
-                            final source = tag.split(':').first;
-                            final keyword = tag.substring(tag.indexOf(':') + 1);
-                            return MiuixPressable(
-                              onPressed: () {
-                                  String type = switch (source) {
-                                    "Picacg" => 'picacg',
-                                    "EHentai" => 'ehentai',
-                                    "JMComic" => 'jm',
-                                    "hitomi" => 'hitomi',
-                                    "HtComic" => 'htmanga',
-                                    "Nhentai" => 'nhentai',
-                                    _ => source
-                                  };
-                                  search(keyword, type);
-                                },
-                              onLongPress: () => insertFavoriteChip(keyword),
-                              feedbackType: MiuixPressFeedbackType.sink,
-                              sinkAmount: 1.05,
-                              shape: const StadiumBorder(),
-                              child: Container(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(6, 4, 8, 4),
-                                  decoration: ShapeDecoration(
-                                    shape: const StadiumBorder(),
-                                    color: isDark
-                                        ? const Color(0xFF2A2A2E)
-                                        : const Color(0xFFF0F1F5),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 6, vertical: 2),
-                                        decoration: ShapeDecoration(
-                                          shape: const StadiumBorder(),
-                                          color: primaryColor.withOpacity(0.12),
-                                        ),
-                                        child: Text(
-                                          source,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: primaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        keyword,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: isDark
-                                              ? const Color(0xDDFFFFFF)
-                                              : const Color(0xDD000000),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () {
-                                          appdata.favoriteTags.remove(tag);
-                                          logic.update();
-                                          appdata.writeHistory();
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(2),
-                                          child: MiuixIcon(
-                                            vector: MiuixIcons.basic.close,
-                                            size: 12,
-                                            tint: isDark
-                                                ? const Color(0x88FFFFFF)
-                                                : const Color(0x77000000),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-);
-                          },
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: ShapeDecoration(
+                          shape: const StadiumBorder(),
+                          color: primaryColor.withOpacity(0.12),
                         ),
-                      ],
+                        child: Text(
+                          source,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        keyword,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark
+                              ? const Color(0xDDFFFFFF)
+                              : const Color(0xDD000000),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          appdata.favoriteTags.remove(tag);
+                          logic.update();
+                          appdata.writeHistory();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: MiuixIcon(
+                            vector: MiuixIcons.basic.close,
+                            size: 12,
+                            tint: isDark
+                                ? const Color(0x88FFFFFF)
+                                : const Color(0x77000000),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-              ],
-            ),
+                ),
+              );
+            },
           );
         },
+      ),
+    );
+  }
+}
+
+/// Fixed-height card: chips paginated, swipe left/right between pages.
+class _SwipePagedChipsCard extends StatefulWidget {
+  const _SwipePagedChipsCard({
+    required this.title,
+    required this.leading,
+    required this.emptyText,
+    required this.isDark,
+    required this.primaryColor,
+    required this.pageSize,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.trailing,
+  });
+
+  final String title;
+  final Widget leading;
+  final Widget? trailing;
+  final String emptyText;
+  final bool isDark;
+  final Color primaryColor;
+  final int pageSize;
+  final int itemCount;
+  final Widget Function(BuildContext context, int index) itemBuilder;
+
+  @override
+  State<_SwipePagedChipsCard> createState() => _SwipePagedChipsCardState();
+}
+
+class _SwipePagedChipsCardState extends State<_SwipePagedChipsCard> {
+  late final PageController _pageController;
+  int _page = 0;
+
+  int get _pageCount {
+    if (widget.itemCount <= 0) return 1;
+    return (widget.itemCount + widget.pageSize - 1) ~/ widget.pageSize;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SwipePagedChipsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_page >= _pageCount) {
+      _page = _pageCount - 1;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(_page);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmpty = widget.itemCount == 0;
+    // ~3 rows of stadium chips + gaps
+    const pageHeight = 118.0;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: ShapeDecoration(
+        shape: MiuixSquircleBorder(
+          cornerRadius: 18,
+          side: BorderSide(
+            color: widget.isDark
+                ? const Color(0x18FFFFFF)
+                : const Color(0x0A000000),
+            width: 0.6,
+          ),
+        ),
+        color: widget.isDark ? const Color(0xFF222226) : Colors.white,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              widget.leading,
+              const SizedBox(width: 6),
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: widget.primaryColor,
+                ),
+              ),
+              const Spacer(),
+              if (widget.trailing != null) widget.trailing!,
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                widget.emptyText,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: widget.isDark
+                      ? const Color(0x66FFFFFF)
+                      : const Color(0x66000000),
+                ),
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: pageHeight,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _pageCount,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (context, page) {
+                  final start = page * widget.pageSize;
+                  final end = (start + widget.pageSize).clamp(0, widget.itemCount);
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (var i = start; i < end; i++)
+                          widget.itemBuilder(context, i),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (_pageCount > 1) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < _pageCount; i++)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: i == _page ? 14 : 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: i == _page
+                            ? widget.primaryColor
+                            : (widget.isDark
+                                ? const Color(0x44FFFFFF)
+                                : const Color(0x33000000)),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ],
       ),
     );
   }
