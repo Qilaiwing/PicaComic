@@ -539,8 +539,11 @@ class JmNetwork {
     appdata.searchHistory.add(keyword);
     final rawKeyword = keyword.trim();
     keyword = jmKeyword(rawKeyword);
-    LogManager.addLog(LogLevel.info, "Search",
-        "jm keyword raw=[$rawKeyword] sent=[$keyword]");
+    LogManager.addLog(
+        LogLevel.info,
+        "Search",
+        "jm titlePlain=${isSearchTitlePlainText(rawKeyword)} "
+            "raw=[$rawKeyword] sent=[$keyword]");
     keyword = Uri.encodeComponent(keyword);
     keyword = keyword.replaceAll('%20', '+');
     appdata.writeHistory();

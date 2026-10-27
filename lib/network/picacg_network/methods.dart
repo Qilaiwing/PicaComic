@@ -280,8 +280,11 @@ class PicacgNetwork {
       String keyWord, String sort, int page,
       {bool addToHistory = false}) async {
     final sentKeyword = picacgKeyword(keyWord);
-    LogManager.addLog(LogLevel.info, "Search",
-        "picacg keyword raw=[$keyWord] sent=[$sentKeyword]");
+    LogManager.addLog(
+        LogLevel.info,
+        "Search",
+        "picacg titlePlain=${isSearchTitlePlainText(keyWord)} "
+            "raw=[${keyWord.trim()}] sent=[$sentKeyword]");
     var response = await post('$apiUrl/comics/advanced-search?page=$page',
         {"keyword": sentKeyword, "sort": sort});
     if (page == 1 && addToHistory && keyWord != "") {
