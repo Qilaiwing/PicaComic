@@ -289,7 +289,10 @@ class _EhLoginPageState extends State<EhLoginPage> {
       if(!mounted)  return;
       if (b) {
         context.pop();
-        showToast(message: "登录成功".tl);
+        showToast(
+          message: "欢迎回来，@name".tlParams({"name": "ehentai".tl}),
+          icon: const Icon(Icons.check),
+        );
       } else {
         EhNetwork().cookieJar.deleteUri(Uri.parse('https://e-hentai.org'));
         EhNetwork().cookieJar.deleteUri(Uri.parse('https://exhentai.org'));

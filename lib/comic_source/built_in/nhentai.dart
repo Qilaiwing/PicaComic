@@ -1,3 +1,4 @@
+import 'package:pica_comic/tools/translations.dart';
 import 'dart:async';
 import 'dart:collection';
 
@@ -86,6 +87,10 @@ final nhentai = ComicSource.named(
         var source = ComicSource.find('nhentai')!;
         source.data["account"] = 'ok';
         source.saveData();
+        showToast(
+          message: "欢迎回来，@name".tlParams({"name": source.name.tl}),
+          icon: const Icon(Icons.check),
+        );
       }
     },
     logout: () {

@@ -89,6 +89,7 @@ class AccountsPage extends StatelessWidget {
               if (element.account!.login != null && context.mounted) {
                 await context.to(
                   () => _LoginPage(
+                    sourceName: element.name,
                     login: element.account!.login!,
                     loginWithSlider: element.account!.loginWithSlider,
                     registerWebsite: element.account!.registerWebsite,
@@ -155,7 +156,12 @@ class AccountsPage extends StatelessWidget {
                 if (res.error) {
                   showToast(message: res.errorMessage!);
                 } else {
-                  showToast(message: "重新登录成功".tl);
+                  showToast(
+                    message: "欢迎回来，@name".tlParams({
+                      "name": element.name.tl,
+                    }),
+                    icon: const Icon(Icons.check),
+                  );
                 }
                 logic._reLogin[element.key] = false;
                 logic.update();
@@ -198,11 +204,13 @@ class AccountsPage extends StatelessWidget {
 
 class _LoginPage extends StatefulWidget {
   const _LoginPage({
+    required this.sourceName,
     required this.login,
     this.loginWithSlider,
     this.registerWebsite,
   });
 
+  final String sourceName;
   final LoginFunction login;
 
   /// 需要滑块验证时使用的登录函数。
@@ -323,7 +331,7 @@ class _LoginPageState extends State<_LoginPage> {
         ),
         const SizedBox(height: 14),
         Text(
-          "欢迎回来".tl,
+          "欢迎回来，@name".tlParams({"name": widget.sourceName.tl}),
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w700,
@@ -517,7 +525,12 @@ class _LoginPageState extends State<_LoginPage> {
       showToast(message: res.errorMessageWithoutNull);
     } else {
       setState(() => _loading = false);
-      showToast(message: "登录成功".tl, icon: const Icon(Icons.check));
+      showToast(
+        message: "欢迎回来，@name".tlParams({
+          "name": widget.sourceName.tl,
+        }),
+        icon: const Icon(Icons.check),
+      );
       if (mounted) context.pop();
     }
   }
