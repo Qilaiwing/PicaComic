@@ -223,21 +223,23 @@ class _SearchResultPageState extends State<_SearchResultPage> {
                 ],
               ),
               child: MiuixPressable(
- onPressed: () {
-                    var s = controller.commitPending();
-                    setState(() {
-                      keyword = s;
-                    });
-                  },
- feedbackType: MiuixPressFeedbackType.sink,
- child: Center(
-                    child: MiuixIcon(
-                      vector: MiuixIcons.basic.search,
-                      size: 24,
-                      tint: Colors.white,
-                    ),
+                onPressed: () {
+                  // Short-tap: search immediately (do not open 切换源 menu).
+                  final s = controller.commitPending();
+                  setState(() {
+                    keyword = s;
+                  });
+                },
+                onLongPress: more,
+                feedbackType: MiuixPressFeedbackType.sink,
+                child: Center(
+                  child: MiuixIcon(
+                    vector: MiuixIcons.basic.search,
+                    size: 24,
+                    tint: Colors.white,
                   ),
-),
+                ),
+              ),
             )
           : null,
  content: (_) => NotificationListener<ScrollUpdateNotification>(

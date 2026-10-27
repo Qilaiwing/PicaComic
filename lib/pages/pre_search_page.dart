@@ -191,7 +191,7 @@ class PreSearchPage extends StatelessWidget {
     );
   }
 
-  /// Long-press a favorite tag: append its keyword as a chip (stay on page).
+  /// Long-press a favorite tag: append its keyword as plain text (stay on page).
   void insertFavoriteChip(String keyword) {
     final k = keyword.trim();
     if (k.isEmpty) return;
