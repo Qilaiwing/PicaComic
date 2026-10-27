@@ -91,9 +91,9 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
     );
 
     return Padding(
+      key: ValueKey<String>(key),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Container(
-        key: Key(key),
         decoration: ShapeDecoration(
           color: Theme.of(context).brightness == Brightness.dark
               ? const Color(0xFF1C1C1E)

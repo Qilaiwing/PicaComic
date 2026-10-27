@@ -143,19 +143,22 @@ class _JmSettingsState extends State<JmSettings> {
               title: "更新API域名".tl,
               onClick: () => JmSettings.updateApiDomains(true),
             ),
-            MiuixSwitchPreference(
+            MiuixBasicComponent(
               startAction: const Icon(Icons.today),
               title: "自动签到".tl,
-              summary: "勾选启用, 点击测试".tl,
-              value: autoCheckIn,
-              onChanged: (b) {
-                b ? appdata.settings[88] = "1" : appdata.settings[88] = "0";
-                setState(() {
-                  autoCheckIn = b;
-                });
-                appdata.updateSettings();
-                if (autoCheckIn && jm.isLogin) JmSettings.daily(false);
-              },
+              summary: "开关启用；点击整行可测试签到".tl,
+              onClick: () => JmSettings.daily(true),
+              endActions: [
+                MiuixSwitch(
+                  value: autoCheckIn,
+                  onChanged: (b) {
+                    appdata.settings[88] = b ? "1" : "0";
+                    setState(() => autoCheckIn = b);
+                    appdata.updateSettings();
+                    if (b && jm.isLogin) JmSettings.daily(false);
+                  },
+                ),
+              ],
             ),
           ],
         ),

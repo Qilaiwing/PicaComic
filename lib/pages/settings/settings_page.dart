@@ -267,6 +267,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
     Widget buildItem(String name, int id) {
       final bool selected = id == currentPage;
 
+      const itemShape = MiuixSquircleBorder(cornerRadius: 16);
       Widget content = Container(
         width: double.infinity,
         height: 52,
@@ -275,7 +276,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
           color: selected
               ? colors.primary.withOpacity(0.15)
               : colors.surface,
-          shape: const MiuixSquircleBorder(cornerRadius: 16),
+          shape: itemShape,
         ),
         child: Row(children: [
           Icon(
@@ -306,14 +307,15 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         child: MiuixPressable(
- onPressed: () => setState(() {
-              _rightBehavior.state.heightOffset = 0;
-              _rightBehavior.state.contentOffset = 0;
-              currentPage = id;
-            }),
- feedbackType: MiuixPressFeedbackType.sink,
- child: content,
-),
+          onPressed: () => setState(() {
+            _rightBehavior.state.heightOffset = 0;
+            _rightBehavior.state.contentOffset = 0;
+            currentPage = id;
+          }),
+          feedbackType: MiuixPressFeedbackType.sink,
+          shape: itemShape,
+          child: content,
+        ),
       );
     }
 

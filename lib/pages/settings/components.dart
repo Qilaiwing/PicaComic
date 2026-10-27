@@ -112,8 +112,11 @@ class NewPageSetting extends StatelessWidget {
   }
 }
 
-/// HyperOS 风格带 AppData 绑定的下拉选择设置项
-class SelectSettingWithAppdata extends StatelessWidget {
+/// HyperOS 风格带 AppData 绑定的下拉选择设置项。
+///
+/// 使用 [showMiuixMenu] 而不是嵌入式 WindowDropdownPreference：
+/// 后者在设置页滚动宿主里 OverlayEntry 点选回调经常丢，导致分流/站点等无法切换。
+class SelectSettingWithAppdata extends StatefulWidget {
   const SelectSettingWithAppdata({
     super.key,
     required this.icon,
@@ -130,27 +133,63 @@ class SelectSettingWithAppdata extends StatelessWidget {
   final void Function()? onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    int index = int.tryParse(appdata.settings[settingsIndex]) ?? 0;
-    if (index < 0 || index >= options.length) {
-      index = 0;
+  State<SelectSettingWithAppdata> createState() =>
+      _SelectSettingWithAppdataState();
+}
+
+class _SelectSettingWithAppdataState extends State<SelectSettingWithAppdata> {
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = _clamp(int.tryParse(appdata.settings[widget.settingsIndex]) ?? 0);
+  }
+
+  @override
+  void didUpdateWidget(covariant SelectSettingWithAppdata oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.settingsIndex != widget.settingsIndex ||
+        oldWidget.options.length != widget.options.length) {
+      _index = _clamp(int.tryParse(appdata.settings[widget.settingsIndex]) ?? 0);
     }
-    return MiuixWindowDropdownPreference(
-      title: title,
-      startAction: icon,
-      items: options,
-      selectedIndex: index,
-      onSelectedIndexChange: (i) {
-        appdata.settings[settingsIndex] = i.toString();
-        appdata.updateSettings();
-        onChanged?.call();
-      },
+  }
+
+  int _clamp(int v) {
+    if (widget.options.isEmpty) return 0;
+    if (v < 0 || v >= widget.options.length) return 0;
+    return v;
+  }
+
+  Future<void> _open() async {
+    final picked = await showMiuixMenu(
+      context: context,
+      anchorBounds: miuixAnchorRectOf(context),
+      items: widget.options,
+      selectedIndex: _index,
+      alignment: MiuixPopupAlign.end,
+      minWidth: 168,
+    );
+    if (!mounted || picked == null) return;
+    setState(() => _index = picked);
+    appdata.settings[widget.settingsIndex] = picked.toString();
+    appdata.updateSettings();
+    widget.onChanged?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SelectPreferenceRow(
+      title: widget.title,
+      startAction: widget.icon,
+      valueText: widget.options.isEmpty ? '' : widget.options[_index],
+      onClick: _open,
     );
   }
 }
 
-/// 通用 HyperOS 下拉选择项
-class SelectSetting extends StatelessWidget {
+/// 通用 HyperOS 下拉选择项（[showMiuixMenu]）。
+class SelectSetting extends StatefulWidget {
   const SelectSetting({
     super.key,
     required this.leading,
@@ -167,17 +206,95 @@ class SelectSetting extends StatelessWidget {
   final int initialValue;
 
   @override
-  Widget build(BuildContext context) {
-    int index = initialValue;
-    if (index < 0 || index >= values.length) {
-      index = 0;
+  State<SelectSetting> createState() => _SelectSettingState();
+}
+
+class _SelectSettingState extends State<SelectSetting> {
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = _clamp(widget.initialValue);
+  }
+
+  @override
+  void didUpdateWidget(covariant SelectSetting oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue ||
+        oldWidget.values.length != widget.values.length) {
+      _index = _clamp(widget.initialValue);
     }
-    return MiuixWindowDropdownPreference(
+  }
+
+  int _clamp(int v) {
+    if (widget.values.isEmpty) return 0;
+    if (v < 0 || v >= widget.values.length) return 0;
+    return v;
+  }
+
+  Future<void> _open() async {
+    final picked = await showMiuixMenu(
+      context: context,
+      anchorBounds: miuixAnchorRectOf(context),
+      items: widget.values,
+      selectedIndex: _index,
+      alignment: MiuixPopupAlign.end,
+      minWidth: 168,
+    );
+    if (!mounted || picked == null) return;
+    setState(() => _index = picked);
+    widget.onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SelectPreferenceRow(
+      title: widget.title,
+      startAction: widget.leading,
+      valueText: widget.values.isEmpty ? '' : widget.values[_index],
+      onClick: _open,
+    );
+  }
+}
+
+class _SelectPreferenceRow extends StatelessWidget {
+  const _SelectPreferenceRow({
+    required this.title,
+    required this.startAction,
+    required this.valueText,
+    required this.onClick,
+  });
+
+  final String title;
+  final Widget startAction;
+  final String valueText;
+  final VoidCallback onClick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = MiuixTheme.of(context);
+    final actionColor = theme.colors.onSurfaceVariantActions;
+    return MiuixBasicComponent(
       title: title,
-      startAction: leading,
-      items: values,
-      selectedIndex: index,
-      onSelectedIndexChange: onChanged,
+      startAction: startAction,
+      endActions: [
+        Flexible(
+          fit: FlexFit.loose,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: Text(
+              valueText,
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textStyles.body2.copyWith(color: actionColor),
+            ),
+          ),
+        ),
+        Icon(Icons.arrow_drop_down, size: 22, color: actionColor),
+      ],
+      onClick: onClick,
     );
   }
 }

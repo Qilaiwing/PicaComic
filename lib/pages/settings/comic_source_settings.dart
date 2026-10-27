@@ -223,33 +223,47 @@ class _ComicSourceSettingsState extends State<ComicSourceSettings> {
           ],
           startAction: const Icon(Icons.dashboard_customize),
         ),
-        MiuixTextField(
-                label: "URL",
-                useLabelAsPlaceholder: true,
-                singleLine: true,
-                trailingIcon: MiuixIconButton(onPressed: () => handleAddSource(url), child: const Icon(Icons.check)),
-                onChanged: (value) {
-                  url = value;
-                },
-                onSubmitted: handleAddSource)
-            .paddingHorizontal(16)
-            .paddingBottom(16),
-        Row(
-          children: [
-            const Spacer(),
-            MiuixTextButton(onPressed: chooseFile, "选择文件".tl)
-                .paddingLeft(8),
-            const Spacer(),
-            MiuixTextButton(
-                onPressed: () {
-                  showPopUpWidget(
-                      context, _ComicSourceList(handleAddSource));
-                },
-                "浏览列表".tl),
-            const Spacer(),
-          ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: MiuixTextField(
+            label: "URL",
+            useLabelAsPlaceholder: true,
+            singleLine: true,
+            trailingIcon: MiuixIconButton(
+              onPressed: () => handleAddSource(url),
+              child: const Icon(Icons.check),
+            ),
+            onChanged: (value) {
+              url = value;
+            },
+            onSubmitted: handleAddSource,
+          ),
         ),
-        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: MiuixButton(
+                  onPressed: chooseFile,
+                  child: Text("选择文件".tl),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: MiuixButton(
+                  onPressed: () {
+                    showPopUpWidget(
+                      context,
+                      _ComicSourceList(handleAddSource),
+                    );
+                  },
+                  child: Text("浏览列表".tl),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
