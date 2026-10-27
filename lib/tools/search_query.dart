@@ -11,6 +11,19 @@ const int kSearchChipMaxChars = 24;
 /// Rule (either condition => plain text, do not chip):
 /// 1. trimmed length > [kSearchChipMaxChars] (24), or
 /// 2. length > 16 AND 3+ whitespace-separated tokens (English-style title).
+
+/// Whether pending input should be turned into chip(s).
+/// Single short keyword alone stays plain text; only multi-term / combining chips.
+/// Titles still blocked by [isSearchTitlePlainText].
+bool shouldAutoChipPending(String pending, {required int existingChipCount}) {
+  final t = pending.trim();
+  if (t.isEmpty) return false;
+  if (isSearchTitlePlainText(t)) return false;
+  final terms = splitSearchTerms(t);
+  if (existingChipCount > 0) return true; // combining with existing chips
+  return terms.length >= 2; // only chip when multiple terms
+}
+
 bool isSearchTitlePlainText(String s) {
   final t = s.trim();
   if (t.isEmpty) return false;

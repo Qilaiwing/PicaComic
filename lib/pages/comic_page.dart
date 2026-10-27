@@ -1253,38 +1253,63 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
     Widget buildItem(String title, dynamic icon, VoidCallback onTap,
         [VoidCallback? onLongPress]) {
-      final primary = Theme.of(context).colorScheme.primary;
-      // Miuix 次级按钮：与下方「下载/开始阅读」同高同圆角。
+      final scheme = Theme.of(context).colorScheme;
+      final primary = scheme.primary;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      // Light mode: tinted fill + primary border for contrast; dark keeps soft surface.
+      final bg = isDark
+          ? scheme.surfaceContainerHighest.withValues(alpha: 0.55)
+          : primary.withValues(alpha: 0.10);
+      final borderColor = isDark
+          ? scheme.outline.withValues(alpha: 0.22)
+          : primary.withValues(alpha: 0.42);
+      final shape = RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(_kActionRadius),
+        side: BorderSide(color: borderColor, width: 1),
+      );
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 2),
         child: GestureDetector(
           onLongPress: onLongPress,
-          child: MiuixButton(
-            cornerRadius: _kActionRadius,
-            minWidth: 0,
-            minHeight: _kActionHeight,
-            insideMargin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          child: MiuixPressable(
             onPressed: onTap,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon is MiuixVectorIcon)
-                  MiuixIcon(vector: icon, size: 18, tint: primary)
-                else
-                  Icon(icon as IconData, size: 18, color: primary),
-                const SizedBox(height: 2),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.2,
-                    height: 1.1,
+            feedbackType: MiuixPressFeedbackType.sink,
+            sinkAmount: 0.97,
+            shape: shape,
+            child: Container(
+              height: _kActionHeight,
+              alignment: Alignment.center,
+              decoration: ShapeDecoration(
+                color: bg,
+                shape: shape,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  if (icon is MiuixVectorIcon)
+                    MiuixIcon(vector: icon, size: 18, tint: primary)
+                  else
+                    Icon(icon as IconData, size: 18, color: primary),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                      height: 1.0,
+                      leadingDistribution: TextLeadingDistribution.even,
+                      color: primary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1292,7 +1317,6 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     }
 
     final width = MediaQuery.of(context).size.width;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final actionItems = <Widget>[
       if (logic.history != null && width >= 500)
@@ -1438,8 +1462,10 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                           const Icon(Icons.menu_book_rounded,
                               size: 18, color: Colors.white),
                           const SizedBox(width: 6),
-                          Text("开始阅读".tl,
-                              style: const TextStyle(color: Colors.white)),
+                          Text(
+                            (_logic.history != null ? "继续阅读" : "开始阅读").tl,
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ],
                       ),
                     ),

@@ -1137,9 +1137,11 @@ class PreSearchPage extends StatelessWidget {
                             final history = appdata.searchHistory[
                                 appdata.searchHistory.length - i - 1];
                             return MiuixPressable(
- onPressed: () => search(history),
- feedbackType: MiuixPressFeedbackType.sink,
- child: Container(
+                              onPressed: () => search(history),
+                              feedbackType: MiuixPressFeedbackType.sink,
+                              sinkAmount: 1.05,
+                              shape: const StadiumBorder(),
+                              child: Container(
                                   padding:
                                       const EdgeInsets.fromLTRB(13, 6, 8, 6),
                                   decoration: ShapeDecoration(
@@ -1192,8 +1194,10 @@ class PreSearchPage extends StatelessWidget {
                               logic.limitHistory = !logic.limitHistory;
                               logic.update(["history"]);
                             },
- feedbackType: MiuixPressFeedbackType.sink,
- child: Container(
+                            feedbackType: MiuixPressFeedbackType.sink,
+                            sinkAmount: 1.05,
+                            shape: const StadiumBorder(),
+                            child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
                               decoration: ShapeDecoration(

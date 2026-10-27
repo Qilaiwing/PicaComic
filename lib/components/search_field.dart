@@ -34,6 +34,12 @@ class SearchChipController extends TextEditingController {
     if (idx < 0) return;
     final done = splitSearchTerms(t.substring(0, idx));
     final rest = t.substring(idx + 1);
+    // Single keyword alone (e.g. "全彩 ") — do not chip until combining / multi-term.
+    if (chips.isEmpty &&
+        done.length == 1 &&
+        rest.trim().isEmpty) {
+      return;
+    }
     _busy = true;
     for (final d in done) {
       chips.add(SearchChip(d));
@@ -52,21 +58,27 @@ class SearchChipController extends TextEditingController {
     notifyListeners();
   }
 
-  /// On search submit: turn leftover typing into a chip, then return [query].
-  /// Long / title-like pending text is left as plain text (still in [query]).
+  /// On search submit: chip leftover only when combining / multi-term.
+  /// Single keyword and long titles stay plain text (still in [query]).
   String commitPending() {
     final t = text.trim();
     if (t.isEmpty) return query;
-    // Only skip auto-chip for title-like plain text; short keywords always chip.
-    if (isSearchTitlePlainText(t)) return query;
+    if (!shouldAutoChipPending(t, existingChipCount: chips.length)) {
+      return query;
+    }
     _busy = true;
-    chips.add(SearchChip(t));
+    if (chips.isEmpty) {
+      for (final term in splitSearchTerms(t)) {
+        chips.add(SearchChip(term));
+      }
+    } else {
+      chips.add(SearchChip(t));
+    }
     value = const TextEditingValue(
       text: '',
       selection: TextSelection.collapsed(offset: 0),
     );
     _busy = false;
-    // value= already notified; ensure chip listeners see the new chip list.
     notifyListeners();
     return query;
   }
@@ -84,7 +96,8 @@ class SearchChipController extends TextEditingController {
       _busy = false;
       return;
     }
-    if (isSearchTitlePlainText(t)) {
+    // Single keyword or title → plain text; multi-term short tags → chips.
+    if (isSearchTitlePlainText(t) || splitSearchTerms(t).length <= 1) {
       _busy = true;
       value = TextEditingValue(
         text: t,
