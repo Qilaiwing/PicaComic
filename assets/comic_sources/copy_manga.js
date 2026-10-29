@@ -7,7 +7,7 @@ class CopyManga extends ComicSource {
 
     key = "copy_manga"
 
-    version = "3.2.3"
+    version = "3.2.4"
 
     minAppVersion = "4.0.0"
 
@@ -93,7 +93,7 @@ favorites_ordering: {
     static appVersion = "3.0.6"
     // App 请求签名用的密钥（官方客户端公开常量）
     static signKey = "3af08590311032efe0660550a0563a53"
-    static fallbackHost = "api.copy2000.online"
+    static fallbackHost = "api.copy202601.com"
 
     get region() {
         return this.loadSetting("region") || "1"
@@ -156,6 +156,8 @@ favorites_ordering: {
     }
 
     afterRequest() {
+        // 登录过程中保持设备指纹稳定，避免每次请求换号触发风控
+        if (this._keepDevice) return
         if (this.loadSetting("auto_clear_device_info") === true) this.clearDeviceInfo()
     }
 
@@ -249,22 +251,75 @@ favorites_ordering: {
     // 账号：官方 App 登录接口，token 放在 authorization 请求头
     account = {
         login: async (account, pwd) => {
+            // 官方 App 登录表单：password 为 base64(utf8(pwd-salt))，其后紧跟换行再接 salt。
+            // 不要对 username/password 做 encodeURIComponent（+ 需按字面提交）。
             let salt = String(1000 + Math.floor(Math.random() * 9000))
             let password = CmUtil.base64(CmUtil.utf8Bytes(`${pwd}-${salt}`))
-            let body = `username=${encodeURIComponent(account)}&password=${encodeURIComponent(password)}&salt=${salt}&authorization=Token+`
-            let res = await this.post(`${await this.apiBase()}/login`, {
+            let body = `username=${account}&password=${password}\n&salt=${salt}&authorization=Token+`
+            let headers = {
                 ...this.headers,
                 "authorization": "Token",
                 "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
-            }, body)
-            let data = null
-            try { data = JSON.parse(res.body) } catch (e) {}
-            if (data && data.code === 200 && data.results && data.results.token) {
-                this.saveData("token", data.results.token)
-                this.saveData("username", data.results.username ?? account)
-                return "ok"
             }
-            throw data?.message ?? `Invalid status code: ${res.status}`
+
+            // 候选主机：network2 最新 → 用户配置 → 内置 fallback（旧域名常对 /login 直接 210/断连）
+            let hosts = []
+            let push = (h) => {
+                h = String(h || "").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+                if (h && !hosts.includes(h)) hosts.push(h)
+            }
+            try { push(await this.fetchHost()) } catch (e) {}
+            push(this.loadSetting("base_url"))
+            push(CopyManga.fallbackHost)
+            // 兼容仍能浏览的旧节点，但放最后
+            push("api.copy2000.online")
+
+            this._keepDevice = true
+            let lastError = null
+            try {
+                for (let host of hosts) {
+                    let res
+                    try {
+                        res = await this.post(`https://${host}/api/v3/login`, headers, body)
+                    } catch (e) {
+                        lastError = String(e)
+                        this.deleteData("_api_host")
+                        continue
+                    }
+                    let data = null
+                    try { data = JSON.parse(res.body) } catch (e) {}
+                    if (data && data.code === 200 && data.results && data.results.token) {
+                        this.saveData("token", data.results.token)
+                        this.saveData("username", data.results.username ?? account)
+                        this.saveData("_api_host", { host: host, time: Date.now() })
+                        // 登录成功的域名写回设置，避免下次仍打到已风控的旧节点
+                        let st = this.loadData("settings") || {}
+                        st.base_url = host
+                        this.saveData("settings", st)
+                        return "ok"
+                    }
+                    let msg = data?.message ?? data?.results?.detail ?? `Invalid status code: ${res.status}`
+                    lastError = msg
+                    // 210：破解检测/设备风控 —— 清设备指纹后换下一主机
+                    if (data && data.code === 210) {
+                        this.clearDeviceInfo()
+                        headers = {
+                            ...this.headers,
+                            "authorization": "Token",
+                            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+                        }
+                        continue
+                    }
+                    // 其它业务错误（密码错误等）无需换主机
+                    if (res.status === 200 || (data && data.code && data.code !== 200)) {
+                        throw msg
+                    }
+                }
+            } finally {
+                this._keepDevice = false
+                this.afterRequest()
+            }
+            throw lastError ?? "登录失败"
         },
         logout: () => {
             this.deleteData("token")
