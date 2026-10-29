@@ -17,7 +17,7 @@ class _NetworkSettingsState extends State<NetworkSettings> {
         MiuixSettingsCard(
           children: [
             MiuixArrowPreference(
-              startAction: const Icon(Icons.network_ping),
+              startAction: _mi(MiuixIcons.os4.searchDevice),
               title: "设置代理".tl,
               onClick: () => setProxy(context),
             ),
@@ -27,7 +27,7 @@ class _NetworkSettingsState extends State<NetworkSettings> {
         MiuixSettingsCard(
           children: [
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.dns),
+              startAction: _mi(MiuixIcons.os4.link),
               title: "启用".tl,
               value: appdata.settings[58] == "1",
               onChanged: (value) {
@@ -38,10 +38,11 @@ class _NetworkSettingsState extends State<NetworkSettings> {
                 if (value) {
                   HttpProxyServer.reload();
                 }
+                setNetworkProxy();
               },
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.rule),
+              startAction: _mi(MiuixIcons.os4.filter),
               title: "规则".tl,
               onClick: () {
                 App.globalTo(() => const EditRuleView());
@@ -49,7 +50,9 @@ class _NetworkSettingsState extends State<NetworkSettings> {
             ),
           ],
         ),
-        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16))
+        Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom + 16))
       ],
     );
   }
@@ -83,26 +86,31 @@ class _EditRuleViewState extends State<EditRuleView> {
   @override
   Widget build(BuildContext context) {
     return MiuixScaffold(
- topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
- title: "rule.json",
- navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
-),
- content: (padding) => ScrollUnderBar(
- padding: padding,
- child: SingleChildScrollView(
-        padding: EdgeInsets.only(top: padding.top),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(8, 0, 8, MediaQuery.of(context).padding.bottom),
-          child: MiuixTextField(
-            keyboardType: TextInputType.multiline,
-            maxLines: null,
-            singleLine: false,
-            controller: controller,
-          ),
-        )
+      topBar: MiuixSmallTopAppBar(
+        color: MiuixTheme.of(context).colors.background,
+        title: "rule.json",
+        navigationIcon: Navigator.of(context).canPop()
+            ? MiuixIconButton(
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: _mi(MiuixIcons.os4.chevronBackward))
+            : null,
       ),
- ),
-);
+      content: (padding) => ScrollUnderBar(
+        padding: padding,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(top: padding.top),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+                8, 0, 8, MediaQuery.of(context).padding.bottom),
+            child: MiuixTextField(
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
+              singleLine: false,
+              controller: controller,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
-

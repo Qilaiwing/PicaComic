@@ -13,6 +13,7 @@ import 'package:pica_comic/foundation/history.dart';
 import 'package:pica_comic/foundation/log.dart';
 import 'package:pica_comic/network/update.dart';
 import 'package:pica_comic/tools/extensions.dart';
+import 'package:pica_comic/tools/translations.dart';
 import '../base.dart';
 import '../foundation/js_engine.dart';
 import '../network/base_comic.dart';
@@ -23,6 +24,7 @@ import 'built_in/ht_manga.dart';
 import 'built_in/jm.dart';
 import 'built_in/nhentai.dart';
 import 'built_in/picacg.dart';
+import 'package:pica_comic/pages/js_web_login.dart';
 
 part 'category.dart';
 
@@ -62,6 +64,20 @@ class ComicSource {
   static ComicSource? fromIntKey(int key) =>
       sources.firstWhereOrNull((element) => element.key.hashCode == key);
 
+  /// 在所有已安装的源（含已停用的内置源 / JS 源）中查找，仅用于显示名称等元数据
+  static ComicSource? fromIntKeyIncludingDisabled(int key) =>
+      fromIntKey(key) ??
+      disabledJsSources.firstWhereOrNull((e) => e.key.hashCode == key) ??
+      builtIn.firstWhereOrNull((e) => e.key.hashCode == key);
+
+  /// 按 key 查找显示名称（含已停用的源），找不到返回 null
+  static String? displayNameOf(String key) {
+    var s = find(key) ??
+        disabledJsSources.firstWhereOrNull((e) => e.key == key) ??
+        builtIn.firstWhereOrNull((e) => e.key == key);
+    return s?.name.tl;
+  }
+
   static Future<void> init() async {
     for (var source in builtInSources) {
       if (appdata.appSettings.isComicSourceEnabled(source)) {
@@ -69,24 +85,162 @@ class ComicSource {
         sources.add(s);
         await s.loadData();
         s.initData?.call(s);
+      } else {
+        // 停用的内置源仍加载账号数据，以便在账号管理中显示
+        var s = builtIn.firstWhere((e) => e.key == source);
+        try {
+          await s.loadData();
+        } catch (e) {
+          // ignore
+        }
       }
     }
     final path = "${App.dataPath}/comic_source";
     if (!(await Directory(path).exists())) {
-      Directory(path).create();
-      return;
+      await Directory(path).create(recursive: true);
     }
+    disabledJsSources.clear();
+    var disabled = await _readDisabledJs(path);
     await for (var entity in Directory(path).list()) {
       if (entity is File && entity.path.endsWith(".js")) {
         try {
           var source = await ComicSourceParser()
               .parse(await entity.readAsString(), entity.absolute.path);
+          if (disabled.contains(source.key)) {
+            disabledJsSources.add(source);
+            continue;
+          }
           sources.add(source);
         } catch (e, s) {
           log("$e\n$s", "ComicSource", LogLevel.error);
         }
       }
     }
+  }
+
+  /// 已启用的漫画源发生变化（开关/添加/删除）时递增，页面监听后即时刷新
+  static final ValueNotifier<int> sourcesChanged = ValueNotifier(0);
+
+  static void notifySourcesChanged() => sourcesChanged.value++;
+
+  /// 账号管理显示的源：已启用的 + 停用的内置源 + 停用的 JS 源
+  static List<ComicSource> get allSourcesForAccounts {
+    var result = <ComicSource>[];
+    for (var key in builtInSources) {
+      var s = builtIn.firstWhereOrNull((e) => e.key == key);
+      if (s != null) result.add(s);
+    }
+    for (var s in sources) {
+      if (!s.isBuiltIn && result.every((e) => e.key != s.key)) result.add(s);
+    }
+    for (var s in disabledJsSources) {
+      if (result.every((e) => e.key != s.key)) result.add(s);
+    }
+    return result;
+  }
+
+  /// 已停用的 JS 漫画源：脚本与数据保留，只是不加入 [sources]
+  static final List<ComicSource> disabledJsSources = [];
+
+  static const _disabledJsFile = ".disabled_js";
+
+  static Future<Set<String>> _readDisabledJs(String path) async {
+    try {
+      var f = File("$path/$_disabledJsFile");
+      if (!await f.exists()) return {};
+      return (jsonDecode(await f.readAsString()) as List)
+          .map((e) => e.toString())
+          .toSet();
+    } catch (e) {
+      return {};
+    }
+  }
+
+  static bool isJsSourceEnabled(String key) =>
+      disabledJsSources.every((s) => s.key != key);
+
+  /// 启用/停用 JS 漫画源，状态写入 comic_source/.disabled_js 持久保存
+  static Future<void> setJsSourceEnabled(ComicSource source, bool enabled) async {
+    final path = "${App.dataPath}/comic_source";
+    var disabled = await _readDisabledJs(path);
+    if (enabled) {
+      disabled.remove(source.key);
+      disabledJsSources.removeWhere((s) => s.key == source.key);
+      if (sources.every((s) => s.key != source.key)) sources.add(source);
+    } else {
+      disabled.add(source.key);
+      sources.removeWhere((s) => s.key == source.key);
+      if (disabledJsSources.every((s) => s.key != source.key)) {
+        disabledJsSources.add(source);
+      }
+    }
+    await File("$path/$_disabledJsFile")
+        .writeAsString(jsonEncode(disabled.toList()));
+  }
+
+  static String? _scriptVersion(String code) =>
+      RegExp(r'version\s*=\s*"([^"]+)"').firstMatch(code)?.group(1);
+  static String? scriptVersionOf(String code) => _scriptVersion(code);
+
+  /// 用远程脚本替换本地脚本并重新加载该源
+  static Future<void> applyScriptUpdate(ComicSource old, String code) async {
+    var newSource = await ComicSourceParser().parse(code, old.filePath, replaceKey: old.key);
+    await File(old.filePath).writeAsString(code);
+    sources.remove(old);
+    sources.removeWhere((s) => s.key == newSource.key && s != newSource);
+    sources.add(newSource);
+    notifySourcesChanged();
+  }
+
+  /// 彻底删除一个 JS 漫画源：脚本、账号/设置数据、停用记录与 JS 运行时对象
+  static Future<void> deleteJsSource(ComicSource source) async {
+    final path = "${App.dataPath}/comic_source";
+    final key = source.key;
+    sources.removeWhere((s) => s.key == key);
+    disabledJsSources.removeWhere((s) => s.key == key);
+    try {
+      JsEngine().runCode("delete ComicSource.sources.$key;");
+    } catch (_) {}
+    for (var f in [File(source.filePath), File("$path/$key.data")]) {
+      try {
+        if (await f.exists()) await f.delete();
+      } catch (e, s) {
+        log("$e\n$s", "ComicSource", LogLevel.error);
+      }
+    }
+    try {
+      var disabled = await _readDisabledJs(path);
+      if (disabled.remove(key)) {
+        await File("$path/$_disabledJsFile")
+            .writeAsString(jsonEncode(disabled.toList()));
+      }
+    } catch (_) {}
+    notifySourcesChanged();
+  }
+
+  /// 把漫画源的探索页、分类页、网络收藏加入用户的页面列表
+  static void addPagesOf(ComicSource source) {
+    var explorePages = appdata.appSettings.explorePages;
+    var categoryPages = appdata.appSettings.categoryPages;
+    var networkFavorites = appdata.appSettings.networkFavorites;
+    explorePages.removeWhere((e) => e.isEmpty);
+    categoryPages.removeWhere((e) => e.isEmpty);
+    networkFavorites.removeWhere((e) => e.isEmpty);
+    for (var page in source.explorePages) {
+      if (!explorePages.contains(page.title)) explorePages.add(page.title);
+    }
+    if (source.categoryData != null &&
+        !categoryPages.contains(source.categoryData!.key)) {
+      categoryPages.add(source.categoryData!.key);
+    }
+    if (source.favoriteData != null &&
+        !networkFavorites.contains(source.favoriteData!.key)) {
+      networkFavorites.add(source.favoriteData!.key);
+    }
+    appdata.appSettings.explorePages = explorePages;
+    appdata.appSettings.categoryPages = categoryPages;
+    appdata.appSettings.networkFavorites = networkFavorites;
+    appdata.updateSettings();
   }
 
   static Future reload() async {
@@ -141,6 +295,9 @@ class ComicSource {
   final String? matchBriefIdReg;
 
   var data = <String, dynamic>{};
+
+  /// JS 漫画源在 `settings` 字段中声明的设置项（key -> 配置）。
+  Map<String, dynamic> jsSettings = {};
 
   bool get isLogin => data["account"] != null;
 
@@ -492,6 +649,12 @@ class ComicInfoData with HistoryMixin {
 
   final String? subId;
 
+  /// Optional score in stars (0-5), when the source provides one.
+  final double? stars;
+
+  /// Optional rating text from the source (e.g. "4.5").
+  final String? rating;
+
   const ComicInfoData(
       this.title,
       this.subTitle,
@@ -506,7 +669,9 @@ class ComicInfoData with HistoryMixin {
       this.sourceKey,
       this.comicId,
       {this.isFavorite,
-      this.subId});
+      this.subId,
+      this.stars,
+      this.rating});
 
   Map<String, dynamic> toJson() {
     return {
@@ -520,6 +685,8 @@ class ComicInfoData with HistoryMixin {
       "comicId": comicId,
       "isFavorite": isFavorite,
       "subId": subId,
+      "stars": stars,
+      "rating": rating,
     };
   }
 
@@ -545,7 +712,9 @@ class ComicInfoData with HistoryMixin {
         thumbnailMaxPage = 0,
         suggestions = null,
         isFavorite = json["isFavorite"],
-        subId = json["subId"];
+        subId = json["subId"],
+        stars = (json["stars"] as num?)?.toDouble(),
+        rating = json["rating"] as String?;
 
   @override
   HistoryType get historyType => HistoryType(sourceKey.hashCode);

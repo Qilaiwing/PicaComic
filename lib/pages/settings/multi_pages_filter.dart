@@ -40,7 +40,7 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
           ? const Duration(milliseconds: 100)
           : const Duration(milliseconds: 500),
       dragChildBoxDecoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: MiuixTheme.of(context).colors.surfaceContainer,
         boxShadow: const [
           BoxShadow(
               color: Colors.black12,
@@ -73,7 +73,7 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
       title: widget.title,
       tailing: [
         if (keys.length < widget.pages.length)
-          MiuixIconButton(onPressed: showAddDialog, child: const Icon(Icons.add))
+          MiuixIconButton(onPressed: showAddDialog, child: _mi(MiuixIcons.os4.add))
       ],
       body: view,
     );
@@ -87,7 +87,7 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
               keys.remove(key);
             });
             updateSetting();
-          }, child: const Icon(Icons.delete)),
+          }, child: _mi(MiuixIcons.os4.delete)),
     );
 
     return Padding(
@@ -110,7 +110,7 @@ class _MultiPagesFilterState extends State<MultiPagesFilter> {
               ),
             ),
             removeButton,
-            const Icon(Icons.drag_handle),
+            _mi(MiuixIcons.os4.menu),
           ],
         ),
       ),

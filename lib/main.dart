@@ -1,3 +1,4 @@
+import 'package:pica_comic/foundation/reading_stats.dart';
 import 'dart:async';
 
 import 'package:desktop_webview_window/desktop_webview_window.dart';
@@ -66,6 +67,41 @@ void main(List<String> args) {
   });
 }
 
+/// 应用「屏幕刷新率」设置 (settings[38]): 0 跟随系统, 1 高刷, 2 60Hz。
+/// [onlyIfForced] 为 true 时, 跟随系统模式下不做任何调用。
+Future<void> applyRefreshRateSetting({bool onlyIfForced = false}) async {
+  if (!App.isAndroid) return;
+  final mode = appdata.settings[38];
+  if (onlyIfForced && mode != "1" && mode != "2") return;
+  try {
+    switch (mode) {
+      case "1":
+        await FlutterDisplayMode.setHighRefreshRate();
+        break;
+      case "2":
+        final modes = await FlutterDisplayMode.supported;
+        final active = await FlutterDisplayMode.active;
+        final candidates = modes
+            .where((m) =>
+                m.width == active.width &&
+                m.height == active.height &&
+                m.refreshRate < 61)
+            .toList()
+          ..sort((a, b) => b.refreshRate.compareTo(a.refreshRate));
+        if (candidates.isNotEmpty) {
+          await FlutterDisplayMode.setPreferredMode(candidates.first);
+        } else {
+          await FlutterDisplayMode.setLowRefreshRate();
+        }
+        break;
+      default:
+        await FlutterDisplayMode.setPreferredMode(DisplayMode.auto);
+    }
+  } catch (_) {
+    // 部分机型不支持
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -101,13 +137,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     AppUsageTracker.instance.handleLifecycle(state);
+    if (state == AppLifecycleState.resumed) {
+      ReadingStats.instance.resume();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      ReadingStats.instance.pause();
+    }
     bool enableAuth = appdata.settings[13] == "1";
-    if (App.isAndroid && appdata.settings[38] == "1") {
-      try {
-        FlutterDisplayMode.setHighRefreshRate();
-      } catch (e) {
-        // ignore
-      }
+    if (state == AppLifecycleState.resumed) {
+      applyRefreshRateSetting(onlyIfForced: true);
     }
     setNetworkProxy();
     scheduleMicrotask(() {
@@ -139,11 +176,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     MyApp.updater = () => setState(() => forceRebuild = true);
     time = DateTime.now();
     TagsTranslation.readData();
-    if (App.isAndroid && appdata.settings[38] == "1") {
-      try {
-        FlutterDisplayMode.setHighRefreshRate();
-      } finally {}
-    }
+    applyRefreshRateSetting(onlyIfForced: true);
     listenMouseSideButtonToBack();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     WidgetsBinding.instance.addObserver(this);

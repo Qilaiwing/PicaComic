@@ -145,7 +145,8 @@ class PreSearchController extends StateController {
     for (var source in ComicSource.sources) {
       searchSource.add(source.key);
     }
-    if (!searchSource.contains(appdata.appSettings.initialSearchTarget)) {
+    if (searchSource.isNotEmpty &&
+        !searchSource.contains(appdata.appSettings.initialSearchTarget)) {
       appdata.appSettings.initialSearchTarget = searchSource.first;
       appdata.updateSettings();
     }

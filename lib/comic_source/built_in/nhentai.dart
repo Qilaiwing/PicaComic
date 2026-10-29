@@ -171,6 +171,7 @@ class _NhentaiComicTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: CachedImageProvider(
           comic.cover,
           headers: {

@@ -1,14 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:pica_comic/foundation/image_manager.dart';
 import 'package:pica_comic/network/download_model.dart';
 import 'package:pica_comic/tools/extensions.dart';
 import 'package:pica_comic/tools/io_tools.dart';
-import '../../base.dart';
 import '../download.dart';
 import 'methods.dart';
-import 'models.dart';
 import 'dart:io';
 
 class DownloadedComic extends DownloadedItem {

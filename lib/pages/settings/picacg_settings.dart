@@ -1,8 +1,9 @@
 part of pica_settings;
 
 class PicacgSettings extends StatefulWidget {
-  const PicacgSettings(this.popUp, {Key? key}) : super(key: key);
+  const PicacgSettings(this.popUp, {this.embedded = false, Key? key}) : super(key: key);
   final bool popUp;
+  final bool embedded;
 
   @override
   State<PicacgSettings> createState() => _PicacgSettingsState();
@@ -17,13 +18,9 @@ class _PicacgSettingsState extends State<PicacgSettings> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        MiuixSmallTitle("哔咔漫画".tl),
-        MiuixSettingsCard(
-          children: [
+    final tiles = <Widget>[
             SelectSetting(
-              leading: const Icon(Icons.dns),
+              leading: _mi(MiuixIcons.os4.link),
               title: "设置分流".tl,
               initialValue: int.parse(picacg.data['appChannel']) - 1,
               values: ["分流1".tl, "分流2".tl, "分流3".tl],
@@ -33,7 +30,7 @@ class _PicacgSettingsState extends State<PicacgSettings> {
               },
             ),
             SelectSetting(
-              leading: const Icon(Icons.image),
+              leading: _mi(MiuixIcons.os4.image),
               title: "设置图片质量".tl,
               initialValue:
                   _imageQualityValues.indexOf(picacg.data['imageQuality']),
@@ -44,7 +41,7 @@ class _PicacgSettingsState extends State<PicacgSettings> {
               },
             ),
             SelectSetting(
-              leading: const Icon(Icons.manage_search_outlined),
+              leading: _mi(MiuixIcons.os4.search),
               initialValue: appdata.getSearchMode(),
               values: ["新到旧".tl, "旧到新".tl, "最多喜欢".tl, "最多指名".tl],
               onChanged: (i) {
@@ -53,7 +50,7 @@ class _PicacgSettingsState extends State<PicacgSettings> {
               title: "搜索及分类排序模式".tl,
             ),
             SelectSetting(
-              leading: const Icon(Icons.collections_bookmark_outlined),
+              leading: _mi(MiuixIcons.os4.favorites),
               initialValue: int.parse(appdata.settings[30]),
               values: ["旧到新".tl, "新到旧".tl],
               onChanged: (i) {
@@ -63,7 +60,7 @@ class _PicacgSettingsState extends State<PicacgSettings> {
               title: "收藏夹漫画排序模式".tl,
             ),
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.circle_outlined),
+              startAction: _mi(MiuixIcons.os4.ok),
               title: "显示头像框".tl,
               value: showFrame,
               onChanged: (b) {
@@ -75,7 +72,7 @@ class _PicacgSettingsState extends State<PicacgSettings> {
               },
             ),
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.today),
+              startAction: _mi(MiuixIcons.os4.months),
               title: "自动打卡".tl,
               summary: App.isMobile
                   ? "APP启动或是距离上次打卡间隔一天时执行".tl
@@ -92,8 +89,14 @@ class _PicacgSettingsState extends State<PicacgSettings> {
                 appdata.writeData();
               },
             ),
-          ],
-        ),
+];
+    if (widget.embedded) {
+      return Column(mainAxisSize: MainAxisSize.min, children: tiles);
+    }
+    return Column(
+      children: [
+        MiuixSmallTitle("哔咔漫画".tl),
+        MiuixSettingsCard(children: tiles),
       ],
     );
   }

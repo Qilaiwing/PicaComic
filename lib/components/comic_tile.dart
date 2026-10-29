@@ -239,7 +239,7 @@ abstract class ComicTile extends StatelessWidget {
         Center(
           child: MiuixButton(
             colors: MiuixButtonDefaults.buttonColorsPrimary(context),
-            child: const Text("确认"),
+            child: Text("确认".tl),
             onPressed: () {
               LocalFavoritesManager().addComic(folder!, favoriteItem!);
               if (onDone != null) {
@@ -299,10 +299,9 @@ abstract class ComicTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var type = appdata.settings[44].split(',').first;
     Widget child;
     bool detailedMode;
-    if (type == "0" || type == "3") {
+    if (appdata.appSettings.comicTileDisplayType == 0) {
       detailedMode = true;
       child = _buildDetailedMode(context);
     } else {
@@ -334,63 +333,31 @@ abstract class ComicTile extends StatelessWidget {
         ),
         Positioned(
           left: detailedMode ? 16 : 8,
-          top: 10,
-          child: Container(
-            height: 22,
-            decoration: ShapeDecoration(
-              shape: const StadiumBorder(),
-              shadows: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.35),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1.5),
+          top: detailedMode ? 12 : 8,
+          right: 8,
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              if (isFavorite)
+                _TileBadge(
+                  color: MiuixTheme.of(context).colors.primary,
+                  icon: MiuixIcons.os4.favoritesFill,
+                  text: "已收藏".tl,
                 ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isFavorite)
-                  Container(
-                    height: 22,
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.92),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.bookmark_rounded,
-                          size: 13,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 2),
-                        Text(
-                          "已收藏",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (history != null)
-                  Container(
-                    height: 22,
-                    color: const Color(0xE62196F3),
-                    constraints: const BoxConstraints(minWidth: 22),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: CustomPaint(
-                      painter:
-                          _ReadingHistoryPainter(history.page, history.maxPage),
-                    ),
-                  )
-              ],
-            ),
+              if (history != null)
+                _TileBadge(
+                  color: const Color(0xFF3482FF),
+                  icon: history.maxPage != null && history.page >= history.maxPage!
+                      ? MiuixIcons.os4.ok
+                      : MiuixIcons.os4.read,
+                  text: history.maxPage != null && history.page >= history.maxPage!
+                      ? "已读完".tl
+                      : history.maxPage == null
+                          ? "P${history.page}"
+                          : "${history.page}/${history.maxPage}",
+                ),
+            ],
           ),
         )
       ],
@@ -427,7 +394,7 @@ abstract class ComicTile extends StatelessWidget {
           ),
           child: ClipPath(
             clipper: const ShapeBorderClipper(shape: shape),
-            clipBehavior: Clip.antiAliasWithSaveLayer,
+            clipBehavior: Clip.antiAlias,
             child: GestureDetector(
               onSecondaryTapDown: onSecondaryTap_,
               child: MiuixPressable(
@@ -672,78 +639,50 @@ class _ComicDescription extends StatelessWidget {
   }
 }
 
-class _ReadingHistoryPainter extends CustomPainter {
-  final int page;
-  final int? maxPage;
+/// 漫画块左上角的小胶囊标记（收藏状态 / 阅读位置），统一 Miuix 风格。
+class _TileBadge extends StatelessWidget {
+  const _TileBadge(
+      {required this.color, required this.icon, required this.text});
 
-  const _ReadingHistoryPainter(this.page, this.maxPage);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (maxPage == null) {
-      // 在中央绘制page
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: "$page",
-          style: TextStyle(
-            fontSize: size.width * 0.8,
-            color: Colors.white,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-          canvas,
-          Offset((size.width - textPainter.width) / 2,
-              (size.height - textPainter.height) / 2));
-    } else if (page == maxPage) {
-      // 在中央绘制勾
-      final paint = Paint()
-        ..color = Colors.white
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(size.width * 0.2, size.height * 0.5),
-          Offset(size.width * 0.45, size.height * 0.75), paint);
-      canvas.drawLine(Offset(size.width * 0.45, size.height * 0.75),
-          Offset(size.width * 0.85, size.height * 0.3), paint);
-    } else {
-      // 在左上角绘制page, 在右下角绘制maxPage
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: "$page",
-          style: TextStyle(
-            fontSize: size.width * 0.8,
-            color: Colors.white,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(canvas, const Offset(0, 0));
-      final textPainter2 = TextPainter(
-        text: TextSpan(
-          text: "/$maxPage",
-          style: TextStyle(
-            fontSize: size.width * 0.5,
-            color: Colors.white,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter2.layout();
-      textPainter2.paint(
-          canvas,
-          Offset(size.width - textPainter2.width,
-              size.height - textPainter2.height));
-    }
-  }
+  final Color color;
+  final MiuixVectorIcon icon;
+  final String text;
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return oldDelegate is! _ReadingHistoryPainter ||
-        oldDelegate.page != page ||
-        oldDelegate.maxPage != maxPage;
+  Widget build(BuildContext context) {
+    return Container(
+      height: 20,
+      padding: const EdgeInsets.only(left: 5, right: 7),
+      decoration: ShapeDecoration(
+        color: color.withOpacity(0.92),
+        shape: const StadiumBorder(),
+        shadows: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MiuixIcon(vector: icon, size: 12, tint: Colors.white),
+          const SizedBox(width: 3),
+          Text(
+            text,
+            maxLines: 1,
+            style: const TextStyle(
+              fontSize: 10,
+              height: 1.1,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -785,6 +724,7 @@ class NormalComicTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: CachedImageProvider(
           coverPath,
           headers: headers,
@@ -812,9 +752,8 @@ class ComicTilePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var type = appdata.settings[44].split(',').first;
     Widget child;
-    if (type == "0" || type == "3") {
+    if (appdata.appSettings.comicTileDisplayType == 0) {
       child = _buildDetailedMode(context);
     } else {
       child = _buildBriefMode(context);
@@ -910,6 +849,7 @@ class CustomComicTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: StreamImageProvider(
             () =>
                 ImageManager().getCustomThumbnail(comic.cover, comic.sourceKey),

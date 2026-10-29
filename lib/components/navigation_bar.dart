@@ -210,6 +210,8 @@ class _NaviPaneState extends State<NaviPane>
 
     StateController.putIfNotExists(FavoritesPageController());
 
+    ComicSource.sourcesChanged.addListener(_onSourcesChanged);
+
     super.initState();
   }
 
@@ -222,6 +224,7 @@ class _NaviPaneState extends State<NaviPane>
   @override
   void dispose() {
     _behavior.state.dispose();
+    ComicSource.sourcesChanged.removeListener(_onSourcesChanged);
     StateController.findOrNull<ExplorePageController>()?.tabController.dispose();
     StateController.remove<ExplorePageController>();
     StateController.findOrNull<CategoryPageController>()?.tabController.dispose();
@@ -230,6 +233,23 @@ class _NaviPaneState extends State<NaviPane>
     controller.dispose();
     widget.observer.removeListener(onNavigatorStateChange);
     super.dispose();
+  }
+
+  /// 启用的漫画源变化：重新计算探索/分类标签并重建 TabController
+  void _onSourcesChanged() {
+    final explore = StateController.findOrNull<ExplorePageController>();
+    if (explore != null) {
+      final old = explore.tabController;
+      explore.init(this);
+      WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+    }
+    final category = StateController.findOrNull<CategoryPageController>();
+    if (category != null) {
+      final old = category.tabController;
+      category.init(this);
+      WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+    }
+    if (mounted) setState(() {});
   }
 
   double targetFormContext(BuildContext context) {
@@ -634,15 +654,15 @@ class _NaviPaneState extends State<NaviPane>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(31),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+            child: FrostBlur(
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(31),
                   color: MiuixTheme.of(context)
                       .colors
                       .background
-                      .withValues(alpha: frostTintAlpha(context) + 0.22),
+                      .withValues(
+                          alpha: (frostTintAlpha(context) + 0.22).clamp(0.0, 1.0)),
                   border: Border.all(
                     color: isDark
                         ? const Color(0x24FFFFFF)
@@ -1238,7 +1258,6 @@ class _NaviPopScope extends StatelessWidget {
 
 class NaviPaddingWidgetController extends StateController {
   NaviPaddingWidgetController() {
-    print("init");
   }
 
   bool _withPadding = false;
@@ -1267,17 +1286,44 @@ class NaviPaddingWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return StateBuilder<NaviPaddingWidgetController>(
       builder: (controller) {
-        return Padding(
-          padding: EdgeInsets.only(
-            top: controller._withPadding
-                ? (controller.topBarHeight ??
-                    _NaviPaneState._kTopBarHeight + context.padding.top)
-                : 0,
-            bottom: 0,
+        return FloatingBottomBarScope(
+          visible: controller._withPadding,
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: controller._withPadding
+                  ? (controller.topBarHeight ??
+                      _NaviPaneState._kTopBarHeight + context.padding.top)
+                  : 0,
+              bottom: 0,
+            ),
+            child: child,
           ),
-          child: child,
         );
       },
     );
+  }
+}
+
+
+/// 标记当前页面是否被悬浮底栏覆盖，供列表在底部留出空间。
+class FloatingBottomBarScope extends InheritedWidget {
+  const FloatingBottomBarScope(
+      {super.key, required this.visible, required super.child});
+
+  final bool visible;
+
+  @override
+  bool updateShouldNotify(FloatingBottomBarScope oldWidget) =>
+      oldWidget.visible != visible;
+
+  /// 列表底部应留出的高度：有悬浮底栏时为「底栏高度 + 底栏底边距（含安全区）」，
+  /// 否则仅为安全区。与 [_NaviPaneState.buildBottom] 的布局保持一致。
+  static double bottomInsetOf(BuildContext context) {
+    final inset = MediaQuery.of(context).padding.bottom;
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<FloatingBottomBarScope>();
+    if (scope == null || !scope.visible) return inset;
+    final barBottom = inset > 0 ? 6.0 + inset : 24.0;
+    return _NaviPaneState._kBottomBarHeight + barBottom + 8;
   }
 }

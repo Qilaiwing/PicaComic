@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:pica_comic/comic_source/built_in/picacg.dart';
 import 'package:pica_comic/foundation/app.dart';
+import 'package:pica_comic/foundation/js_engine.dart';
+import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:workmanager/workmanager.dart';
 import '../base.dart';
 import '../network/picacg_network/methods.dart';
@@ -17,7 +19,12 @@ void onStart() {
     await appdata.readData();
     var notifications = Notifications();
     await notifications.init();
-    if (picacg.data['token'] != "") {
+    // 后台 isolate 中需要加载漫画源数据, 否则拿不到 PicACG 登录状态
+    try {
+      await JsEngine().init();
+      await ComicSource.init();
+    } catch (_) {}
+    if ((picacg.data['token'] ?? "") != "") {
       var userInfo = await network.getProfile(false);
       if (userInfo.error) {
         return true;

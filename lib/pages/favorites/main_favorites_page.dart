@@ -362,6 +362,14 @@ class FavoritesPage extends StatelessWidget with _LocalFavoritesManager {
   }
 
   Widget buildFoldersList(BuildContext context) {
+    // 漫画源开关变化时即时刷新网络收藏
+    return ValueListenableBuilder<int>(
+      valueListenable: ComicSource.sourcesChanged,
+      builder: (context, _, __) => _buildFoldersList(context),
+    );
+  }
+
+  Widget _buildFoldersList(BuildContext context) {
     var networkFolders = appdata.appSettings.networkFavorites
         .map((e) => getFavoriteDataOrNull(e))
         .whereType<FavoriteData>();

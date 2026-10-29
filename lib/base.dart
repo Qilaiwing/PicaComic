@@ -67,13 +67,13 @@ class Appdata {
     "500", //35 缓存大小限制
     "1", //36 翻页动画
     "0", //37 禁漫图片分流
-    "0", //38 高刷新率
+    "0", //38 屏幕刷新率: 0 跟随系统, 1 高刷, 2 60Hz
     "0", //39 nhentai搜索排序
     "25", //40 点按翻页识别范围(0-50),
     "0", //41 阅读器图片布局方式, 0-contain, 1-fitWidth, 2-fitHeight
     "0", //42 禁漫收藏夹排序模式, 0-最新收藏, 1-最新更新
     "1", //43 限制图片宽度
-    "0,1.0", //44 comic display type
+    "0", //44 comic tile display mode (0 detailed / 1 brief)
     "", //45 webdav
     "0", //46 webdav version
     "0", //47 eh warning
@@ -119,6 +119,9 @@ class Appdata {
     "gold-usergeneratedcontent.net", //87 hitomi cdn url
     "0", //88 jm auto checkin
     "2.0.11", //89 jm app version
+    "1", //90 [unused]
+    "1.0", //91 comic tile scale
+    "1", //92 毛玻璃效果
   ];
 
   /// 隐式数据, 用于存储一些不需要用户设置的数据, 此数据通常为某些组件的状态, 此设置不应当被同步
@@ -189,6 +192,21 @@ class Appdata {
     if (settings[26].length < 2) {
       settings[26] += "0";
     }
+    migrateComicTileSettings();
+  }
+
+  /// 旧版本把「模式,大小」存在 settings[44]（如 "0,1.0"），模式还可能是已废弃的 2/3。
+  /// 拆成 44 = 模式（0 详细 / 1 简略）、91 = 大小。
+  void migrateComicTileSettings() {
+    var parts = settings[44].split(',');
+    var mode = parts.first.trim();
+    if (mode == "2") mode = "1";
+    if (mode == "3" || (mode != "0" && mode != "1")) mode = mode == "1" ? "1" : "0";
+    if (parts.length > 1 && double.tryParse(parts[1]) != null) {
+      settings[91] = parts[1];
+    }
+    if (double.tryParse(settings[91]) == null) settings[91] = "1.0";
+    settings[44] = mode;
   }
 
   Future<void> updateSettings([bool syncData = true]) async {
@@ -245,6 +263,7 @@ class Appdata {
         "firstUse": firstUse,
         "blockingKeywords": blockingKeyword,
         "favoriteTags": favoriteTags.toList(),
+        "searchHistory": searchHistory,
       };
 
   bool readDataFromJson(Map<String, dynamic> json) {
@@ -257,6 +276,7 @@ class Appdata {
       }
       settings[22] = downloadPath;
       settings[13] = authRequired;
+      migrateComicTileSettings();
       var newFirstUse = List<String>.from(json["firstUse"]);
       for (var i = 0; i < firstUse.length && i < newFirstUse.length; i++) {
         firstUse[i] = newFirstUse[i];
@@ -270,6 +290,13 @@ class Appdata {
           .toList();
       favoriteTags =
           Set.from((json["favoriteTags"] ?? []) + List.from(favoriteTags));
+      if (json["searchHistory"] is List) {
+        final merged = <String>[...searchHistory];
+        for (final s in List<String>.from(json["searchHistory"])) {
+          if (!merged.contains(s)) merged.add(s);
+        }
+        searchHistory = merged;
+      }
       writeData(false);
       return true;
     } catch (e, s) {
@@ -321,16 +348,13 @@ class _Settings {
 
   /// 0/1 (detailed/brief)
   int get comicTileDisplayType =>
-      int.parse(appdata.settings[44].split(',').first);
+      int.tryParse(appdata.settings[44].split(',').first) == 1 ? 1 : 0;
 
   set comicTileDisplayType(int v) {
-    var values = appdata.settings[44].split(',');
-    if (values.length != 2) {
-      values = ['0', '1.0'];
-    }
-    values[0] = v.toString();
-    appdata.settings[44] = values.join(',');
+    appdata.settings[44] = v == 1 ? "1" : "0";
   }
+
+  double get comicTileScale => double.tryParse(appdata.settings[91]) ?? 1.0;
 
   /// 0/1 (Continuous mode/Paging mode)
   int get comicsListDisplayType => int.parse(appdata.settings[25]);

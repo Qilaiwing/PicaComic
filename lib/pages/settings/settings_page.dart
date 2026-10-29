@@ -4,12 +4,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_reorderable_grid_view/widgets/reorderable_builder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pica_comic/base.dart';
@@ -21,6 +19,8 @@ import 'package:pica_comic/main.dart';
 import 'package:pica_comic/network/app_dio.dart';
 import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/pages/logs_page.dart';
+import 'package:pica_comic/pages/accounts_page.dart';
+import 'package:pica_comic/foundation/js_engine.dart';
 import 'package:pica_comic/tools/extensions.dart';
 import 'package:pica_comic/tools/io_tools.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -62,7 +62,15 @@ class SettingsPage extends StatefulWidget {
     App.globalTo(() => SettingsPage(initialPage: initialPage));
   }
 
-  const SettingsPage({this.initialPage = -1, super.key});
+  /// 单独打开某个设置分区（如从账号管理跳转），返回时直接回到上一页
+  static void openSection(int page) {
+    App.globalTo(() => SettingsPage(initialPage: page, singlePage: true));
+  }
+
+  const SettingsPage({this.initialPage = -1, this.singlePage = false, super.key});
+
+  /// 为 true 时只显示 [initialPage] 分区，返回即关闭整个页面
+  final bool singlePage;
 
   final int initialPage;
 
@@ -73,21 +81,21 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> implements PopEntry{
   int currentPage = -1;
 
-  ColorScheme get colors => Theme.of(context).colorScheme;
+  MiuixColors get colors => MiuixTheme.of(context).colors;
 
   bool get enableTwoViews => !UiMode.m1(context);
 
   final categories = <String>["浏览", "漫画源", "阅读", "外观", "本地收藏", "APP", "网络", "关于"];
 
-  final icons = <IconData>[
-    Icons.explore,
-    Icons.source,
-    Icons.book,
-    Icons.color_lens,
-    Icons.collections_bookmark_rounded,
-    Icons.apps,
-    Icons.public,
-    Icons.info
+  final icons = <MiuixVectorIcon>[
+    MiuixIcons.os4.layers,
+    MiuixIcons.os4.store,
+    MiuixIcons.os4.book,
+    MiuixIcons.os4.theme,
+    MiuixIcons.os4.favorites,
+    MiuixIcons.os4.gridView,
+    MiuixIcons.os4.link,
+    MiuixIcons.os4.info
   ];
 
   double offset = 0;
@@ -171,7 +179,10 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
 
   @override
   Widget build(BuildContext context) {
-    if (currentPage != -1 && !enableTwoViews) {
+    if (widget.singlePage) {
+      canPop.value = true;
+      App.temporaryDisablePopGesture = false;
+    } else if (currentPage != -1 && !enableTwoViews) {
       canPop.value = false;
       App.temporaryDisablePopGesture = true;
     } else {
@@ -184,6 +195,9 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
   }
 
   Widget buildBody() {
+    if (widget.singlePage && currentPage != -1) {
+      return buildRight();
+    }
     if (enableTwoViews) {
       return Row(
         children: [
@@ -197,7 +211,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(
-                  color: context.colorScheme.outlineVariant,
+                  color: MiuixTheme.of(context).colors.dividerLine,
                   width: 0.6,
                 ),
               ),
@@ -228,6 +242,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
   }
 
   void handlePointerDown(PointerDownEvent event) {
+    if (widget.singlePage) return;
     if (event.position.dx < 20) {
       gestureRecognizer.addPointer(event);
     }
@@ -275,13 +290,13 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         decoration: ShapeDecoration(
           color: selected
               ? colors.primary.withOpacity(0.15)
-              : colors.surface,
+              : colors.surfaceContainer, // Miuix 卡片色（surface 在 Miuix 中等于页面背景）
           shape: itemShape,
         ),
         child: Row(children: [
-          Icon(
-            icons[id],
-            color: selected ? colors.primary : colors.onSurface,
+          MiuixIcon(
+            vector: icons[id],
+            tint: selected ? colors.primary : colors.onSurface,
             size: 22,
           ),
           const SizedBox(
@@ -296,10 +311,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
             ),
           ),
           const Spacer(),
-          Icon(
-            Icons.chevron_right,
-            size: 18,
-            color: colors.onSurfaceVariant.withOpacity(0.5),
+          MiuixIcon(vector: MiuixIcons.os4.chevronForward, size: 18, tint: colors.onSurfaceVariantSummary.withOpacity(0.5),
           ),
         ]),
       );
@@ -337,7 +349,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
             children: [
               SelectSettingWithAppdata(
                 title: "主题选择".tl,
-                icon: const Icon(Icons.color_lens),
+                icon: _mi(MiuixIcons.os4.theme),
                 settingsIndex: 27,
                 options: [
                   "动态色彩".tl,
@@ -361,7 +373,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               ),
               SelectSettingWithAppdata(
                 title: "深色模式".tl,
-                icon: const Icon(Icons.dark_mode),
+                icon: _mi(MiuixIcons.os4.background),
                 settingsIndex: 32,
                 options: ["跟随系统".tl, "禁用".tl, "启用".tl],
                 onChanged: () {
@@ -372,7 +384,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               if (appdata.settings[32] == "0" || appdata.settings[32] == "2")
                 MiuixSwitchPreference(
                   title: "纯黑色模式".tl,
-                  startAction: const Icon(Icons.remove_red_eye),
+                  startAction: _mi(MiuixIcons.os4.show),
                   value: appdata.settings[84] == "1",
                   onChanged: (i) {
                     setState(() {
@@ -384,38 +396,37 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
                 ),
             ],
           ),
-          if (App.isAndroid) ...[
-            MiuixSmallTitle("显示与刷新率".tl),
-            MiuixSettingsCard(
-              children: [
-                MiuixSwitchPreference(
-                  title: "高刷新率模式".tl,
-                  summary: "尝试强制设置高刷新率, 可能对部分机型不起作用".tl,
-                  startAction: const Icon(Icons.smart_screen_outlined),
-                  value: appdata.settings[38] == "1",
-                  onChanged: (b) {
-                    setState(() {
-                      appdata.settings[38] = b ? "1" : "0";
-                    });
+          MiuixSmallTitle("显示与性能".tl),
+          MiuixSettingsCard(
+            children: [
+              MiuixSwitchPreference(
+                title: "毛玻璃效果".tl,
+                summary: "关闭后顶栏与底栏使用纯色背景, 更省电".tl,
+                startAction: _mi(MiuixIcons.os4.show),
+                value: appdata.settings[92] != "0",
+                onChanged: (b) {
+                  setState(() {
+                    appdata.settings[92] = b ? "1" : "0";
+                  });
+                  appdata.updateSettings();
+                  MyApp.updater?.call();
+                },
+              ),
+              if (App.isAndroid)
+                SelectSetting(
+                  leading: _mi(MiuixIcons.os4.screenMirroring),
+                  title: "屏幕刷新率".tl,
+                  values: ["跟随系统".tl, "高刷新率".tl, "60Hz"],
+                  initialValue:
+                      (int.tryParse(appdata.settings[38]) ?? 0).clamp(0, 2),
+                  onChanged: (i) {
+                    appdata.settings[38] = i.toString();
                     appdata.updateSettings();
-                    if (b) {
-                      try {
-                        FlutterDisplayMode.setHighRefreshRate();
-                      } catch (e) {
-                        // ignore
-                      }
-                    } else {
-                      try {
-                        FlutterDisplayMode.setLowRefreshRate();
-                      } catch (e) {
-                        // ignore
-                      }
-                    }
+                    applyRefreshRateSetting();
                   },
                 ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ],
       );
 
@@ -426,7 +437,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         MiuixSettingsCard(
           children: [
             MiuixArrowPreference(
-              startAction: const Icon(Icons.bug_report),
+              startAction: _mi(MiuixIcons.os4.report),
               title: "Logs",
               summary: "查看运行与调试日志".tl,
               onClick: () => context.to(() => const LogsPage()),
@@ -436,16 +447,10 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         MiuixSmallTitle("版本与更新".tl),
         MiuixSettingsCard(
           children: [
-            MiuixArrowPreference(
-              startAction: const Icon(Icons.update),
-              title: "检查更新".tl,
-              summary: "${"当前:".tl} $appVersion",
-              onClick: () => findUpdate(context),
-            ),
             SwitchSetting(
               title: "启动时检查更新".tl,
               settingsIndex: 2,
-              icon: const Icon(Icons.security_update),
+              icon: _mi(MiuixIcons.os4.download),
             ),
           ],
         ),
@@ -454,12 +459,12 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
           children: [
             if (App.isDesktop || App.isAndroid)
               MiuixArrowPreference(
-                startAction: const Icon(Icons.folder),
+                startAction: _mi(MiuixIcons.os4.folder),
                 title: "设置下载目录".tl,
                 onClick: () => setDownloadFolder(),
               ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.sd_storage_outlined),
+              startAction: _mi(MiuixIcons.os4.fileDownloads),
               title: "缓存大小限制".tl,
               summary: '${bytesLengthToReadableSize(CacheManager().currentSize)}'
                   ' / '
@@ -467,7 +472,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               onClick: setCacheLimit,
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.delete_outline),
+              startAction: _mi(MiuixIcons.os4.clear),
               title: "清除缓存".tl,
               onClick: () {
                 CacheManager().clear().then((value) {
@@ -478,22 +483,22 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               },
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.delete_forever),
+              startAction: _mi(MiuixIcons.os4.delete),
               title: "删除所有数据".tl,
               onClick: () => clearUserData(context),
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.sim_card_download),
+              startAction: _mi(MiuixIcons.os4.share),
               title: "导出用户数据".tl,
               onClick: () => exportDataSetting(context),
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.data_object),
+              startAction: _mi(MiuixIcons.os4.import),
               title: "导入用户数据".tl,
               onClick: () => importDataSetting(context),
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.sync),
+              startAction: _mi(MiuixIcons.os4.refresh),
               title: "数据同步".tl,
               summary: () {
                 final raw = appdata.settings[45];
@@ -513,7 +518,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
           children: [
             if (App.isAndroid)
               MiuixSwitchPreference(
-                startAction: const Icon(Icons.screenshot),
+                startAction: _mi(MiuixIcons.os4.screenCapture),
                 title: "阻止屏幕截图".tl,
                 summary: "需要重启App以应用更改".tl,
                 value: appdata.settings[12] == "1",
@@ -527,7 +532,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               title: "需要身份验证".tl,
               subTitle: "如果系统中未设置任何认证方法请勿开启".tl,
               settingsIndex: 13,
-              icon: const Icon(Icons.security),
+              icon: _mi(MiuixIcons.os4.lock),
             ),
           ],
         ),
@@ -535,7 +540,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
         MiuixSettingsCard(
           children: [
             SelectSetting(
-              leading: const Icon(Icons.language),
+              leading: _mi(MiuixIcons.os4.translate),
               title: "语言".tl,
               initialValue:
                   ["", "cn", "tw", "en"].indexOf(appdata.settings[50]).clamp(0, 3),
@@ -547,7 +552,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               },
             ),
             SelectSetting(
-              leading: const Icon(Icons.download),
+              leading: _mi(MiuixIcons.os4.download),
               title: "下载并行".tl,
               initialValue: ["1", "2", "4", "6", "8", "16"]
                   .indexOf(appdata.settings[79])
@@ -562,7 +567,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
               MiuixArrowPreference(
                 title: "应用链接".tl,
                 summary: "在系统设置中管理APP支持的链接".tl,
-                startAction: const Icon(Icons.link),
+                startAction: _mi(MiuixIcons.os4.link),
                 onClick: () async {
                   try {
                     await const MethodChannel("pica_comic/settings")
@@ -585,76 +590,122 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
   }
 
   Widget buildAbout() {
+    final colors = MiuixTheme.of(context).colors;
+    void open(String url) =>
+        launchUrlString(url, mode: LaunchMode.externalApplication);
     return Column(
       children: [
-        const SizedBox(height: 20),
-        Container(
-          width: 96,
-          height: 96,
-          decoration: const ShapeDecoration(
-            shape: MiuixSquircleBorder(cornerRadius: 24),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: const Image(
-            image: AssetImage("images/app_icon_no_bg.png"),
-            filterQuality: FilterQuality.medium,
-          ),
-        ),
         const SizedBox(height: 12),
-        const Text(
-          "Pica Comic",
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "V$appVersion (HyperOS Edition)",
-          style: TextStyle(
-            fontSize: 14,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "一个完全免费的漫画阅读APP · 仅用于学习交流".tl,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        const SizedBox(height: 16),
-        MiuixSmallTitle("开源与社区".tl),
         MiuixSettingsCard(
           children: [
-            MiuixArrowPreference(
-              startAction: const Icon(Icons.code),
-              title: "项目地址 (GitHub)".tl,
-              summary: "https://github.com/Qilaiwing/PicaComic_miuix",
-              onClick: () => launchUrlString(
-                "https://github.com/Qilaiwing/PicaComic_miuix",
-                mode: LaunchMode.externalApplication,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+              child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: const ShapeDecoration(
+                      shape: MiuixSquircleBorder(cornerRadius: 22),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: const Image(
+                      image: AssetImage("images/app_icon_no_bg.png"),
+                      filterQuality: FilterQuality.medium,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Pica Comic",
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: colors.onSurface),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: ShapeDecoration(
+                      color: colors.primary.withValues(alpha: 0.12),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Text(
+                      textAlign: TextAlign.center,
+                      "v$appVersion · HyperOS Edition",
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: colors.primary),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "一个完全免费的漫画阅读APP · 仅用于学习交流".tl,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12.5, color: colors.onSurfaceVariantSummary),
+                  ),
+                ],
               ),
-            ),
-            MiuixArrowPreference(
-              startAction: const Icon(Icons.account_tree_outlined),
-              title: "上游地址（GitHub）".tl,
-              summary: "https://github.com/Pacalini/PicaComic",
-              onClick: () => launchUrlString(
-                "https://github.com/Pacalini/PicaComic",
-                mode: LaunchMode.externalApplication,
-              ),
-            ),
-            MiuixArrowPreference(
-              startAction: const Icon(Icons.bug_report_outlined),
-              title: "问题反馈 (GitHub Issues)".tl,
-              summary: "提交缺陷与功能建议".tl,
-              onClick: () => launchUrlString(
-                "https://github.com/Qilaiwing/PicaComic_miuix/issues",
-                mode: LaunchMode.externalApplication,
               ),
             ),
           ],
         ),
-        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 24))
+        MiuixSmallTitle("版本与更新".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixArrowPreference(
+              startAction: _mi(MiuixIcons.os4.update),
+              title: "检查更新".tl,
+              summary: "${"当前:".tl} $appVersion",
+              onClick: () => findUpdate(context),
+            ),
+            MiuixArrowPreference(
+              startAction: _mi(MiuixIcons.os4.listView),
+              title: "更新日志".tl,
+              summary: "查看最新版本的更新内容".tl,
+              onClick: () => showLatestChangelog(context),
+            ),
+          ],
+        ),
+        MiuixSmallTitle("开源与社区".tl),
+        MiuixSettingsCard(
+          children: [
+            MiuixArrowPreference(
+              startAction: _mi(MiuixIcons.os4.community),
+              title: "项目地址 (GitHub)".tl,
+              summary: "Qilaiwing/PicaComic_miuix",
+              onClick: () => open("https://github.com/Qilaiwing/PicaComic_miuix"),
+            ),
+            MiuixArrowPreference(
+              startAction: _mi(MiuixIcons.os4.share),
+              title: "上游地址（GitHub）".tl,
+              summary: "Pacalini/PicaComic",
+              onClick: () => open("https://github.com/Pacalini/PicaComic"),
+            ),
+            MiuixArrowPreference(
+              startAction: _mi(MiuixIcons.os4.tasks),
+              title: "问题反馈 (GitHub Issues)".tl,
+              summary: "提交缺陷与功能建议".tl,
+              onClick: () =>
+                  open("https://github.com/Qilaiwing/PicaComic_miuix/issues"),
+            ),
+            MiuixArrowPreference(
+              startAction: _mi(MiuixIcons.os4.info),
+              title: "开源许可".tl,
+              summary: "MIT License",
+              onClick: () => open(
+                  "https://github.com/Qilaiwing/PicaComic_miuix/blob/miuix/LICENSE"),
+            ),
+          ],
+        ),
+        Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom + 24))
       ],
     );
   }
@@ -682,7 +733,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
           blurred: true,
           blurRadius: 0,
           blurTintAlpha: 0,
-          navigationIcon: enableTwoViews
+          navigationIcon: enableTwoViews && !widget.singlePage
               ? null
               : MiuixIconButton(
                   child: MiuixIcon(
@@ -690,10 +741,12 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
                         MiuixIcons.os4.back,
                     size: 20,
                   ),
-                  onPressed: () => setState(() {
-                    _leftBehavior.state.heightOffset = 0;
-                    currentPage = -1;
-                  }),
+                  onPressed: () => widget.singlePage
+                      ? _singlePageBack()
+                      : setState(() {
+                          _leftBehavior.state.heightOffset = 0;
+                          currentPage = -1;
+                        }),
                 ),
         ),
         content: (padding) => MiuixScrollBehaviorListener(
@@ -713,6 +766,22 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
     return body;
   }
 
+  /// 单页模式返回：本页可能位于弹窗内部的嵌套 Navigator 根部，
+  /// 此时内层 maybePop 无路由可弹，需要回落到外层/根 Navigator。
+  void _singlePageBack() {
+    final nav = Navigator.of(context);
+    if (nav.canPop()) {
+      nav.pop();
+      return;
+    }
+    final root = Navigator.of(context, rootNavigator: true);
+    if (root.canPop()) {
+      root.pop();
+    } else {
+      App.globalBack();
+    }
+  }
+
   var canPop = ValueNotifier(true);
 
   @override
@@ -720,6 +789,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
 
   @override
   void onPopInvokedWithResult(bool didPop, result) {
+    if (widget.singlePage) return;
     if (currentPage != -1) {
       setState(() {
         _leftBehavior.state.heightOffset = 0;
@@ -730,6 +800,7 @@ class _SettingsPageState extends State<SettingsPage> implements PopEntry{
 
   @override
   void onPopInvoked(bool didPop) {
+    if (widget.singlePage) return;
     if (currentPage != -1) {
       setState(() {
         _leftBehavior.state.heightOffset = 0;

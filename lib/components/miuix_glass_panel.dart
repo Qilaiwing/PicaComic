@@ -92,7 +92,7 @@ class _MiuixGlassPanelState extends State<MiuixGlassPanel> {
     // 模糊层：始终完全不透明，绝不参与淡入动画。
     // 一旦被 Opacity / FadeTransition 包住就会离屏合成，BackdropFilter
     // 采不到身后画面，首帧白闪。
-    final Widget blurLayer = widget.blurRadius > 0
+    final Widget blurLayer = widget.blurRadius > 0 && frostEnabled
         ? Positioned(
             top: -reach,
             bottom: -reach,
@@ -100,8 +100,8 @@ class _MiuixGlassPanelState extends State<MiuixGlassPanel> {
             right: -reach,
             child: BackdropFilter(
               filter: ImageFilter.blur(
-                sigmaX: widget.blurRadius,
-                sigmaY: widget.blurRadius,
+                sigmaX: math.min(widget.blurRadius, kFrostSigma),
+                sigmaY: math.min(widget.blurRadius, kFrostSigma),
               ),
               child: const SizedBox.expand(),
             ),
@@ -121,7 +121,10 @@ class _MiuixGlassPanelState extends State<MiuixGlassPanel> {
             builder: (context, t, __) => DecoratedBox(
               decoration: ShapeDecoration(
                 color: (widget.tint ?? Colors.transparent).withValues(
-                  alpha: (widget.tint?.a ?? 0.0) * t,
+                  alpha: (frostEnabled || widget.tint == null
+                          ? (widget.tint?.a ?? 0.0)
+                          : math.max(widget.tint!.a, 0.94)) *
+                      t,
                 ),
                 shape: shape,
               ),

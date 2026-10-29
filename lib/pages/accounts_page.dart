@@ -1,213 +1,171 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/network/htmanga_network/htmanga_main_network.dart';
 import 'package:pica_comic/network/res.dart';
 import 'package:pica_comic/pages/htmanga/ht_slider_captcha.dart';
+import 'package:pica_comic/pages/settings/settings_page.dart'
+    show JsSourceSettingTile, SettingsPage;
+import 'package:pica_comic/foundation/js_engine.dart';
 import 'package:pica_comic/tools/translations.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-class AccountsPageLogic extends StateController {
-  final _reLogin = <String, bool>{};
-}
-
+/// 账号管理已并入「漫画源」设置页；保留入口兼容旧跳转。
 class AccountsPage extends StatelessWidget {
   const AccountsPage({super.key});
 
-  AccountsPageLogic get logic => StateController.find<AccountsPageLogic>();
-
   @override
   Widget build(BuildContext context) {
-    if (PopupIndicatorWidget.maybeOf(context) != null) {
-      var body = StateBuilder<AccountsPageLogic>(
-        init: AccountsPageLogic(),
-        builder: (logic) {
-          return CustomScrollView(
-            slivers: [
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  buildContent(context).toList(),
-                ),
-              ),
-              SliverPadding(
-                padding: EdgeInsets.only(bottom: context.padding.bottom),
-              )
-            ],
-          );
-        },
-      );
-      return PopUpWidgetScaffold(title: "账号管理".tl, body: body);
-    } else {
-      return MiuixScaffold(
-        content: (_) => StateBuilder<AccountsPageLogic>(
-          init: AccountsPageLogic(),
-          builder: (logic) {
-            return SmoothCustomScrollView(
-              slivers: [
-                SliverAppbar(
-                  title: Text("账号管理".tl),
-                ),
-                SliverList(
-                  delegate: SliverChildListDelegate(
-                    buildContent(context).toList(),
-                  ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.only(bottom: context.padding.bottom + 20),
-                )
-              ],
-            );
-          },
-        ),
-      );
-    }
-  }
-
-  Iterable<Widget> buildContent(BuildContext context) sync* {
-    var sources =
-        ComicSource.sources.where((element) => element.account != null);
-    if (sources.isEmpty) return;
-
-    for (var element in sources) {
-      final bool logged = element.isLogin;
-      yield MiuixSmallTitle(element.name.tl);
-
-      final cardChildren = <Widget>[];
-
-      if (!logged) {
-        cardChildren.add(
-          MiuixArrowPreference(
-            startAction: const Icon(Icons.login),
-            title: "登录".tl,
-            summary: "点击登录该漫画源账号".tl,
-            onClick: () async {
-              if (element.account!.onLogin != null) {
-                await element.account!.onLogin!(context);
-              }
-              if (element.account!.login != null && context.mounted) {
-                await context.to(
-                  () => _LoginPage(
-                    sourceName: element.name,
-                    login: element.account!.login!,
-                    loginWithSlider: element.account!.loginWithSlider,
-                    registerWebsite: element.account!.registerWebsite,
-                  ),
-                );
-                element.saveData();
-              }
-              logic.update();
-            },
-          ),
-        );
-      } else {
-        for (var item in element.account!.infoItems) {
-          if (item.builder != null) {
-            cardChildren.add(item.builder!(context));
-          } else {
-            cardChildren.add(
-              MiuixArrowPreference(
-                startAction: const Icon(Icons.account_circle_outlined),
-                title: item.title.tl,
-                summary: item.data?.call(),
-                onClick: item.onTap ?? () {},
-              ),
-            );
-          }
-        }
-        if (element.account!.allowReLogin) {
-          bool loading = logic._reLogin[element.key] == true;
-          cardChildren.add(
-            MiuixArrowPreference(
-              startAction: loading
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: MiuixCircularProgressIndicator(strokeWidth: 2, size: 20),
-                    )
-                  : const Icon(Icons.refresh),
-              title: "重新登录".tl,
-              summary: "如果登录失效点击此处".tl,
-              onClick: () async {
-                if (element.data["account"] == null) {
-                  showToast(message: "无数据".tl);
-                  return;
-                }
-                logic._reLogin[element.key] = true;
-                logic.update();
-                final List account = element.data["account"];
-                var res =
-                    await element.account!.login!(account[0], account[1]);
-                // 需要滑块验证时，弹窗验证后用通行证重试一次。
-                if (res.error && element.account!.loginWithSlider != null) {
-                  final msg = res.errorMessage ?? "";
-                  if (msg.contains("滑塊") ||
-                      msg.contains("滑块") ||
-                      msg.contains("滑動")) {
-                    if (context.mounted) {
-                      final pass = await requestHtSliderPass(context);
-                      if (pass != null) {
-                        res = await element.account!
-                            .loginWithSlider!(account[0], account[1], pass);
-                      }
-                    }
-                  }
-                }
-                if (res.error) {
-                  showToast(message: res.errorMessage!);
-                } else {
-                  showToast(
-                    message: "登录成功".tl,
-                    icon: const Icon(Icons.check),
-                  );
-                }
-                logic._reLogin[element.key] = false;
-                logic.update();
-              },
-            ),
-          );
-        }
-        cardChildren.add(
-          MiuixArrowPreference(
-            startAction: const Icon(Icons.logout, color: Colors.red),
-            title: "退出登录".tl,
-            onClick: () {
-              element.data["account"] = null;
-              element.account?.logout();
-              element.saveData();
-              logic.update();
-            },
-          ),
-        );
-      }
-
-      yield Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: ClipPath(
-          clipper: const ShapeBorderClipper(
-            shape: MiuixSquircleBorder(cornerRadius: 16),
-          ),
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          child: MiuixCard(
-            insideMargin: EdgeInsets.zero,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: cardChildren,
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  void setClipboard(String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    showToast(message: "已复制".tl, icon: const Icon(Icons.check));
+    return const SettingsPage(initialPage: 1, singlePage: true);
   }
 }
 
-class _LoginPage extends StatefulWidget {
-  const _LoginPage({
+
+/// 内置漫画源账号行（与 JS 的 [JsAccountRows] 对应），供漫画源折叠卡片复用。
+class BuiltInAccountRows extends StatefulWidget {
+  const BuiltInAccountRows({
+    super.key,
+    required this.source,
+    this.onChanged,
+  });
+
+  final ComicSource source;
+  final VoidCallback? onChanged;
+
+  @override
+  State<BuiltInAccountRows> createState() => _BuiltInAccountRowsState();
+}
+
+class _BuiltInAccountRowsState extends State<BuiltInAccountRows> {
+  bool reLoggingIn = false;
+
+  ComicSource get source => widget.source;
+
+  void changed() {
+    if (mounted) setState(() {});
+    widget.onChanged?.call();
+  }
+
+  Future<void> login() async {
+    final acc = source.account!;
+    if (acc.onLogin != null) {
+      await acc.onLogin!(context);
+    }
+    if (acc.login != null && mounted) {
+      await context.to(
+        () => SourceLoginPage(
+          sourceName: source.name,
+          login: acc.login!,
+          loginWithSlider: acc.loginWithSlider,
+          registerWebsite: acc.registerWebsite,
+        ),
+      );
+      source.saveData();
+    }
+    changed();
+  }
+
+  Future<void> reLogin() async {
+    if (reLoggingIn) return;
+    if (source.data["account"] == null) {
+      showToast(message: "无数据".tl);
+      return;
+    }
+    setState(() => reLoggingIn = true);
+    final List account = source.data["account"];
+    var res = await source.account!.login!(account[0], account[1]);
+    if (res.error && source.account!.loginWithSlider != null) {
+      final msg = res.errorMessage ?? "";
+      if (msg.contains("滑塊") || msg.contains("滑块") || msg.contains("滑動")) {
+        if (mounted) {
+          final pass = await requestHtSliderPass(context);
+          if (pass != null) {
+            res = await source.account!
+                .loginWithSlider!(account[0], account[1], pass);
+          }
+        }
+      }
+    }
+    if (res.error) {
+      showToast(message: res.errorMessage!);
+    } else {
+      showToast(message: "登录成功".tl, icon: const Icon(Icons.check));
+    }
+    reLoggingIn = false;
+    changed();
+  }
+
+  void logout() {
+    source.data["account"] = null;
+    source.account?.logout();
+    source.saveData();
+    changed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final logged = source.isLogin;
+    final acc = source.account!;
+    final children = <Widget>[];
+
+    if (!logged) {
+      children.add(
+        MiuixArrowPreference(
+          startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.forward, size: 22))),
+          title: "登录".tl,
+          summary: "点击登录该漫画源账号".tl,
+          onClick: login,
+        ),
+      );
+    } else {
+      for (var item in acc.infoItems) {
+        if (item.builder != null) {
+          children.add(item.builder!(context));
+        } else {
+          children.add(
+            MiuixArrowPreference(
+              startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.contactsCircle, size: 22))),
+              title: item.title.tl,
+              summary: item.data?.call(),
+              onClick: item.onTap ?? () {},
+            ),
+          );
+        }
+      }
+      if (acc.allowReLogin) {
+        children.add(
+          MiuixArrowPreference(
+            startAction: reLoggingIn
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: MiuixCircularProgressIndicator(
+                        strokeWidth: 2, size: 20),
+                  )
+                : const Icon(Icons.refresh),
+            title: "重新登录".tl,
+            summary: "如果登录失效点击此处".tl,
+            onClick: reLogin,
+          ),
+        );
+      }
+      children.add(
+        MiuixArrowPreference(
+          startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.back, size: 22, tint: Colors.red))),
+          title: "退出登录".tl,
+          onClick: logout,
+        ),
+      );
+    }
+
+    return Column(mainAxisSize: MainAxisSize.min, children: children);
+  }
+}
+
+/// 漫画源登录页，账号管理与漫画源设置共用。
+class SourceLoginPage extends StatefulWidget {
+  const SourceLoginPage({
+    super.key,
     required this.sourceName,
     required this.login,
     this.loginWithSlider,
@@ -223,10 +181,10 @@ class _LoginPage extends StatefulWidget {
   final String? registerWebsite;
 
   @override
-  State<_LoginPage> createState() => _LoginPageState();
+  State<SourceLoginPage> createState() => SourceLoginPageState();
 }
 
-class _LoginPageState extends State<_LoginPage> {
+class SourceLoginPageState extends State<SourceLoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _usernameFocus = FocusNode();
@@ -280,6 +238,15 @@ class _LoginPageState extends State<_LoginPage> {
             ),
             onPressed: () => context.pop(),
           ),
+          actions: [
+            AppTooltip(
+              message: "漫画源".tl,
+              child: MiuixIconButton(
+                onPressed: () => SettingsPage.openSection(1),
+                child: const Icon(Icons.extension_outlined, size: 22),
+              ),
+            ),
+          ],
         ),
         content: (padding) => MiuixScrollBehaviorListener(
           behavior: _behavior,
@@ -561,5 +528,211 @@ class _LoginPageState extends State<_LoginPage> {
         message.contains("滑動") ||
         message.contains("滑动");
     return needs || (message.contains("先完成") && message.contains("驗證"));
+  }
+}
+
+/// JS 源凭证状态：调用脚本的 account.checkStatus 校验
+class _JsCredentialStatus extends StatefulWidget {
+  const _JsCredentialStatus({required this.source});
+
+  final ComicSource source;
+
+  @override
+  State<_JsCredentialStatus> createState() => _JsCredentialStatusState();
+}
+
+class _JsCredentialStatusState extends State<_JsCredentialStatus> {
+  bool? valid;
+  bool checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    check();
+  }
+
+  void check() async {
+    var key = widget.source.key;
+    var has = JsEngine().runCode(
+            "typeof ComicSource.sources.$key.account.checkStatus === 'function'") ==
+        true;
+    if (!has) return;
+    setState(() => checking = true);
+    try {
+      var res = await JsEngine()
+          .runCode("ComicSource.sources.$key.account.checkStatus()");
+      valid = res is Map ? res["valid"] == true : null;
+    } catch (e) {
+      valid = null;
+    }
+    if (mounted) setState(() => checking = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var colors = MiuixTheme.of(context).colors;
+    String state;
+    Color color;
+    if (checking) {
+      state = "检查中".tl;
+      color = colors.onSurfaceVariantSummary;
+    } else if (valid == true) {
+      state = "凭证有效".tl;
+      color = Colors.green;
+    } else if (valid == false) {
+      state = "凭证失效".tl;
+      color = colors.error;
+    } else {
+      state = "未校验".tl;
+      color = colors.onSurfaceVariantSummary;
+    }
+    return MiuixBasicComponent(
+      startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.lock, size: 22))),
+      title: "凭证状态".tl,
+      endActions: [Text(state, style: TextStyle(color: color, fontSize: 14))],
+      onClick: check,
+    );
+  }
+}
+
+/// JS 漫画源账号行（漫画源折叠卡片共用）：
+/// 账号 → 凭证状态 → 设备信息（若脚本提供）→ 重新登录 → 退出登录；未登录时显示登录行。
+class JsAccountRows extends StatefulWidget {
+  const JsAccountRows({super.key, required this.source, this.onChanged});
+
+  final ComicSource source;
+  final VoidCallback? onChanged;
+
+  static const deviceKeys = ["clear_device_info", "auto_clear_device_info"];
+
+  @override
+  State<JsAccountRows> createState() => _JsAccountRowsState();
+}
+
+class _JsAccountRowsState extends State<JsAccountRows> {
+  bool reLoggingIn = false;
+
+  ComicSource get source => widget.source;
+
+  void changed() {
+    if (mounted) setState(() {});
+    widget.onChanged?.call();
+  }
+
+  Future<void> login() async {
+    var acc = source.account!;
+    // 网页登录：只走 onLogin，不再打开账号密码页
+    if (acc.onLogin != null && acc.login == null) {
+      await acc.onLogin!(context);
+      source.saveData();
+      changed();
+      return;
+    }
+    if (acc.onLogin != null) await acc.onLogin!(context);
+    if (acc.login != null && mounted) {
+      await context.to(() => SourceLoginPage(
+            sourceName: source.name,
+            login: acc.login!,
+            loginWithSlider: acc.loginWithSlider,
+            registerWebsite: acc.registerWebsite,
+          ));
+      source.saveData();
+    }
+    changed();
+  }
+
+  Future<void> reLogin() async {
+    if (reLoggingIn) return;
+    var acc = source.account!;
+    // 网页登录源没有保存密码，重新打开 WebView
+    if (acc.login == null && acc.onLogin != null) {
+      setState(() => reLoggingIn = true);
+      try {
+        await acc.onLogin!(context);
+        source.saveData();
+      } finally {
+        if (mounted) setState(() => reLoggingIn = false);
+      }
+      changed();
+      return;
+    }
+    setState(() => reLoggingIn = true);
+    var ok = await source.reLogin();
+    showToast(
+        message:
+            ok ? "登录成功".tl : (source.lastReLoginError ?? "登录失败".tl));
+    reLoggingIn = false;
+    changed();
+  }
+
+  void logout() {
+    source.data["account"] = null;
+    source.account?.logout();
+    source.data.remove("username");
+    source.saveData();
+    changed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var logged = source.isLogin;
+    var acc = source.account!;
+    var accountData = source.data["account"];
+    var username = source.data["username"]?.toString() ??
+        (accountData is List && accountData.isNotEmpty
+            ? accountData[0].toString()
+            : null);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (!logged)
+          MiuixArrowPreference(
+            startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.forward, size: 22))),
+            title: (acc.onLogin != null && acc.login == null)
+                ? "网页登录".tl
+                : "登录".tl,
+            summary: (acc.onLogin != null && acc.login == null)
+                ? "登录完成后自动返回".tl
+                : "点击登录该漫画源账号".tl,
+            onClick: login,
+          )
+        else ...[
+          MiuixArrowPreference(
+            startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.contactsCircle, size: 22))),
+            title: "账号".tl,
+            summary: username,
+            onClick: () {},
+          ),
+          _JsCredentialStatus(source: source),
+        ],
+        for (var key in JsAccountRows.deviceKeys)
+          if (source.jsSettings[key] is Map)
+            JsSourceSettingTile(
+              source: source,
+              settingKey: key,
+              config: Map<String, dynamic>.from(source.jsSettings[key]),
+              onChanged: changed,
+            ),
+        if (logged) ...[
+          MiuixArrowPreference(
+            startAction: reLoggingIn
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: MiuixCircularProgressIndicator(
+                        strokeWidth: 2, size: 20),
+                  )
+                : const Icon(Icons.refresh),
+            title: "重新登录".tl,
+            summary: "如果登录失效点击此处".tl,
+            onClick: reLogin,
+          ),
+          MiuixArrowPreference(
+            startAction: SizedBox.square(dimension: 24, child: Center(child: MiuixIcon(vector: MiuixIcons.os4.back, size: 22, tint: Colors.red))),
+            title: "退出登录".tl,
+            onClick: logout,
+          ),
+        ],
+      ],
+    );
   }
 }

@@ -427,16 +427,57 @@ extension ToolBar on ComicReadingPage {
                           ),
                           const SizedBox(width: 4),
                           Expanded(
-                            child: Text(
-                              readingData.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
+                            child: Builder(builder: (context) {
+                              final hasEp = readingData.hasEp;
+                              final epName = hasEp
+                                  ? (readingData.eps?.values.elementAtOrNull(
+                                          comicReadingPageLogic.order - 1) ??
+                                      "E${comicReadingPageLogic.order}")
+                                  : null;
+                              final secondary = Theme.of(context)
+                                  .colorScheme.onSurface.withValues(alpha: 0.62);
+                              if (!hasEp || epName == null) {
+                                return Text(
+                                  readingData.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: -0.2,
+                                  ),
+                                );
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    readingData.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: -0.2,
+                                      height: 1.15,
+                                      color: secondary,
+                                    ),
+                                  ),
+                                  Text(
+                                    epName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.2,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }),
                           ),
                           const SizedBox(width: 4),
                           MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("阅读设置".tl)), child: MiuixIconButton(

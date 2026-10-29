@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -330,7 +329,7 @@ class DownloadPage extends StatelessWidget {
     var dio = logDio();
     try {
       await dio.download(
-        "https://raw.githubusercontent.com/Pacalini/PicaComic/master/fonts/NotoSansSC-Regular.ttf",
+        "https://raw.githubusercontent.com/Qilaiwing/PicaComic_miuix/miuix/fonts/NotoSansSC-Regular.ttf",
         "${App.dataPath}/font.ttf",
         cancelToken: cancelToken,
       );
@@ -1249,8 +1248,7 @@ child: MiuixPressable(
         ),
         child: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: FrostBlur(
               child: Container(
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xF01C1C1E) : const Color(0xF4F6F6F8),

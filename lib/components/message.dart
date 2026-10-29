@@ -41,8 +41,7 @@ class _ToastOverlay extends StatelessWidget {
               clipper: const ShapeBorderClipper(
                 shape: MiuixSquircleBorder(cornerRadius: 20),
               ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: FrostBlur(
                 child: MiuixSurface(
                   color: MiuixTheme.of(context)
                       .colors

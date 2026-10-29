@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/foundation/history.dart';
@@ -320,6 +319,7 @@ class _EhGalleryTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: CachedImageProvider(
           gallery.coverPath,
           headers: {

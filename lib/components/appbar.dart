@@ -135,8 +135,7 @@ class _AppbarState extends State<Appbar> {
           widget.backgroundColor ?? MiuixTheme.of(context).colors.background;
       final translucentColor = baseColor.withValues(alpha: frostTintAlpha(context));
       return ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+        child: FrostBlur(
           child: ColoredBox(
             color: translucentColor,
             child: content,
@@ -277,8 +276,7 @@ class _MySliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
     return SizedBox.expand(
       child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+        child: FrostBlur(
           child: Container(
             color: bgColor,
             child: Stack(
@@ -688,7 +686,8 @@ class _FilledTabBarState extends State<FilledTabBar> {
               shape: const StadiumBorder(),
               color: isSelected
                   ? MiuixTheme.of(context).colors.primary
-                  : MiuixTheme.of(context).colors.surfaceContainerHigh,
+                  // 未选中: 半透明对比底色, 浅色/深色背景上都能看清边界
+                  : (isDark ? const Color(0x33FFFFFF) : const Color(0x17000000)),
             ),
             child: Text(
               text.isNotEmpty ? text : 'Tab ${i + 1}',
@@ -697,7 +696,7 @@ class _FilledTabBarState extends State<FilledTabBar> {
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? MiuixTheme.of(context).colors.onPrimary
-                    : MiuixTheme.of(context).colors.onSurfaceContainerHigh,
+                    : MiuixTheme.of(context).colors.onSurface.withValues(alpha: 0.86),
                 height: 1.2,
               ),
             ),          )),

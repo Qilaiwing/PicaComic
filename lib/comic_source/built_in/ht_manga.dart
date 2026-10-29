@@ -217,6 +217,7 @@ class _HtComicTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: CachedImageProvider(
           comic.image,
           headers: {

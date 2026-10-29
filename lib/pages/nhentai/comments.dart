@@ -91,7 +91,7 @@ class _NhentaiCommentsPageState extends State<NhentaiCommentsPage> {
                       tint: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: () {
-                      showToast(message: "未完成");
+                      showToast(message: "未完成".tl);
                     },
                   ),
                 ],

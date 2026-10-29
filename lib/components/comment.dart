@@ -18,7 +18,8 @@ class CommentTile extends StatelessWidget {
       this.liked,
       this.comments,
       this.leading,
-      this.like})
+      this.like,
+      this.dense = false})
       : super(key: key);
   final String? avatarUrl;
   final String? frameUrl;
@@ -34,6 +35,8 @@ class CommentTile extends StatelessWidget {
   final Widget? tailing;
   final void Function()? like;
   final Widget? leading;
+  /// Tighter layout for sources without likes / levels (typical JS comments).
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -41,54 +44,100 @@ class CommentTile extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final outlineColor =
         isDark ? const Color(0x99FFFFFF) : const Color(0x8A000000);
+    final useDense = dense || (like == null && level == null);
+    final avatarSize = useDense ? 40.0 : 52.0;
+    final nameSize = useDense ? 13.5 : 14.0;
+    final contentSize = useDense ? 13.5 : 14.5;
+    final gapAfterName = useDense ? 4.0 : 8.0;
 
-    return MiuixPressable(
-        shape: const MiuixSquircleBorder(cornerRadius: 14),
+    Widget? avatar;
+    if (avatarUrl != null) {
+      avatar = Avatar(
+        size: avatarSize,
+        avatarUrl: avatarUrl,
+        frame: frameUrl,
+        slogan: slogan,
+        name: name,
+        couldBeShown: level != null,
+        level: level ?? 0,
+      );
+    } else if (leading != null) {
+      avatar = leading;
+    } else {
+      final ch = name.trim().isEmpty ? "?" : name.trim().substring(0, 1);
+      avatar = Container(
+        width: avatarSize,
+        height: avatarSize,
+        alignment: Alignment.center,
+        decoration: ShapeDecoration(
+          shape: MiuixSquircleBorder(cornerRadius: useDense ? 12 : 14),
+          color: primaryColor.withOpacity(0.14),
+        ),
+        child: Text(
+          ch.toUpperCase(),
+          style: TextStyle(
+            fontSize: useDense ? 14 : 16,
+            fontWeight: FontWeight.w700,
+            color: primaryColor,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: MiuixCard(
+        cornerRadius: 14,
+        insideMargin: EdgeInsets.fromLTRB(
+            12, useDense ? 10 : 12, 12, useDense ? 10 : 12),
         onPressed: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-          child: SizedBox(
-            width: double.infinity,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (avatarUrl != null)
-                  Avatar(
-                    size: 52,
-                    avatarUrl: avatarUrl,
-                    frame: frameUrl,
-                    slogan: slogan,
-                    name: name,
-                    couldBeShown: level != null,
-                    level: level ?? 0,
-                  ),
-                if (leading != null) leading!,
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      SelectableText(
-                        content,
-                        style: const TextStyle(fontSize: 14.5, height: 1.3),
-                      ),
+        feedbackType: onTap != null
+            ? MiuixPressFeedbackType.sink
+            : MiuixPressFeedbackType.none,
+        child: SizedBox(
+          width: double.infinity,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              avatar!,
+              SizedBox(width: useDense ? 10 : 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: TextStyle(
+                                fontSize: nameSize,
+                                fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (time != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            time!,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: outlineColor,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    SizedBox(height: gapAfterName),
+                    SelectableText(
+                      content,
+                      style: TextStyle(fontSize: contentSize, height: 1.3),
+                    ),
+                    if (like != null || comments != null) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          if (time != null)
-                            Text(
-                              time!,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: outlineColor,
-                              ),
-                            ),
                           const Spacer(),
                           if (like != null)
                             MiuixPressable(
@@ -158,13 +207,15 @@ class CommentTile extends StatelessWidget {
                                   ),
                                 )),
                         ],
-                      )
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

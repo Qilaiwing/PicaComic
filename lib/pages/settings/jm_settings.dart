@@ -15,8 +15,9 @@ class SetJmComicsOrderController extends StateController{
 
 
 class JmSettings extends StatefulWidget {
-  const JmSettings(this.popUp, {Key? key}) : super(key: key);
+  const JmSettings(this.popUp, {this.embedded = false, Key? key}) : super(key: key);
   final bool popUp;
+  final bool embedded;
 
   @override
   State<JmSettings> createState() => _JmSettingsState();
@@ -81,13 +82,9 @@ class _JmSettingsState extends State<JmSettings> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        MiuixSmallTitle("禁漫天堂设置".tl),
-        MiuixSettingsCard(
-          children: [
+    final tiles = <Widget>[
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.track_changes),
+              startAction: _mi(MiuixIcons.os4.refresh),
               title: "自动选择域名".tl,
               summary: "登录时自动选择API域名".tl,
               value: autoSelectStream,
@@ -101,7 +98,7 @@ class _JmSettingsState extends State<JmSettings> {
               },
             ),
             SelectSetting(
-              leading: const Icon(Icons.dns),
+              leading: _mi(MiuixIcons.os4.link),
               title: "API域名".tl,
               initialValue: int.parse(appdata.settings[17]),
               values: [
@@ -114,7 +111,7 @@ class _JmSettingsState extends State<JmSettings> {
               },
             ),
             SelectSetting(
-              leading: const Icon(Icons.dns_outlined),
+              leading: _mi(MiuixIcons.os4.photos),
               title: "图片分流".tl,
               initialValue: int.parse(appdata.appSettings.jmImgUrlIndex),
               values: [
@@ -127,7 +124,7 @@ class _JmSettingsState extends State<JmSettings> {
               },
             ),
             SelectSetting(
-              leading: const Icon(Icons.favorite_border),
+              leading: _mi(MiuixIcons.os4.favorites),
               title: "收藏夹漫画排序模式".tl,
               initialValue: int.parse(appdata.settings[42]),
               values: [
@@ -139,12 +136,12 @@ class _JmSettingsState extends State<JmSettings> {
               },
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.update_outlined),
+              startAction: _mi(MiuixIcons.os4.update),
               title: "更新API域名".tl,
               onClick: () => JmSettings.updateApiDomains(true),
             ),
             MiuixBasicComponent(
-              startAction: const Icon(Icons.today),
+              startAction: _mi(MiuixIcons.os4.months),
               title: "自动签到".tl,
               summary: "开关启用；点击整行可测试签到".tl,
               onClick: () => JmSettings.daily(true),
@@ -160,9 +157,15 @@ class _JmSettingsState extends State<JmSettings> {
                 ),
               ],
             ),
-          ],
-        ),
-        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16))
+];
+    if (widget.embedded) {
+      return Column(mainAxisSize: MainAxisSize.min, children: tiles);
+    }
+    return Column(
+      children: [
+        MiuixSmallTitle("禁漫天堂设置".tl),
+        MiuixSettingsCard(children: tiles),
+        Padding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16)),
       ],
     );
   }

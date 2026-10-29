@@ -39,7 +39,7 @@ Dio _updateDio({bool followRedirects = true}) {
   var s = raw.trim();
   if (s.startsWith("v") || s.startsWith("V")) s = s.substring(1);
   final miuixMatch =
-      RegExp(r'-miuix(\d+)$', caseSensitive: false).firstMatch(s);
+      RegExp(r'-miuix(\d*)$', caseSensitive: false).firstMatch(s);
   var miuix = 0;
   if (miuixMatch != null) {
     miuix = int.tryParse(miuixMatch.group(1)!) ?? 0;
@@ -132,17 +132,38 @@ Future<void> _loadUpdateInfoFromAtom() async {
   final content = RegExp(r'<content[^>]*>([\s\S]*?)</content>')
       .firstMatch(entry.group(1)!);
   if (content != null) {
-    var text = content
-        .group(1)!
+    final text = _htmlToMarkdown(content.group(1)!
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>')
         .replaceAll('&quot;', '"')
-        .replaceAll('&amp;', '&')
-        .replaceAll(RegExp(r'<[^>]+>'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+        .replaceAll('&#39;', "'")
+        .replaceAll('&amp;', '&'));
     if (text.isNotEmpty) _updateInfo = text;
   }
+}
+
+/// 把 GitHub atom 里的 release HTML 转成简易 Markdown, 保留标题 / 列表 / 段落。
+String _htmlToMarkdown(String html) {
+  var s = html;
+  s = s.replaceAllMapped(
+      RegExp(r'<h([1-6])[^>]*>([\s\S]*?)</h\1>', caseSensitive: false),
+      (m) => "\n${'#' * int.parse(m.group(1)!)} ${m.group(2)}\n");
+  s = s.replaceAllMapped(RegExp(r'<li[^>]*>', caseSensitive: false), (_) => "\n- ");
+  s = s.replaceAllMapped(
+      RegExp(r'<(strong|b)>([\s\S]*?)</\1>', caseSensitive: false),
+      (m) => "**${m.group(2)}**");
+  s = s.replaceAllMapped(
+      RegExp(r'<code>([\s\S]*?)</code>', caseSensitive: false),
+      (m) => "`${m.group(1)}`");
+  s = s.replaceAllMapped(
+      RegExp(r'<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)</a>', caseSensitive: false),
+      (m) => "[${m.group(2)}](${m.group(1)})");
+  s = s.replaceAll(RegExp(r'<br\s*/?>|</p>|</ul>|</ol>|<hr\s*/?>', caseSensitive: false), "\n");
+  s = s.replaceAll(RegExp(r'<[^>]+>'), '');
+  s = s.replaceAll(RegExp(r'[ \t]+'), ' ');
+  s = s.split('\n').map((l) => l.trim()).join('\n');
+  s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+  return s.trim();
 }
 
 Future<String?> _latestTagFromAtom() async {
@@ -164,7 +185,7 @@ Future<String?> _latestTagFromAtom() async {
       .map((m) => m.group(1)!.trim())
       .toList();
   for (final t in titles) {
-    final vm = RegExp(r'v?\d+\.\d+\.\d+(?:-miuix\d+)?',
+    final vm = RegExp(r'v?\d+\.\d+\.\d+(?:-miuix\d*)?',
             caseSensitive: false)
         .firstMatch(t);
     if (vm != null) {
@@ -179,6 +200,7 @@ Future<bool?> checkUpdate() async {
   try {
     final local = appVersion;
     final remote = await getLatestVersion();
+    _latestVersion = remote;
     LogManager.addLog(
         LogLevel.info, "Update", "compare remote=$remote local=$local");
     return compareSemVer(remote, local);
@@ -203,20 +225,22 @@ bool compareSemVer(String ver1, String ver2) {
   return false;
 }
 
+/// 返回最新版本的更新日志 (Markdown), 拿不到时返回 null。
 Future<String?> getUpdatesInfo() async {
   if (_updateInfo == null) {
     try {
       await _loadUpdateInfoFromAtom();
     } catch (_) {}
   }
-  if (_updateInfo == null) return "New release available";
-  final text = _updateInfo!.replaceAll('\r\n', '\n');
-  final lines = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
-  if (lines.length > 12) {
-    return "${lines.take(12).join('\n')}\n...";
-  }
+  final text = _updateInfo?.replaceAll('\r\n', '\n').trim();
+  if (text == null || text.isEmpty) return null;
   return text;
 }
+
+String? _latestVersion;
+
+/// 最近一次检查得到的最新版本号 (不含 v 前缀)。
+String? get latestVersion => _latestVersion;
 
 Future<String> getDownloadUrl() async {
   return "https://github.com/Qilaiwing/PicaComic_miuix/releases/latest";

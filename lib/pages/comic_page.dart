@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -157,6 +156,12 @@ class _ComicPageImpl extends BaseComicPage<ComicInfoData> {
   @override
   String? get introduction => data!.description;
 
+  @override
+  double? get stars => data?.stars;
+
+  @override
+  String? get ratingText => data?.rating;
+
   ComicSource? get comicSource => ComicSource.find(sourceKey);
 
   @override
@@ -238,7 +243,22 @@ class _ComicPageImpl extends BaseComicPage<ComicInfoData> {
           imageUrl),
       fit: BoxFit.cover,
       filterQuality: FilterQuality.medium,
-      errorBuilder: (context, s, d) => const Icon(Icons.error),
+      errorBuilder: (context, err, d) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return ColoredBox(
+          color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE8E8EC),
+          child: Center(
+            child: Icon(
+              Icons.broken_image_outlined,
+              size: 28,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withOpacity(0.55),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -347,10 +367,20 @@ class _CommentsPageState extends State<_CommentsPage> {
   int? maxPage;
   var controller = TextEditingController();
   bool sending = false;
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    firstLoad();
+  }
 
   void firstLoad() async {
+    if (_started && _loading == false && _comments != null) return;
+    _started = true;
     var res = await widget.source.commentsLoader!(
         widget.data.comicId, widget.data.subId, 1, widget.replyId);
+    if (!mounted) return;
     if (res.error) {
       setState(() {
         _error = res.errorMessage;
@@ -368,6 +398,7 @@ class _CommentsPageState extends State<_CommentsPage> {
   void loadMore() async {
     var res = await widget.source.commentsLoader!(
         widget.data.comicId, widget.data.subId, _page + 1, widget.replyId);
+    if (!mounted) return;
     if (res.error) {
       showToast(message: res.errorMessage ?? "Unknown Error");
     } else {
@@ -381,10 +412,11 @@ class _CommentsPageState extends State<_CommentsPage> {
     }
   }
 
+  bool get _canSend => widget.source.sendCommentFunc != null;
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      firstLoad();
       return const Center(
         child: MiuixInfiniteProgressIndicator(),
       );
@@ -394,104 +426,202 @@ class _CommentsPageState extends State<_CommentsPage> {
         retry: () {
           setState(() {
             _loading = true;
+            _error = null;
+            _comments = null;
+            _page = 1;
+            maxPage = null;
+            _started = false;
           });
+          firstLoad();
         },
         withAppbar: false,
       );
     } else {
-      return Column(
+      final empty = _comments == null || _comments!.isEmpty;
+      final bottomReserve = _canSend ? 78.0 : 58.0;
+      return Stack(
         children: [
-          Expanded(
-            child: ListView.builder(
-              primary: false,
-              padding: EdgeInsets.zero,
-              itemCount: _comments!.length + 1,
-              itemBuilder: (context, index) {
-                if (index == _comments!.length) {
-                  if (_page < (maxPage ?? _page + 1)) {
-                    loadMore();
-                    return const ListLoadingIndicator();
-                  } else {
-                    return const SizedBox();
-                  }
-                }
-
-                bool enableReply = _comments![index].replyCount != null;
-
-                return CommentTile(
-                  leading: _comments![index].avatar == null
-                      ? null
-                      : Container(
-                          width: 40,
-                          height: 40,
-                          clipBehavior: Clip.antiAlias,
-                          decoration: const ShapeDecoration(
-                            shape: MiuixSquircleBorder(cornerRadius: 12),
-                            color: Color(0x18000000),
+          Positioned.fill(
+            child: empty
+                ? Center(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(24, 24, 24, bottomReserve),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 40,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withOpacity(0.45),
                           ),
-                          child: AnimatedImage(
-                            image: StreamImageProvider(
-                              () => ImageManager().getCustomThumbnail(
-                                _comments![index].avatar!,
-                                widget.data.sourceKey,
-                              ),
-                              _comments![index].avatar!,
+                          const SizedBox(height: 12),
+                          Text(
+                            "暂无评论".tl,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withOpacity(0.8),
                             ),
                           ),
-                        ),
-                  avatarUrl: null,
-                  name: _comments![index].userName,
-                  time: _comments![index].time,
-                  content: _comments![index].content,
-                  comments: _comments![index].replyCount,
-                  onTap: enableReply
-                      ? () {
-                          showSideBar(
-                            context,
-                            _CommentsPage(
-                              data: widget.data,
-                              source: widget.source,
-                              replyId: _comments![index].id,
-                            ),
-                            title: "回复".tl,
-                          );
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    primary: false,
+                    padding: EdgeInsets.only(top: 4, bottom: bottomReserve),
+                    itemCount: _comments!.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == _comments!.length) {
+                        if (_page < (maxPage ?? _page + 1)) {
+                          loadMore();
+                          return const ListLoadingIndicator();
+                        } else {
+                          return const SizedBox(height: 8);
                         }
-                      : null,
-                );
-              },
-            ),
+                      }
+
+                      final c = _comments![index];
+                      final enableReply = c.replyCount != null;
+                      final replyTitle = "回复 · @name"
+                          .tlParams({"name": c.userName});
+
+                      return CommentTile(
+                        leading: c.avatar == null
+                            ? _avatarPlaceholder(context, c.userName)
+                            : Container(
+                                width: 40,
+                                height: 40,
+                                clipBehavior: Clip.antiAlias,
+                                decoration: const ShapeDecoration(
+                                  shape:
+                                      MiuixSquircleBorder(cornerRadius: 12),
+                                  color: Color(0x18000000),
+                                ),
+                                child: AnimatedImage(
+                                  image: StreamImageProvider(
+                                    () => ImageManager().getCustomThumbnail(
+                                      c.avatar!,
+                                      widget.data.sourceKey,
+                                    ),
+                                    c.avatar!,
+                                  ),
+                                ),
+                              ),
+                        avatarUrl: null,
+                        name: c.userName,
+                        time: c.time,
+                        content: c.content,
+                        comments: c.replyCount,
+                        onTap: enableReply
+                            ? () {
+                                showSideBar(
+                                  context,
+                                  _CommentsPage(
+                                    data: widget.data,
+                                    source: widget.source,
+                                    replyId: c.id,
+                                  ),
+                                  title: replyTitle,
+                                );
+                              }
+                            : null,
+                      );
+                    },
+                  ),
           ),
-          buildBottom(context)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 10,
+            child: buildBottom(context),
+          ),
         ],
       );
     }
   }
 
-  Widget buildBottom(BuildContext context) {
-    if (widget.source.sendCommentFunc == null) {
-      return const SizedBox(
-        height: 0,
-      );
-    }
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _avatarPlaceholder(BuildContext context, String name) {
+    final ch = name.trim().isEmpty ? "?" : name.trim().substring(0, 1);
+    final primary = Theme.of(context).colorScheme.primary;
     return Container(
-      padding: EdgeInsets.fromLTRB(
-          12, 8, 12, 8 + MediaQuery.of(context).padding.bottom),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E22) : const Color(0xFFF9F9FA),
-        border: Border(
-          top: BorderSide(
-            color: isDark ? const Color(0x18FFFFFF) : const Color(0x0E000000),
-            width: 0.8,
-          ),
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        shape: const MiuixSquircleBorder(cornerRadius: 12),
+        color: primary.withOpacity(0.14),
+      ),
+      child: Text(
+        ch.toUpperCase(),
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: primary,
         ),
       ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  Widget buildBottom(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final barColor = isDark ? const Color(0xFF2A2A2E) : const Color(0xFFF5F5F7);
+    final shadow = [
+      BoxShadow(
+        color: Colors.black.withOpacity(isDark ? 0.45 : 0.12),
+        blurRadius: 18,
+        offset: const Offset(0, 6),
+      ),
+    ];
+
+    if (!_canSend) {
+      return DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: const MiuixSquircleBorder(cornerRadius: 16),
+          color: barColor,
+          shadows: shadow,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Text(
+            "此源仅支持查看评论".tl,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withOpacity(0.75),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: ShapeDecoration(
+        shape: const MiuixSquircleBorder(cornerRadius: 18),
+        color: barColor,
+        shadows: shadow,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: MiuixTextField(controller: controller, label: "评论...".tl, useLabelAsPlaceholder: true, minLines: 1, maxLines: 4),
+              child: MiuixTextField(
+                controller: controller,
+                label: "评论...".tl,
+                useLabelAsPlaceholder: true,
+                minLines: 1,
+                maxLines: 4,
+              ),
             ),
             sending
                 ? const Padding(
@@ -512,31 +642,28 @@ class _CommentsPageState extends State<_CommentsPage> {
                       tint: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: () async {
-                      if (controller.text.isEmpty) {
-                        return;
-                      }
-                      setState(() {
-                        sending = true;
-                      });
+                      if (controller.text.isEmpty) return;
+                      setState(() => sending = true);
                       var b = await widget.source.sendCommentFunc!(
                           widget.data.comicId,
                           widget.data.subId,
                           controller.text,
                           widget.replyId);
+                      if (!mounted) return;
                       if (!b.error) {
                         controller.text = "";
                         setState(() {
                           sending = false;
                           _loading = true;
-                          _comments?.clear();
+                          _comments = null;
                           _page = 1;
                           maxPage = null;
+                          _started = false;
                         });
+                        firstLoad();
                       } else {
                         showToast(message: b.errorMessage ?? "Error");
-                        setState(() {
-                          sending = false;
-                        });
+                        setState(() => sending = false);
                       }
                     },
                   ),
@@ -597,6 +724,13 @@ class ComicPageLogic<T extends Object> extends StateController {
   History? history;
   bool reverseEpsOrder = false;
   bool showFullEps = false;
+
+  /// Section fold state on the detail page.
+  bool sectionIntroExpanded = true;
+  bool sectionPreviewExpanded = true;
+  bool sectionChaptersExpanded = true;
+  bool sectionChaptersDefaultApplied = false;
+  bool sectionRecommendExpanded = true;
   int colorIndex = 0;
   bool? favoriteOnPlatform;
 
@@ -696,6 +830,12 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
   /// comic introduction
   String? get introduction;
+
+  /// Optional score in stars (0-5). Null = source has none.
+  double? get stars => null;
+
+  /// Optional rating label from source. Null = none.
+  String? get ratingText => null;
 
   /// create thumbnails data
   ThumbnailsData? get thumbnailsCreator;
@@ -847,30 +987,23 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
             children: [
               SizedBox(
                 height: 56,
-                child: const BackButton().toAlign(Alignment.centerLeft),
-              ).paddingLeft(8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: MiuixIconButton(
+                    onPressed: () => Navigator.maybePop(context),
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ).paddingLeft(4),
               SizedBox(
                 width: double.infinity,
                 child: buildComicInfo(_logic, context, false),
               ),
-              const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: MiuixHorizontalDivider()),
-              SizedBox(
-                width: 100,
-                child: Row(
-                  children: [
-                    const SizedBox(
-                      width: 18,
-                    ),
-                    Text(
-                      "信息".tl,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w500, fontSize: 18),
-                    )
-                  ],
-                ),
-              ).paddingBottom(8),
+              MiuixSmallTitle("信息".tl),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: List.generate(
@@ -990,6 +1123,10 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
                             ),
                           );
                         }),
+                        if (stars != null || ratingText != null) ...[
+                          const SizedBox(height: 8),
+                          _buildRatingChip(context),
+                        ],
                         const SizedBox(height: 8),
                         if (subTitle != null)
                           SizedBox(
@@ -1482,34 +1619,178 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     );
   }
 
+  Widget _buildRatingChip(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final outline = Theme.of(context).colorScheme.onSurfaceVariant;
+    final sVal = stars;
+    final label = ratingText;
+    final scoreText = sVal == null
+        ? ""
+        : (sVal % 1 == 0 ? sVal.toStringAsFixed(0) : sVal.toStringAsFixed(1));
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: ShapeDecoration(
+            shape: const MiuixSquircleBorder(cornerRadius: 10),
+            color: primary.withOpacity(0.12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star_rounded, size: 16, color: primary),
+              const SizedBox(width: 4),
+              Text(
+                label ?? scoreText,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: primary,
+                ),
+              ),
+              if (sVal != null && label != null) ...[
+                Text(
+                  " · $scoreText",
+                  style: TextStyle(fontSize: 12.5, color: outline),
+                ),
+              ],
+              if (sVal != null && label == null)
+                Text(
+                  " / 5",
+                  style: TextStyle(
+                      fontSize: 12, color: outline.withOpacity(0.8)),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionCardTitle(
+    String title, {
+    Widget? trailing,
+    bool? expanded,
+    VoidCallback? onToggle,
+  }) {
+    final chevron = expanded == null
+        ? null
+        : Icon(
+            expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+            size: 22,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 2, 0, 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: onToggle == null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                : MiuixPressable(
+                    onPressed: onToggle,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+          if (trailing != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: trailing,
+            ),
+          if (chevron != null)
+            MiuixIconButton(
+              minWidth: 36,
+              minHeight: 36,
+              onPressed: onToggle,
+              child: chevron,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionHeader(
+    String title, {
+    Widget? trailing,
+    bool? expanded,
+    VoidCallback? onToggle,
+  }) {
+    final chevron = expanded == null
+        ? null
+        : Icon(
+            expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+            size: 22,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          );
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 2),
+        child: Row(
+          children: [
+            Expanded(
+              child: onToggle == null
+                  ? MiuixSmallTitle(title)
+                  : MiuixPressable(
+                      onPressed: onToggle,
+                      child: MiuixSmallTitle(title),
+                    ),
+            ),
+            if (trailing != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: trailing,
+              ),
+            if (chevron != null)
+              MiuixIconButton(
+                minWidth: 36,
+                minHeight: 36,
+                onPressed: onToggle,
+                child: chevron,
+              ),
+            const SizedBox(width: 6),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget buildTags(ComicPageLogic logic, BuildContext context) {
     return SliverToBoxAdapter(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: MiuixHorizontalDivider()),
-          SizedBox(
-              width: 100,
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 18,
-                  ),
-                  Text(
-                    "信息".tl,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w500, fontSize: 18),
-                  )
-                ],
-              )),
-          const SizedBox(
-            height: 12,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+        child: MiuixCard(
+          cornerRadius: 16,
+          insideMargin: const EdgeInsets.fromLTRB(4, 4, 4, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _sectionCardTitle("信息".tl),
+              ...buildInfoCards(logic, context),
+            ],
           ),
-          ...buildInfoCards(logic, context)
-        ],
+        ),
       ),
     );
   }
@@ -1518,7 +1799,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
       ComicPageLogic logic, BuildContext context) sync* {
     if (buildMoreInfo != null) {
       yield Padding(
-        padding: const EdgeInsets.fromLTRB(18, 8, 30, 8),
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
         child: buildMoreInfo!,
       );
     }
@@ -1527,7 +1808,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
     for (var key in tags!.keys) {
       yield Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
         child: Wrap(
           children: [
             buildInfoCard(key, context, title: true),
@@ -1539,7 +1820,7 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
     if (uploaderInfo != null) {
       yield Padding(
-        padding: const EdgeInsets.fromLTRB(18, 4, 18, 4),
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
         child: Align(
           alignment: Alignment.centerLeft,
           child: ConstrainedBox(
@@ -1555,142 +1836,193 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
 
   Iterable<Widget> buildEpisodeInfo(BuildContext context) sync* {
     final colorScheme = Theme.of(context).colorScheme;
-    if (eps == null) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = colorScheme.primary;
+    if (eps == null || eps!.eps.isEmpty) return;
 
-    yield const SliverToBoxAdapter(
-      child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: MiuixHorizontalDivider()),
-    );
-
-    yield SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-          Text(
-            "章节".tl,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
-          ),
-          const Spacer(),
-          MiuixTooltipBox(tooltip: (context, scope) => MiuixPlainTooltip(scope: scope, child: Text("排序".tl)), child: MiuixIconButton(
-              child: MiuixIcon(
-                vector: MiuixIcons.os4.sort,
-                size: 20,
-              ),
-              onPressed: () {
-                _logic.reverseEpsOrder = !_logic.reverseEpsOrder;
-                _logic.update();
-              },
-            ),
-          )
-        ]),
-      ),
-    );
-
-    yield const SliverPadding(padding: EdgeInsets.all(6));
+    if (!_logic.sectionChaptersDefaultApplied) {
+      _logic.sectionChaptersDefaultApplied = true;
+      _logic.sectionChaptersExpanded = eps!.eps.length <= 16;
+    }
 
     int length = eps!.eps.length;
-
     if (!_logic.showFullEps) {
       length = math.min(length, 20);
     }
 
-    yield SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      sliver: SliverGrid(
-        delegate: SliverChildBuilderDelegate(childCount: length, (context, i) {
-          if (_logic.reverseEpsOrder) {
-            i = eps!.eps.length - i - 1;
-          }
-          bool visited =
-              (_logic.history?.readEpisode ?? const {}).contains(i + 1);
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-            child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 12), onPressed: () => eps!.onTap(i), child: Material(
-                color: colorScheme.surface,
-                shape: MiuixSquircleBorder(
-                  cornerRadius: 12,
-                  side: BorderSide(
-                    color: Theme.of(context).brightness == Brightness.dark
+    Widget epCell(int i) {
+      if (_logic.reverseEpsOrder) {
+        i = eps!.eps.length - i - 1;
+      }
+      final visited =
+          (_logic.history?.readEpisode ?? const {}).contains(i + 1);
+      final isCurrent = _logic.history?.ep == i + 1;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
+        child: MiuixPressable(
+          feedbackType: MiuixPressFeedbackType.sink,
+          shape: const MiuixSquircleBorder(cornerRadius: 12),
+          onPressed: () => eps!.onTap(i),
+          child: Material(
+            color: isCurrent
+                ? primary.withOpacity(isDark ? 0.28 : 0.14)
+                : (isDark
+                    ? colorScheme.surface
+                    : colorScheme.surfaceContainerHighest),
+            shape: MiuixSquircleBorder(
+              cornerRadius: 12,
+              side: BorderSide(
+                color: isCurrent
+                    ? primary.withOpacity(0.45)
+                    : (isDark
                         ? const Color(0x18FFFFFF)
-                        : const Color(0x0C000000),
-                    width: 0.6,
-                  ),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Center(
-                    child: Text(
-                      eps!.eps[i],
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: visited ? colorScheme.outline : null),
-                    ),
-                  ),
-                ),
-              )
+                        : const Color(0x1F000000)),
+                width: isCurrent ? 1.0 : 0.9,
+              ),
             ),
-          );
-        }),
-        gridDelegate: const SliverGridDelegateWithFixedHeight(
-            maxCrossAxisExtent: 200, itemHeight: 48),
-      ),
-    );
-
-    if (eps!.eps.length > 20 && !_logic.showFullEps) {
-      yield SliverToBoxAdapter(
-        child: Align(
-          alignment: Alignment.center,
-          child: MiuixButton(
-            cornerRadius: 12,
-            onPressed: () {
-              _logic.showFullEps = true;
-              _logic.update();
-            },
-            child: Text("${"显示全部".tl} (${eps!.eps.length})"),
-          ).paddingTop(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Center(
+                child: Text(
+                  eps!.eps[i],
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isCurrent
+                        ? FontWeight.w600
+                        : (visited ? FontWeight.w400 : FontWeight.w500),
+                    color: isCurrent
+                        ? primary
+                        : (visited
+                            ? (isDark ? Colors.white38 : Colors.black45)
+                            : null),
+                    height: 1.15,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       );
     }
-  }
 
-  List<Widget> buildIntroduction(BuildContext context) {
-    if (introduction == null) return [];
-
-    return [
-      const SliverPadding(padding: EdgeInsets.all(5)),
-      const SliverToBoxAdapter(
-        child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: MiuixHorizontalDivider()),
-      ),
-      SliverToBoxAdapter(
-        child: SizedBox(
-          width: 100,
-          child: Row(
+    yield SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+        child: MiuixCard(
+          cornerRadius: 16,
+          insideMargin: const EdgeInsets.fromLTRB(4, 4, 4, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(
-                width: 18,
+              _sectionCardTitle(
+                "章节目录".tl,
+                expanded: _logic.sectionChaptersExpanded,
+                onToggle: () {
+                  _logic.sectionChaptersExpanded =
+                      !_logic.sectionChaptersExpanded;
+                  _logic.update();
+                },
+                trailing: MiuixTooltipBox(
+                  tooltip: (context, scope) =>
+                      MiuixPlainTooltip(scope: scope, child: Text("排序".tl)),
+                  child: MiuixIconButton(
+                    child: MiuixIcon(vector: MiuixIcons.os4.sort, size: 20),
+                    onPressed: () {
+                      _logic.reverseEpsOrder = !_logic.reverseEpsOrder;
+                      _logic.update();
+                    },
+                  ),
+                ),
               ),
-              Text(
-                "简介".tl,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
-              )
+              if (!_logic.sectionChaptersExpanded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(
+                    "共 @count 话，点击展开"
+                        .tlParams({"count": "${eps!.eps.length}"}),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                    ),
+                  ),
+                )
+              else ...[
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(6, 0, 6, 4),
+                  itemCount: length,
+                  gridDelegate: const SliverGridDelegateWithFixedHeight(
+                      maxCrossAxisExtent: 200, itemHeight: 52),
+                  itemBuilder: (context, i) => epCell(i),
+                ),
+                if (eps!.eps.length > 20 && !_logic.showFullEps)
+                  Align(
+                    alignment: Alignment.center,
+                    child: MiuixButton(
+                      cornerRadius: 12,
+                      onPressed: () {
+                        _logic.showFullEps = true;
+                        _logic.update();
+                      },
+                      child: Text("${"显示全部".tl} (${eps!.eps.length})"),
+                    ).paddingTop(4).paddingBottom(4),
+                  ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  List<Widget> buildIntroduction(BuildContext context) {
+    final text = introduction?.trim() ?? "";
+    final isEmpty = text.isEmpty;
+    final outline = Theme.of(context).colorScheme.onSurfaceVariant;
+    return [
       SliverToBoxAdapter(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-          child: SelectableText(introduction!),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: MiuixCard(
+            cornerRadius: 16,
+            insideMargin: const EdgeInsets.fromLTRB(4, 4, 4, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _sectionCardTitle(
+                  "作品简介".tl,
+                  expanded: _logic.sectionIntroExpanded,
+                  onToggle: () {
+                    _logic.sectionIntroExpanded = !_logic.sectionIntroExpanded;
+                    _logic.update();
+                  },
+                ),
+                if (_logic.sectionIntroExpanded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: isEmpty
+                        ? Text(
+                            "暂无作品简介".tl,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              height: 1.35,
+                              color: outline.withOpacity(0.75),
+                            ),
+                          )
+                        : SelectableText(
+                            text,
+                            style: const TextStyle(fontSize: 14, height: 1.4),
+                          ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
-      const SliverPadding(padding: EdgeInsets.all(5)),
     ];
   }
 
@@ -1700,7 +2032,21 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
           CachedImageProvider(thumbnails!.thumbnails[index], headers: headers),
       fit: BoxFit.cover,
       filterQuality: FilterQuality.medium,
-      errorBuilder: (context, s, d) => const Icon(Icons.error),
+      errorBuilder: (context, err, d) => _thumbnailErrorPlaceholder(context),
+    );
+  }
+
+  Widget _thumbnailErrorPlaceholder(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ColoredBox(
+      color: isDark ? const Color(0xFF2A2A2E) : const Color(0xFFE8E8EC),
+      child: Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          size: 28,
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.55),
+        ),
+      ),
     );
   }
 
@@ -1712,138 +2058,158 @@ abstract class BaseComicPage<T extends Object> extends StatelessWidget {
     if (thumbnails!.thumbnails.isEmpty) {
       thumbnails!.get(update);
     }
+
+    final thumbs = thumbnails!.thumbnails;
     return [
-      const SliverPadding(padding: EdgeInsets.all(5)),
-      const SliverToBoxAdapter(
-        child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: MiuixHorizontalDivider()),
-      ),
       SliverToBoxAdapter(
-        child: SizedBox(
-          width: 100,
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 18,
-              ),
-              Text(
-                "预览".tl,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
-              )
-            ],
-          ),
-        ),
-      ),
-      const SliverPadding(padding: EdgeInsets.all(5)),
-      SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        sliver: SliverGrid(
-          delegate: SliverChildBuilderDelegate(
-              childCount: thumbnails!.thumbnails.length, (context, index) {
-            if (index == thumbnails!.thumbnails.length - 1) {
-              thumbnails!.get(update);
-            }
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            return Padding(
-              padding: const EdgeInsets.all(4.5),
-              child: MiuixPressable(feedbackType: MiuixPressFeedbackType.sink, shape: const MiuixSquircleBorder(cornerRadius: 12), onPressed: () => onThumbnailTapped(index),
-                  child: Container(
-                    decoration: ShapeDecoration(
-                      shape: MiuixSquircleBorder(
-                        cornerRadius: 12,
-                        side: BorderSide(
-                          color: isDark
-                              ? const Color(0x38FFFFFF)
-                              : const Color(0x24000000),
-                          width: 0.8,
-                        ),
-                      ),
-                      color: isDark
-                          ? const Color(0xFF1E1E22)
-                          : const Color(0xFFEEEEF0),
-                      shadows: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: MiuixCard(
+            cornerRadius: 16,
+            insideMargin: const EdgeInsets.fromLTRB(4, 4, 4, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _sectionCardTitle(
+                  "预览".tl,
+                  expanded: _logic.sectionPreviewExpanded,
+                  onToggle: () {
+                    _logic.sectionPreviewExpanded =
+                        !_logic.sectionPreviewExpanded;
+                    _logic.update();
+                  },
+                ),
+                if (_logic.sectionPreviewExpanded) ...[
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(6, 0, 6, 4),
+                    itemCount: thumbs.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 135,
+                      childAspectRatio: 0.74,
                     ),
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        thumbnailImageBuilder(
-                            index, thumbnails!.thumbnails[index]),
-                        Positioned(
-                          right: 6,
-                          bottom: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.62),
-                              borderRadius: BorderRadius.circular(6),
+                    itemBuilder: (context, index) {
+                      if (index == thumbs.length - 1) {
+                        thumbnails!.get(update);
+                      }
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
+                      final border = isDark
+                          ? const Color(0x18FFFFFF)
+                          : const Color(0x0C000000);
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
+                        child: MiuixPressable(
+                          feedbackType: MiuixPressFeedbackType.sink,
+                          shape:
+                              const MiuixSquircleBorder(cornerRadius: 12),
+                          onPressed: () => onThumbnailTapped(index),
+                          child: Material(
+                            color: isDark
+                                ? const Color(0xFF1E1E22)
+                                : Theme.of(context).colorScheme.surface,
+                            shape: MiuixSquircleBorder(
+                              cornerRadius: 12,
+                              side: BorderSide(color: border, width: 0.6),
                             ),
-                            child: Text(
-                              "${index + 1}",
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                height: 1.1,
-                              ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                thumbnailImageBuilder(
+                                    index, thumbs[index]),
+                                Positioned(
+                                  right: 6,
+                                  bottom: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.62),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      "${index + 1}",
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                        height: 1.1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                ),
-            );
-          }),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 135,
-            childAspectRatio: 0.74,
+                  if (thumbnails!.current < thumbnails!.maxPage)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 4),
+                      child: ListLoadingIndicator(),
+                    ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
-      if (thumbnails!.current < thumbnails!.maxPage)
-        const SliverToBoxAdapter(
-          child: ListLoadingIndicator(),
-        ),
     ];
   }
 
   List<Widget> buildRecommendation(BuildContext context) {
     var recommendation = recommendationBuilder(_logic.data!);
     if (recommendation == null) return [];
+
     return [
-      const SliverToBoxAdapter(
-        child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: MiuixHorizontalDivider()),
-      ),
       SliverToBoxAdapter(
-        child: SizedBox(
-            width: 100,
-            child: Row(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: MiuixCard(
+            cornerRadius: 16,
+            insideMargin: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(
-                  width: 18,
-                ),
-                Text(
+                _sectionCardTitle(
                   "相关推荐".tl,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w500, fontSize: 18),
-                )
+                  expanded: _logic.sectionRecommendExpanded,
+                  onToggle: () {
+                    _logic.sectionRecommendExpanded =
+                        !_logic.sectionRecommendExpanded;
+                    _logic.update();
+                  },
+                ),
+                if (!_logic.sectionRecommendExpanded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Text(
+                      "已折叠相关推荐".tl,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withOpacity(0.75),
+                      ),
+                    ),
+                  ),
               ],
-            )),
+            ),
+          ),
+        ),
       ),
-      const SliverPadding(padding: EdgeInsets.all(5)),
-      recommendation,
+      if (_logic.sectionRecommendExpanded)
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          sliver: recommendation,
+        ),
     ];
   }
 

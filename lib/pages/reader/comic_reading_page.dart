@@ -1,11 +1,11 @@
 library pica_reader;
 
+import 'package:pica_comic/foundation/reading_stats.dart';
 import 'package:pica_comic/pages/settings/settings_page.dart' show SelectSetting;
 
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -196,6 +196,8 @@ class ComicReadingPage extends StatelessWidget {
     HistoryManager().saveReadHistory(history!, updateMePage);
   }
 
+  static void _onStatsPage(int _) => ReadingStats.instance.pageTurned();
+
   bool get useDarkBackground => appdata.appSettings.useDarkBackground;
 
   @override
@@ -218,6 +220,14 @@ class ComicReadingPage extends StatelessWidget {
       }
       //进入阅读器时清除内存中的缓存, 并且增大限制
       BaseImageProvider.clearCache();
+      if (history != null) {
+        ReadingStats.instance.startSession(
+            target: history!.target,
+            title: history!.title,
+            cover: history!.cover,
+            type: history!.type.value);
+      }
+      logic.addIndexChangeCallback(_onStatsPage);
       BaseImageProvider.setCacheSizeLimit(100 * 1024 * 1024);
       logic.openEpsView = openEpsDrawer;
       if (useDarkBackground) {
@@ -226,6 +236,8 @@ class ComicReadingPage extends StatelessWidget {
                 ?.setDarkTheme());
       }
     }, dispose: (logic) {
+        logic.removeIndexChangeCallback(_onStatsPage);
+        ReadingStats.instance.endSession();
       //清除缓存并减小最大缓存
       BaseImageProvider.clearCache();
       BaseImageProvider.setCacheSizeLimit(50 * 1024 * 1024);

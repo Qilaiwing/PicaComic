@@ -11,6 +11,8 @@ import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
 import 'package:pica_comic/foundation/cache_manager.dart';
 import 'package:pica_comic/foundation/history.dart';
+import 'package:pica_comic/foundation/reading_stats.dart';
+import 'package:pica_comic/foundation/app_usage.dart';
 import 'package:pica_comic/foundation/local_favorites.dart';
 import 'package:pica_comic/foundation/log.dart';
 import 'package:pica_comic/network/cookie_jar.dart';
@@ -309,6 +311,16 @@ Future<String?> _exportData(String path, String appdataString,
         localFavorite.name, localFavorite.path.replaceAll("\\", "/"));
     encode.addFile(history.name, history.path);
     encode.addFile('cookies.db', "$path/cookies.db");
+    // 本分支新增的数据: 阅读统计 / 应用使用时长 / 网络分流规则
+    for (var name in const [
+      "reading_stats.json",
+      "app_foreground_usage_ms.txt",
+      "rule.json",
+    ]) {
+      if (File("$path/$name").existsSync()) {
+        encode.addFile(name, "$path/$name");
+      }
+    }
     await for (var entry in Directory("$path/comic_source").list()) {
       if (entry is File) {
         encode.addFile('comic_source/${entry.name}', entry.path);
@@ -460,6 +472,13 @@ Future<bool> importData([String? filePath]) async {
         Directory("$path/comic_source").deleteSync(recursive: true);
         comicSource.renameSync('$path/comic_source');
       }
+      // 新增数据: 统计类先放到 *_import 再在主 isolate 合并; rule.json 直接覆盖
+      for (var name in const ["reading_stats.json", "app_foreground_usage_ms.txt"]) {
+        var f = File('$path/dataTemp/$name');
+        if (f.existsSync()) f.copySync('$path/${name}_import');
+      }
+      var rule = File('$path/dataTemp/rule.json');
+      if (rule.existsSync()) rule.copySync('$path/rule.json');
       var cookies = File('$path/dataTemp/cookies.db');
       if (cookies.existsSync()) {
         cookies.copySync('$path/cookies.db');
@@ -506,6 +525,21 @@ Future<bool> importData([String? filePath]) async {
   }
   await LocalFavoritesManager().readData();
   LocalFavoritesManager().updateUI();
+  try {
+    var stats = File("$path/reading_stats.json_import");
+    if (stats.existsSync()) {
+      ReadingStats.instance.mergeFromFile(stats);
+      stats.deleteSync();
+    }
+    var usage = File("$path/app_foreground_usage_ms.txt_import");
+    if (usage.existsSync()) {
+      AppUsageTracker.instance
+          .mergeImported(int.tryParse(usage.readAsStringSync().trim()) ?? 0);
+      usage.deleteSync();
+    }
+  } catch (e) {
+    LogManager.addLog(LogLevel.warning, "importData", "merge stats: $e");
+  }
   await HistoryManager().tryUpdateDb();
   return true;
 }

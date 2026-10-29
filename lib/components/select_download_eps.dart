@@ -90,44 +90,79 @@ class _SelectDownloadChapterState extends State<SelectDownloadChapter> {
               itemCount: widget.eps.length,
             ),
           ),
-          SizedBox(
-            height: 50,
-            child: Row(
+          const SizedBox(height: 14),
+          Builder(builder: (context) {
+            final scheme = Theme.of(context).colorScheme;
+            final selectable = <int>[
+              for (int i = 0; i < widget.eps.length; i++)
+                if (!widget.downloadedEps.contains(i)) i
+            ];
+            final allSelected = selectable.isNotEmpty &&
+                selectable.every((e) => selected.contains(e));
+            final canDownload = selected.isNotEmpty;
+            Widget button(String text, Color bg, Color fg, VoidCallback? onTap) {
+              return Expanded(
+                child: MiuixPressable(
+                  borderRadius: const BorderRadius.all(Radius.circular(16)),
+                  onPressed: onTap,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 50,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: const BorderRadius.all(Radius.circular(16)),
+                    ),
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                          color: fg, fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return Row(
               children: [
-                const SizedBox(
-                  width: 16,
+                button(
+                  allSelected ? "全不选".tl : "全选".tl,
+                  scheme.secondaryContainer,
+                  scheme.onSecondaryContainer,
+                  selectable.isEmpty
+                      ? null
+                      : () {
+                          setState(() {
+                            if (allSelected) {
+                              selected.clear();
+                            } else {
+                              selected = List<int>.from(selectable);
+                            }
+                          });
+                        },
                 ),
-                Expanded(
-                  child: MiuixButton(
-                      onPressed: () {
-                        var res = <int>[];
-                        for (int i = 0; i < widget.eps.length; i++) {
-                          if (!widget.downloadedEps.contains(i)) {
-                            res.add(i);
-                          }
+                const SizedBox(width: 12),
+                button(
+                  "下载".tl,
+                  canDownload
+                      ? scheme.primary
+                      : scheme.primary.withValues(alpha: 0.38),
+                  canDownload
+                      ? scheme.onPrimary
+                      : scheme.onPrimary.withValues(alpha: 0.7),
+                  canDownload
+                      ? () {
+                          selected.sort();
+                          widget.finishSelect(selected);
                         }
-                        widget.finishSelect(res);
-                      },
-                      child: Text("下载全部".tl)),
-                ),
-                const SizedBox(
-                  width: 16,
-                ),
-                Expanded(
-                  child: MiuixButton(
-                      onPressed: () {
-                        widget.finishSelect(selected);
-                      },
-                      child: Text("下载选择".tl)),
-                ),
-                const SizedBox(
-                  width: 16,
+                      : null,
                 ),
               ],
-            ),
-          ),
+            );
+          }),
+          const SizedBox(height: 8),
           SizedBox(
-            height: MediaQuery.of(context).padding.bottom + 4,
+            height: MediaQuery.of(context).padding.bottom + 12,
           )
         ],
       ),

@@ -6,6 +6,7 @@ import 'package:pica_comic/network/http_client.dart';
 import 'package:pica_comic/tools/extensions.dart';
 
 class FileDownloader{
+  Timer? _speedTimer;
   final String url;
   final String savePath;
   final String? proxy;
@@ -123,8 +124,9 @@ class FileDownloader{
 
       _reportStatus(resultStream);
 
-      Timer.periodic(const Duration(seconds: 1), (timer) {
-        if(_canceled || _currentBytes >= _fileSize){
+      _speedTimer?.cancel();
+      _speedTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if(_canceled || resultStream.isClosed || _currentBytes >= _fileSize){
           timer.cancel();
           return;
         }
@@ -138,6 +140,8 @@ class FileDownloader{
 
       // start downloading
       await _scheduleDownload();
+      _speedTimer?.cancel();
+      _speedTimer = null;
       await _file!.close();
       _file = null;
       await File("$savePath.download").delete();
@@ -152,6 +156,8 @@ class FileDownloader{
       resultStream.close();
     }
     catch(e, s){
+      _speedTimer?.cancel();
+      _speedTimer = null;
       await _file?.close();
       _file = null;
       resultStream.addError(e, s);

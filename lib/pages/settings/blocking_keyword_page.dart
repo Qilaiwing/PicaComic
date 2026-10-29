@@ -61,19 +61,19 @@ class BlockingKeywordPage extends StatelessWidget {
               ),
             ),
           );
-        }, child: const Icon(Icons.add)),
+        }, child: _mi(MiuixIcons.os4.add)),
 );
 
     var orderButton = StateBuilder<BlockingKeywordPageLogic>(
       builder: (logic) {
         return MiuixTooltipBox(
- tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("显示顺序")),
+ tooltip: (_, scope) => MiuixPlainTooltip(scope: scope, child: Text("显示顺序".tl)),
  child: MiuixIconButton(onPressed: () {
               logic.down = !logic.down;
               logic.update();
             }, child: logic.down
-                ? const Icon(Icons.arrow_downward)
-                : const Icon(Icons.arrow_upward)),
+                ? _mi(MiuixIcons.os4.expandMore)
+                : _mi(MiuixIcons.os4.expandLess)),
 );
       },
     );
@@ -92,24 +92,20 @@ class BlockingKeywordPage extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: Container(
                       decoration: ShapeDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                        color: MiuixTheme.of(context).colors.primary.withOpacity(0.08),
                         shape: const MiuixSquircleBorder(cornerRadius: 16),
                       ),
                       padding: const EdgeInsets.all(14),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 24,
-                          ),
+                          MiuixIcon(vector: MiuixIcons.os4.info, size: 24, tint: MiuixTheme.of(context).colors.primary),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               "关键词屏蔽不会生效于收藏夹和历史记录, 屏蔽依据仅限漫画列表信息".tl,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: MiuixTheme.of(context).colors.onSurface,
                               ),
                             ),
                           ),
@@ -117,7 +113,7 @@ class BlockingKeywordPage extends StatelessWidget {
                               appdata.firstUse[0] = "0";
                               appdata.writeData();
                               logic.update();
-                            }, child: const Icon(Icons.close, size: 18)),
+                            }, child: MiuixIcon(vector: MiuixIcons.os4.close, size: 18)),
                         ],
                       ),
                     ),
@@ -146,10 +142,7 @@ class BlockingKeywordPage extends StatelessWidget {
                         logic.keywords.remove(keywords[index - 1]);
                         logic.update();
                         appdata.writeData();
-                      }, child: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.outline,
+                      }, child: MiuixIcon(vector: MiuixIcons.os4.close, size: 20, tint: MiuixTheme.of(context).colors.outline,
                       )),
                   ],
                 ),

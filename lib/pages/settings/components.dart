@@ -49,6 +49,7 @@ class SwitchSetting extends StatefulWidget {
     this.subTitle,
     required this.icon,
     required this.settingsIndex,
+    this.onChanged,
     super.key,
   });
 
@@ -56,6 +57,7 @@ class SwitchSetting extends StatefulWidget {
   final String? subTitle;
   final Widget icon;
   final int settingsIndex;
+  final VoidCallback? onChanged;
 
   @override
   State<SwitchSetting> createState() => _SwitchSettingState();
@@ -74,6 +76,7 @@ class _SwitchSettingState extends State<SwitchSetting> {
           appdata.settings[widget.settingsIndex] = value ? '1' : '0';
           appdata.updateSettings();
         });
+        widget.onChanged?.call();
       },
     );
   }
@@ -297,7 +300,7 @@ class _SelectPreferenceRow extends StatelessWidget {
             ),
           ),
         ),
-        Icon(Icons.arrow_drop_down, size: 22, color: actionColor),
+        MiuixIcon(vector: MiuixIcons.os4.expandMore, size: 22, tint: actionColor),
       ],
       onClick: onClick,
     );

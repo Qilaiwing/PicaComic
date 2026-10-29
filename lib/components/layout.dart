@@ -74,6 +74,10 @@ class SliverGridDelegateWithFixedHeight extends SliverGridDelegate{
 
 }
 
+/// 漫画网格与屏幕两侧的水平边距: 简略(封面)模式 12, 详细模式 4。
+EdgeInsets comicGridPadding() => EdgeInsets.symmetric(
+    horizontal: appdata.appSettings.comicTileDisplayType == 1 ? 12 : 4);
+
 class SliverGridDelegateWithComics extends SliverGridDelegate{
   SliverGridDelegateWithComics([this.useBriefMode = false, this.scale]);
 
@@ -83,14 +87,12 @@ class SliverGridDelegateWithComics extends SliverGridDelegate{
 
   @override
   SliverGridLayout getLayout(SliverConstraints constraints) {
-    var setting = appdata.settings[44].split(',');
-    if(setting.length == 1){
-      setting.add("1.0");
-    }
-    if(setting[0] == "1" || setting[0] == "2" || useBriefMode){
-      return getBriefModeLayout(constraints, double.parse(scale ?? setting[1]));
+    final brief = appdata.appSettings.comicTileDisplayType == 1 || useBriefMode;
+    final s = double.tryParse(scale ?? appdata.settings[91]) ?? 1.0;
+    if(brief){
+      return getBriefModeLayout(constraints, s);
     } else {
-      return getDetailedModeLayout(constraints, double.parse(scale ?? setting[1]));
+      return getDetailedModeLayout(constraints, s);
     }
   }
 
@@ -116,7 +118,9 @@ class SliverGridDelegateWithComics extends SliverGridDelegate{
     final maxCrossAxisExtent = 192.0 * scale;
     const childAspectRatio = 0.72;
     const crossAxisSpacing = 0.0;
-    int crossAxisCount = (constraints.crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil();
+    // 四舍五入而不是向上取整：手机宽度（~400–440dp）在 100% 时为 2 列，
+    // 75% 约 3 列，125% 仍保持 2 列。
+    int crossAxisCount = (constraints.crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).round();
     // Ensure a minimum count of 1, can be zero and result in an infinite extent
     // below when the window size is 0.
     crossAxisCount = math.max(1, crossAxisCount);

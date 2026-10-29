@@ -15,6 +15,10 @@ class CategoryPageController extends StateController {
   late TabController tabController;
 
   void init(TickerProvider vsync) {
+    String? previous;
+    try {
+      previous = categories[tabController.index];
+    } catch (_) {}
     categories = appdata.appSettings.categoryPages;
     var allCategories = ComicSource.sources
         .map((e) => e.categoryData?.key)
@@ -23,7 +27,11 @@ class CategoryPageController extends StateController {
         .toList();
     categories =
         categories.where((element) => allCategories.contains(element)).toList();
-    tabController = TabController(length: categories.length, vsync: vsync);
+    var initial = previous == null ? 0 : categories.indexOf(previous);
+    tabController = TabController(
+        length: categories.length,
+        vsync: vsync,
+        initialIndex: initial < 0 ? 0 : initial);
   }
 }
 
@@ -32,13 +40,19 @@ class AllCategoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logic = StateController.find<CategoryPageController>();
-    return Material(
-      color: Colors.transparent,
-      child: TabBarView(
-        controller: logic.tabController,
-        children: logic.categories.map((e) => CategoryPage(e)).toList(),
-      ),
+    return ValueListenableBuilder<int>(
+      valueListenable: ComicSource.sourcesChanged,
+      builder: (context, version, _) {
+        final logic = StateController.find<CategoryPageController>();
+        return Material(
+          key: ValueKey("category_$version"),
+          color: Colors.transparent,
+          child: TabBarView(
+            controller: logic.tabController,
+            children: logic.categories.map((e) => CategoryPage(e)).toList(),
+          ),
+        );
+      },
     );
   }
 }

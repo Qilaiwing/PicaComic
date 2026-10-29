@@ -17,7 +17,7 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
           children: [
             if (LocalFavoritesManager().folderNames.isEmpty)
               MiuixArrowPreference(
-                startAction: const Icon(Icons.book),
+                startAction: _mi(MiuixIcons.os4.book),
                 title: "快速收藏".tl,
                 summary: "暂无收藏夹".tl,
                 onClick: () =>
@@ -25,7 +25,7 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
               )
             else
             SelectSetting(
-              leading: const Icon(Icons.book),
+              leading: _mi(MiuixIcons.os4.book),
               title: "快速收藏".tl,
               initialValue: (() {
                 final names = LocalFavoritesManager().folderNames;
@@ -41,25 +41,25 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
               values: LocalFavoritesManager().folderNames,
             ),
             SelectSettingWithAppdata(
-              icon: const Icon(Icons.bookmark_add),
+              icon: _mi(MiuixIcons.os4.addBookmark),
               title: "新收藏添加至".tl,
               options: ["最后".tl, "最前".tl],
               settingsIndex: 53,
             ),
             SelectSettingWithAppdata(
-              icon: const Icon(Icons.move_up),
+              icon: _mi(MiuixIcons.os4.moveFile),
               title: "阅读后移动本地收藏至".tl,
               options: ["无操作".tl, "最后".tl, "最前".tl],
               settingsIndex: 54,
             ),
             SelectSettingWithAppdata(
-              icon: const Icon(Icons.touch_app),
+              icon: _mi(MiuixIcons.os4.ok),
               title: "点击漫画时".tl,
               options: ["查看信息".tl, "阅读".tl],
               settingsIndex: 60,
             ),
             SelectSetting(
-              leading: const Icon(Icons.sync),
+              leading: _mi(MiuixIcons.os4.refresh),
               title: "下拉更新拉取页数".tl,
               initialValue: ["1", "2", "3", "4", "5", "10", "99"]
                   .indexOf(appdata.settings[71])
@@ -70,6 +70,16 @@ class _LocalFavoritesSettingsState extends State<LocalFavoritesSettings> {
                     ["1", "2", "3", "4", "5", "10", "99"][i];
                 appdata.updateSettings();
               },
+            ),
+          ],
+        ),
+        MiuixSmallTitle("图片收藏".tl),
+        MiuixSettingsCard(
+          children: [
+            ScaleSliderSetting(
+              icon: _mi(MiuixIcons.os4.photos),
+              title: "图片收藏大小".tl,
+              settingsIndex: 74,
             ),
           ],
         ),

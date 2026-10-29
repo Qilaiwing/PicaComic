@@ -25,7 +25,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
         MiuixSettingsCard(
           children: [
             SelectSetting(
-              leading: const Icon(Icons.chrome_reader_mode),
+              leading: _mi(MiuixIcons.os4.read),
               title: "阅读模式".tl,
               initialValue: int.parse(appdata.settings[9]) - 1,
               values: [
@@ -44,21 +44,21 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             SwitchSetting(
               title: "点按翻页".tl,
               settingsIndex: 0,
-              icon: const Icon(Icons.touch_app_outlined),
+              icon: _mi(MiuixIcons.os4.ok),
             ),
             SwitchSetting(
               title: "反转点按翻页".tl,
               settingsIndex: 70,
-              icon: const Icon(Icons.swap_horiz),
+              icon: _mi(MiuixIcons.os4.replace),
             ),
             if (App.isAndroid)
               SwitchSetting(
                 title: "使用音量键翻页".tl,
                 settingsIndex: 7,
-                icon: const Icon(Icons.volume_mute),
+                icon: _mi(MiuixIcons.os4.volumeUp),
               ),
             MiuixSliderPreference(
-              startAction: const Icon(Icons.timer_sharp),
+              startAction: _mi(MiuixIcons.os4.timer),
               title: "自动翻页时间间隔".tl,
               value: (int.tryParse(appdata.settings[33]) ?? 5).toDouble().clamp(1.0, 20.0),
               min: 1,
@@ -75,7 +75,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             SwitchSetting(
               title: "宽屏时显示控制按钮".tl,
               settingsIndex: 4,
-              icon: const Icon(Icons.control_camera),
+              icon: _mi(MiuixIcons.os4.screenMirroring),
             ),
           ],
         ),
@@ -86,21 +86,21 @@ class _ReadingSettingsState extends State<ReadingSettings> {
               SwitchSetting(
                 title: "保持屏幕常亮".tl,
                 settingsIndex: 14,
-                icon: const Icon(Icons.screenshot_outlined),
+                icon: _mi(MiuixIcons.os4.screenCapture),
               ),
             SwitchSetting(
               title: "深色模式下降低图片亮度".tl,
               settingsIndex: 18,
-              icon: const Icon(Icons.brightness_4),
+              icon: _mi(MiuixIcons.os4.theme),
             ),
             SwitchSetting(
               title: "使用深色背景".tl,
               settingsIndex: 81,
-              icon: const Icon(Icons.dark_mode),
+              icon: _mi(MiuixIcons.os4.background),
             ),
             if (App.isAndroid)
               SelectSetting(
-                leading: const Icon(Icons.screen_lock_rotation),
+                leading: _mi(MiuixIcons.os4.rotateLeft),
                 title: "固定屏幕方向".tl,
                 initialValue: int.parse(appdata.settings[76]),
                 values: [
@@ -116,7 +116,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             SwitchSetting(
               title: "显示页面信息".tl,
               settingsIndex: 57,
-              icon: const Icon(Icons.insert_drive_file_outlined),
+              icon: _mi(MiuixIcons.os4.file),
             ),
           ],
         ),
@@ -124,7 +124,7 @@ class _ReadingSettingsState extends State<ReadingSettings> {
         MiuixSettingsCard(
           children: [
             SelectSetting(
-              leading: const Icon(Icons.image_outlined),
+              leading: _mi(MiuixIcons.os4.image),
               title: "图片预加载".tl,
               initialValue: ["0", "1", "2", "3", "4", "5", "10", "15"].indexOf(appdata.settings[28]),
               values: const ["0", "1", "2", "3", "4", "5", "10", "15"],
@@ -136,12 +136,12 @@ class _ReadingSettingsState extends State<ReadingSettings> {
             SwitchSetting(
               title: "双击缩放".tl,
               settingsIndex: 49,
-              icon: const Icon(Icons.zoom_out_map),
+              icon: _mi(MiuixIcons.os4.trim),
             ),
             SwitchSetting(
               title: "长按缩放".tl,
               settingsIndex: 55,
-              icon: const Icon(Icons.zoom_in),
+              icon: _mi(MiuixIcons.os4.zoomOut),
             ),
           ],
         ),

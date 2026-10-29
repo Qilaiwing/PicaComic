@@ -8,12 +8,12 @@ import 'package:pica_comic/tools/app_links.dart';
 import 'package:pica_comic/tools/background_service.dart';
 import 'package:pica_comic/tools/translations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pica_comic/comic_source/comic_source.dart';
 import 'category_page.dart';
 import 'explore_page.dart';
 import 'favorites/main_favorites_page.dart';
 import 'pre_search_page.dart';
 import 'settings/settings_page.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/network/update.dart';
 import 'me_page.dart';
@@ -116,12 +116,27 @@ class MainPageState extends State<MainPage> {
 
   List<Widget> get _pages => [
         const MePage(),
-        FavoritesPage(),
+        FavoritesPage(key: ValueKey("fav_$_sourcesVersion")),
         ExplorePage(
-          key: Key(appdata.appSettings.explorePages.length.toString()),
+          key: Key(
+              "${appdata.appSettings.explorePages.join(",")}_$_sourcesVersion"),
         ),
-        const AllCategoryPage(),
+        AllCategoryPage(key: ValueKey("cat_$_sourcesVersion")),
       ];
+
+  int _sourcesVersion = 0;
+
+  void _onSourcesChanged() {
+    if (mounted) {
+      setState(() => _sourcesVersion = ComicSource.sourcesChanged.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    ComicSource.sourcesChanged.removeListener(_onSourcesChanged);
+    super.dispose();
+  }
 
   void _login() {
     network.updateProfile().then((res) {
@@ -130,16 +145,16 @@ class MainPageState extends State<MainPage> {
       } else {
         //检查是否打卡
         if (network.user?.isPunched == false && appdata.settings[6] == "1") {
+          // 前台直接打卡 (所有平台); 移动端另外注册后台任务作为兜底
+          network.punchIn().then((b) {
+            if (b) {
+              network.user?.isPunched = true;
+              network.user?.exp += 10;
+              showToast(message: "打卡成功".tl);
+            }
+          });
           if (App.isMobile) {
             runBackgroundService();
-          } else {
-            network.user?.isPunched = true;
-            network.punchIn().then((b) {
-              if (b) {
-                showToast(message: "打卡成功".tl);
-                network.user?.exp += 10;
-              }
-            });
           }
         }
       }
@@ -161,41 +176,17 @@ class MainPageState extends State<MainPage> {
     s.setInt("lastCheckUpdate", DateTime.now().millisecondsSinceEpoch);
     if (res != true) return;
     var info = await getUpdatesInfo();
-    if (info == null) return;
-    showMiuixDialog(context: App.globalContext!, title: "有可用更新".tl, summary: info, actionsBuilder: (dialogContext, close) => [
-              MiuixTextButton("关闭更新检查", onPressed: () {
-                    close();
-                    appdata.settings[2] = "0";
-                    appdata.writeData();
-                  }),
-              MiuixTextButton("取消".tl, onPressed: () => close()),
-              MiuixTextButton("下载".tl, onPressed: () {
-                    getDownloadUrl().then((s) {
-                      launchUrlString(s, mode: LaunchMode.externalApplication);
-                    });
-                  })
-            ]);
-
-    // if (appdata.settings[80] == "1") {
-    //   ComicSourceSettings.checkCustomComicSourceUpdate();
-    // }
+    var url = await getDownloadUrl();
+    if (App.globalContext == null) return;
+    showUpdateDialog(App.globalContext!,
+        version: latestVersion,
+        notes: info,
+        releaseUrl: url, onDisableCheck: () {
+      appdata.settings[2] = "0";
+      appdata.writeData();
+    });
   }
 
-  void _checkDownload() {
-    if (downloadManager.downloading.isNotEmpty) {
-      Future.delayed(const Duration(microseconds: 500), () {
-        if (mounted) {
-          showMiuixDialog(context: context, title: "下载管理器".tl, summary: "继续未完成的下载?".tl, actionsBuilder: (dialogContext, close) => [
-                  MiuixTextButton("否".tl, onPressed: () => close()),
-                  MiuixTextButton("是".tl, onPressed: () {
-                        downloadManager.start();
-                        close();
-                      })
-                ]);
-        }
-      });
-    }
-  }
 
   @override
   void initState() {
@@ -205,7 +196,6 @@ class MainPageState extends State<MainPage> {
     notifications.requestPermission();
     notifications.cancelAll();
     _checkUpdates();
-    _checkDownload();
 
     if (appdata.firstUse[3] == "0") {
       appdata.firstUse[3] = "1";
@@ -215,6 +205,7 @@ class MainPageState extends State<MainPage> {
     Future.delayed(const Duration(milliseconds: 300), () => Webdav.syncData())
         .then((v) => checkClipboard());
     _observer = NaviObserver();
+    ComicSource.sourcesChanged.addListener(_onSourcesChanged);
     super.initState();
   }
 

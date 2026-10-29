@@ -1,9 +1,10 @@
 part of pica_settings;
 
 class HitomiSettings extends StatefulWidget {
-  const HitomiSettings(this.popUp, {super.key});
+  const HitomiSettings(this.popUp, {this.embedded = false, super.key});
 
   final bool popUp;
+  final bool embedded;
 
   @override
   State<HitomiSettings> createState() => _HitomiSettingsState();
@@ -12,19 +13,21 @@ class HitomiSettings extends StatefulWidget {
 class _HitomiSettingsState extends State<HitomiSettings> {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        MiuixSmallTitle("Hitomi".tl),
-        MiuixSettingsCard(
-          children: [
+    final tiles = <Widget>[
             MiuixArrowPreference(
-              startAction: const Icon(Icons.dns),
+              startAction: _mi(MiuixIcons.os4.link),
               title: "CDN ${"域名".tl}",
               summary: appdata.settings[87],
               onClick: () => changeDomain(context),
             ),
-          ],
-        ),
+];
+    if (widget.embedded) {
+      return Column(mainAxisSize: MainAxisSize.min, children: tiles);
+    }
+    return Column(
+      children: [
+        MiuixSmallTitle("Hitomi".tl),
+        MiuixSettingsCard(children: tiles),
       ],
     );
   }

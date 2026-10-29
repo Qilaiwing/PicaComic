@@ -4,10 +4,34 @@ part of 'components.dart';
 /// headers, pinned search bars): content scrolling underneath is blurred,
 /// matching the Miuix top bar.
 /// One frosted surface for every top bar and pinned header.
-const double kFrostSigma = 22.5;
+/// 降低模糊半径: 大 sigma 在中低端机上是主要的 GPU 开销之一。
+const double kFrostSigma = 9;
 
-double frostTintAlpha(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark ? 0.42 : 0.48;
+/// 设置「毛玻璃效果」(settings[92]), 关闭时改为不透明度较高的纯色底。
+bool get frostEnabled => appdata.settings[92] != "0";
+
+double frostTintAlpha(BuildContext context) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  if (!frostEnabled) return dark ? 0.94 : 0.96;
+  return dark ? 0.42 : 0.48;
+}
+
+/// 统一的毛玻璃层: 开启时 BackdropFilter, 关闭时直接返回 child。
+class FrostBlur extends StatelessWidget {
+  const FrostBlur({super.key, this.sigma = kFrostSigma, required this.child});
+
+  final double sigma;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!frostEnabled) return child;
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+      child: child,
+    );
+  }
+}
 
 /// Live height of the main-frame top bar for pages whose content scrolls
 /// underneath it (0 when the frame still pads the page itself).
@@ -106,8 +130,7 @@ class FrostedBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: kFrostSigma, sigmaY: kFrostSigma),
+      child: FrostBlur(
         child: ColoredBox(
           color: MiuixTheme.of(context).colors.background.withValues(alpha: alpha ?? frostTintAlpha(context)),
           child: child,

@@ -6,6 +6,7 @@ import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/foundation/log.dart';
 import 'package:pica_comic/network/webdav.dart';
+import 'package:pica_comic/tools/translations.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 part "image_favorites.dart";
@@ -46,6 +47,16 @@ final class HistoryType {
       return ComicSource.fromIntKey(value)?.name ?? "Unknown";
     }
   }
+
+  /// 用于界面显示的源名称；不依赖源是否启用（已停用的源也能解析）
+  String? get displayNameOrNull {
+    if (value >= 0 && value <= 5) {
+      return ComicSource.displayNameOf(name);
+    }
+    return ComicSource.fromIntKeyIncludingDisabled(value)?.name.tl;
+  }
+
+  String get displayName => displayNameOrNull ?? "Unknown";
 
   const HistoryType(this.value);
 

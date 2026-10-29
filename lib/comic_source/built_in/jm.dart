@@ -267,6 +267,7 @@ class _JmComicTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: CachedImageProvider(
           getJmCoverUrl(comic.id),
           headers: getImgHeaders(),

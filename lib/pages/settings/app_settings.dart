@@ -7,32 +7,82 @@ void findUpdate(BuildContext context) {
     if (b == null) {
       context.showMessage(message: "网络错误".tl);
     } else if (b) {
-      getUpdatesInfo().then((s) {
+      getUpdatesInfo().then((s) async {
         if (!context.mounted) return;
-        if (s != null) {
-          showMiuixDialog(
-              context: context,
-              title: "有可用更新".tl,
-              summary: s,
-              actionsBuilder: (context, close) => [
-                    MiuixTextButton(onPressed: () => close(), "取消".tl),
-                    MiuixTextButton(
-                        onPressed: () {
-                          getDownloadUrl().then((s) {
-                            launchUrlString(s,
-                                mode: LaunchMode.externalApplication);
-                          });
-                        },
-                        "下载".tl)
-                  ]);
-        } else {
-          context.showMessage(message: "网络错误".tl);
-        }
+        showUpdateDialog(context,
+            version: latestVersion,
+            notes: s,
+            releaseUrl: await getDownloadUrl());
       });
     } else {
       context.showMessage(message: "已是最新版本".tl);
     }
   });
+}
+
+/// 关于页「更新日志」: 拉取最新 release 的说明并以 Markdown 显示。
+Future<void> showLatestChangelog(BuildContext context) async {
+  var loading = showLoadingDialog(context,
+      allowCancel: true, barrierDismissible: false);
+  String? version;
+  String? notes;
+  try {
+    version = await getLatestVersion();
+    notes = await getUpdatesInfo();
+  } catch (_) {}
+  loading.close();
+  if (!context.mounted) return;
+  if (version == null && notes == null) {
+    context.showMessage(message: "网络错误".tl);
+    return;
+  }
+  final url = await getDownloadUrl();
+  if (!context.mounted) return;
+  showMiuixDialog<void>(
+    context: context,
+    title: "更新日志".tl,
+    summary: version == null ? null : "v$version",
+    contentBuilder: (context, close) {
+      final colors = MiuixTheme.of(context).colors;
+      var maxH = MediaQuery.of(context).size.height * 0.55;
+      if (maxH < 160) maxH = 160;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            constraints: BoxConstraints(maxHeight: maxH),
+            decoration: ShapeDecoration(
+              color: colors.secondaryContainer,
+              shape: const MiuixSquircleBorder(cornerRadius: 14),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: notes == null
+                  ? Text("暂无更新日志, 点击在 GitHub 查看".tl)
+                  : SimpleMarkdown(notes),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+                child: MiuixTextButton("关闭".tl, onPressed: () => close())),
+            const SizedBox(width: 12),
+            Expanded(
+              child: MiuixButton(
+                colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                onPressed: () {
+                  close();
+                  launchUrlString(url, mode: LaunchMode.externalApplication);
+                },
+                child: Text("在 GitHub 查看".tl),
+              ),
+            ),
+          ]),
+        ],
+      );
+    },
+  );
 }
 
 class ProxyController extends StateController {
@@ -81,10 +131,7 @@ void setProxy(BuildContext context) {
                       padding: const EdgeInsets.fromLTRB(2, 0, 0, 12),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.info_outline,
-                            size: 18,
-                          ),
+                          MiuixIcon(vector: MiuixIcons.os4.info, size: 18),
                           Text("  ${"留空表示禁用网络代理".tl}",
                               style: const TextStyle(fontSize: 13))
                         ],
@@ -191,10 +238,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.info_outline,
-                        size: 18,
-                      ),
+                      MiuixIcon(vector: MiuixIcons.os4.info, size: 18),
                       const SizedBox(
                         width: 4,
                       ),
@@ -295,10 +339,7 @@ class _SetDownloadFolderDialogState extends State<SetDownloadFolderDialog> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.info_outline,
-                        size: 18,
-                      ),
+                      MiuixIcon(vector: MiuixIcons.os4.info, size: 18),
                       const SizedBox(
                         width: 2,
                       ),
@@ -379,7 +420,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
               config.remove(i);
               appdata.appSettings.explorePages = config;
             });
-          }, child: const Icon(Icons.delete)),
+          }, child: _mi(MiuixIcons.os4.delete)),
     );
 
     return Padding(
@@ -402,7 +443,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
               ),
             ),
             removeButton,
-            const Icon(Icons.drag_handle),
+            _mi(MiuixIcons.os4.menu),
           ],
         ),
       ),
@@ -453,7 +494,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
           : const Duration(milliseconds: 500),
       dragChildBoxDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: Theme.of(context).colorScheme.surfaceContainer,
+        color: MiuixTheme.of(context).colors.surfaceContainer,
         boxShadow: const [
           BoxShadow(
               color: Colors.black12,
@@ -496,7 +537,7 @@ class _SetExplorePagesState extends State<SetExplorePages> {
                       .toList(),
                 ),
               );
-            }, child: const Icon(Icons.add))
+            }, child: _mi(MiuixIcons.os4.add))
       ],
       body: view,
     );
@@ -590,118 +631,147 @@ Future<void> syncDataSettings(BuildContext context) async {
   if (appdata.settings[45] != "") {
     configs = appdata.settings[45].split(';');
   }
-  String url = configs[0];
-  String username = configs[1];
-  String pwd = configs[2];
-  String path = configs[3];
+  while (configs.length < 4) {
+    configs.add("");
+  }
+  final urlCtrl = TextEditingController(text: configs[0]);
+  final userCtrl = TextEditingController(text: configs[1]);
+  final pwdCtrl = TextEditingController(text: configs[2]);
+  final pathCtrl = TextEditingController(text: configs[3]);
   int value = 0;
+  String joined() =>
+      "${urlCtrl.text};${userCtrl.text};${pwdCtrl.text};${pathCtrl.text}";
+
   await showMiuixDialog(
     context: context,
     title: "Webdav",
-    contentBuilder: (context, close) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          MiuixTextField(
-              onChanged: (s) => url = s,
-              controller: TextEditingController(text: url),
-              label: "URL",
-              singleLine: true),
-          const SizedBox(
-            height: 8,
-          ),
-          MiuixTextField(
-              onChanged: (s) => username = s,
-              controller: TextEditingController(text: username),
-              label: "用户名".tl,
-              singleLine: true),
-          const SizedBox(
-            height: 8,
-          ),
-          MiuixTextField(
-              onChanged: (s) => pwd = s,
-              controller: TextEditingController(text: pwd),
-              obscureText: true,
-              label: "密码".tl,
-              singleLine: true),
-          const SizedBox(
-            height: 8,
-          ),
-          MiuixTextField(
-              onChanged: (s) => path = s,
-              controller: TextEditingController(text: path),
-              label: "储存路径".tl,
-              singleLine: true),
-          const SizedBox(
-            height: 8,
-          ),
-          StatefulBuilder(builder: (context, stateSetter) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MiuixSmallTitle("立即执行:".tl),
-                MiuixRadioButtonPreference(
-                    title: "上传数据".tl,
-                    selected: value == 0,
-                    onClick: () => stateSetter(() => value = 0)),
-                MiuixRadioButtonPreference(
-                    title: "下载数据".tl,
-                    selected: value == 1,
-                    onClick: () => stateSetter(() => value = 1)),
-              ],
-            );
-          }),
-          const SizedBox(
-            height: 8,
-          ),
-          MiuixButton(
-              colors: MiuixButtonDefaults.buttonColorsPrimary(context),
-              child: Text("提交".tl),
-              onPressed: () async {
-                if (url.isEmpty) {
-                  appdata.settings[45] = "$url;$username;$pwd;$path";
-                  appdata.updateSettings();
-                  close();
-                  return;
-                }
-                var dialog = showLoadingDialog(context,
-                    allowCancel: false, barrierDismissible: false);
-                var res = value == 0
-                    ? await Webdav.uploadData("$url;$username;$pwd;$path")
-                    : await Webdav.downloadData("$url;$username;$pwd;$path");
-                if (!res) {
-                  dialog.close();
-                  showToast(message: "Failed to sync data");
-                } else {
-                  appdata.settings[45] = "$url;$username;$pwd;$path";
-                  appdata.updateSettings();
-                  dialog.close();
-                  close();
-                }
-              },
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  size: 20,
+    contentBuilder: (context, close) {
+      final colors = MiuixTheme.of(context).colors;
+      final mq = MediaQuery.of(context);
+      // 预留标题/边距与软键盘高度, 内容超出时滚动, 不再溢出
+      var maxH =
+          mq.size.height - mq.viewInsets.bottom - mq.padding.vertical - 200;
+      if (maxH < 160) maxH = 160;
+      Widget gap() => const SizedBox(height: 10);
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxH),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MiuixTextField(controller: urlCtrl, label: "URL", singleLine: true),
+              gap(),
+              MiuixTextField(
+                  controller: userCtrl, label: "用户名".tl, singleLine: true),
+              gap(),
+              MiuixTextField(
+                  controller: pwdCtrl,
+                  obscureText: true,
+                  label: "密码".tl,
+                  singleLine: true),
+              gap(),
+              MiuixTextField(
+                  controller: pathCtrl, label: "储存路径".tl, singleLine: true),
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 6),
+                child: Text("立即执行".tl,
+                    style: TextStyle(
+                        fontSize: 13, color: colors.onSurfaceVariantSummary)),
+              ),
+              StatefulBuilder(builder: (context, stateSetter) {
+                Widget option(String title, int v) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => stateSetter(() => value = v),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 13),
+                        child: Row(children: [
+                          Expanded(
+                              child: Text(title,
+                                  style: TextStyle(
+                                      fontSize: 15, color: colors.onSurface))),
+                          AnimatedOpacity(
+                            opacity: value == v ? 1 : 0,
+                            duration: const Duration(milliseconds: 150),
+                            child: MiuixIcon(
+                                vector: MiuixIcons.os4.ok,
+                                size: 20,
+                                tint: colors.primary),
+                          ),
+                        ]),
+                      ),
+                    );
+                return Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: ShapeDecoration(
+                    color: colors.secondaryContainer,
+                    shape: const MiuixSquircleBorder(cornerRadius: 14),
+                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    option("上传数据".tl, 0),
+                    option("下载数据".tl, 1),
+                  ]),
+                );
+              }),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  MiuixIcon(
+                      vector: MiuixIcons.os4.info,
+                      size: 16,
+                      tint: colors.onSurfaceVariantSummary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text("将URL留空以禁用同步".tl,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: colors.onSurfaceVariantSummary)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: MiuixTextButton("取消".tl, onPressed: () => close()),
                 ),
-                const SizedBox(
-                  width: 4,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: MiuixButton(
+                    colors: MiuixButtonDefaults.buttonColorsPrimary(context),
+                    child: Text("提交".tl),
+                    onPressed: () async {
+                      final cfg = joined();
+                      if (urlCtrl.text.trim().isEmpty) {
+                        appdata.settings[45] = cfg;
+                        appdata.updateSettings();
+                        close();
+                        return;
+                      }
+                      var dialog = showLoadingDialog(context,
+                          allowCancel: false, barrierDismissible: false);
+                      var res = value == 0
+                          ? await Webdav.uploadData(cfg)
+                          : await Webdav.downloadData(cfg);
+                      dialog.close();
+                      if (!res) {
+                        showToast(message: "同步失败".tl);
+                      } else {
+                        appdata.settings[45] = cfg;
+                        appdata.updateSettings();
+                        close();
+                      }
+                    },
+                  ),
                 ),
-                if (configs.length == 4)
-                  Text("将URL留空以禁用同步".tl)
-                else
-                  Text("已禁用".tl)
-              ],
-            ),
-          )
-        ],
-      ),
+              ]),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 

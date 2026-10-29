@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pica_comic/comic_source/comic_source.dart';
 import 'package:pica_comic/components/components.dart';
-import 'package:pica_comic/foundation/app_usage.dart';
+import 'package:pica_comic/foundation/reading_stats.dart';
 import 'package:pica_comic/foundation/history.dart';
 import 'package:pica_comic/foundation/image_loader/cached_image.dart';
 import 'package:pica_comic/network/download.dart';
@@ -11,6 +11,7 @@ import 'package:pica_comic/pages/download_page.dart';
 import 'package:pica_comic/pages/tools.dart';
 import 'package:pica_comic/foundation/app.dart';
 import 'history_page.dart';
+import 'reading_stats_page.dart';
 import 'package:pica_comic/tools/translations.dart';
 import 'image_favorites.dart';
 
@@ -131,9 +132,10 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
     return value < 0 ? "-$buffer" : buffer.toString();
   }
 
-  /// 前台使用时长的紧凑文案（拉丁缩写，与语言无关）
+  /// 时长的紧凑文案（拉丁缩写，与语言无关）
   String _formatUsage(Duration d) {
     final minutes = d.inMinutes;
+    if (d.inSeconds <= 0) return "0m";
     if (minutes < 1) return "<1m";
     if (minutes < 60) return "${minutes}m";
     final hours = d.inHours;
@@ -156,7 +158,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
     final logged = profile != null;
     final accounts = findAccounts().length;
     final historyCount = HistoryManager().count();
-    final usageText = _formatUsage(AppUsageTracker.instance.totalDuration);
+    final todayReadMs = ReadingStats.instance.today[0];
+    final usageText = _formatUsage(Duration(milliseconds: todayReadMs));
 
     final name = logged ? profile.name : "请登录您的PicACG".tl;
     final slogan = logged ? (profile.slogan ?? '') : "登录后即可展示你的个人信息".tl;
@@ -335,9 +338,10 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
               ),
               const SizedBox(width: 10),
               buildStat(
-                title: "使用时长".tl,
+                title: "今日阅读".tl,
                 value: usageText,
-                highlight: AppUsageTracker.instance.totalMilliseconds > 0,
+                highlight: true,
+                onTap: () => context.to(() => const ReadingStatsPage()),
               ),
             ],
           ),
@@ -417,6 +421,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver {
                                 forceFit: BoxFit.cover,
                                 width: itemWidth,
                                 height: itemHeight,
+                                clipShape: const MiuixSquircleBorder(
+                                    cornerRadius: 12),
                                 filterQuality: FilterQuality.medium,
                               ),
                             ),

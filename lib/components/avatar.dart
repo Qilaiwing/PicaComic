@@ -45,6 +45,7 @@ class Avatar extends StatelessWidget {
                 forceFit: BoxFit.cover,
                 width: avatarSize,
                 height: avatarSize,
+                clipShape: const CircleBorder(),
                 filterQuality: FilterQuality.medium,
               )
             : ColoredBox(
@@ -81,6 +82,7 @@ class Avatar extends StatelessWidget {
                         forceFit: BoxFit.cover,
                         width: frameAvatarSize,
                         height: frameAvatarSize,
+                        clipShape: const CircleBorder(),
                         filterQuality: FilterQuality.medium,
                       )
                     : ColoredBox(

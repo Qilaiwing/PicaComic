@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 import "package:pica_comic/comic_source/comic_source.dart";
 import "package:pica_comic/components/components.dart";
-import "package:pica_comic/foundation/app.dart";
 import "package:pica_comic/network/res.dart";
 import "package:pica_comic/tools/translations.dart";
 import 'package:pica_comic/network/base_comic.dart';

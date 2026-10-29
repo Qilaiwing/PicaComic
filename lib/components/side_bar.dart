@@ -179,46 +179,46 @@ class _SidebarBodyState extends State<SidebarBody> {
       children: [
         if (widget.title != null)
           Container(
-            height: 60 + MediaQuery.of(context).padding.top,
+            height: 56 + MediaQuery.of(context).padding.top,
             color: top
                 ? null
                 : Theme.of(context).colorScheme.surfaceTint.withAlpha(20),
             padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
             child: Row(
               children: [
-                const SizedBox(
-                  width: 8,
-                ),
+                const SizedBox(width: 4),
                 AppTooltip(
                   message: "返回".tl,
-                  child: MiuixPressable(
-                      shape: const MiuixSquircleBorder(cornerRadius: 12),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: ShapeDecoration(
-                          shape: const MiuixSquircleBorder(cornerRadius: 12),
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0x18FFFFFF)
-                              : const Color(0x0A000000),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back,
-                          size: 20,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white.withOpacity(0.9)
-                              : const Color(0xFF222222),
-                        ),
-                      )),
+                  child: MiuixIconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    backgroundColor:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0x18FFFFFF)
+                            : const Color(0x0A000000),
+                    cornerRadius: 12,
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 18,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withOpacity(0.9)
+                          : const Color(0xFF222222),
+                    ),
+                  ),
                 ),
-                const SizedBox(
-                  width: 10,
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    widget.title!,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                Text(
-                  widget.title!,
-                  style: const TextStyle(fontSize: 22),
-                )
+                const SizedBox(width: 12),
               ],
             ),
           ),

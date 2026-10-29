@@ -45,7 +45,7 @@ extension WebviewExtension on InAppWebViewController{
 
 class AppWebview extends StatefulWidget {
   const AppWebview({required this.initialUrl, this.onTitleChange,
-    this.onNavigation, this.singlePage = false, this.onStarted, super.key});
+    this.onNavigation, this.onLoadStop, this.singlePage = false, this.onStarted, super.key});
 
   final String initialUrl;
 
@@ -54,6 +54,8 @@ class AppWebview extends StatefulWidget {
   final bool Function(String url)? onNavigation;
 
   final void Function(InAppWebViewController controller)? onStarted;
+
+  final void Function(String url, InAppWebViewController controller)? onLoadStop;
 
   final bool singlePage;
 
@@ -108,6 +110,10 @@ class _AppWebviewState extends State<AppWebview> {
         widget.onTitleChange?.call(title, controller!);
       },
       shouldOverrideUrlLoading: (c, r) async {
+        // Subframe / iframe navigations must not drive app-link or login checks.
+        if (r.isForMainFrame == false) {
+          return NavigationActionPolicy.ALLOW;
+        }
         var res = widget.onNavigation?.call(r.request.url?.toString() ?? "") ?? false;
         if(res) {
           return NavigationActionPolicy.CANCEL;
@@ -118,6 +124,11 @@ class _AppWebviewState extends State<AppWebview> {
       onWebViewCreated: (c){
         controller = c;
         widget.onStarted?.call(c);
+      },
+      onLoadStop: (c, url){
+        if(url != null){
+          widget.onLoadStop?.call(url.toString(), c);
+        }
       },
       onProgressChanged: (c, p){
         if(mounted){

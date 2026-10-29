@@ -448,17 +448,7 @@ class _AppAppearanceState extends State<_AppAppearance>
                       MyApp.updater?.call();
                     },
                   ),
-                SelectSetting(
-                  leading: const Icon(Icons.view_agenda_rounded),
-                  title: "漫画块显示模式".tl,
-                  values: ["详细".tl, "简略".tl],
-                  initialValue: appdata.appSettings.comicTileDisplayType,
-                  onChanged: (i) {
-                    appdata.appSettings.comicTileDisplayType = i;
-                    appdata.updateSettings();
-                    MyApp.updater?.call();
-                  },
-                ),
+                const ComicTileDisplayModeSetting(),
               ],
             ),
           ),
@@ -744,7 +734,7 @@ class _More extends StatelessWidget with _WelcomePageComponents {
           child: Column(
             children: [
               buildTile("登录账号".tl, Icons.account_circle_rounded, () {
-                showPopUpWidget(context, const AccountsPage());
+                context.to(() => const AccountsPage());
               }),
               buildTile("更多设置".tl, Icons.settings_rounded, () {
                 SettingsPage.open();

@@ -107,6 +107,7 @@ class _HiComicTile extends ComicTile {
 
   @override
   Widget get image => AnimatedImage(
+        useTileFit: true,
         image: CachedImageProvider(
           comic.cover,
           headers: {"User-Agent": webUA, "Referer": "https://hitomi.la/"},

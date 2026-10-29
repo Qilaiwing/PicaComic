@@ -8,7 +8,6 @@ import 'package:pica_comic/foundation/app.dart';
 import 'package:pica_comic/foundation/history.dart';
 import 'package:pica_comic/foundation/image_loader/base_image_provider.dart';
 import 'package:pica_comic/foundation/image_manager.dart';
-import 'package:pica_comic/foundation/ui_mode.dart';
 import 'package:pica_comic/network/eh_network/eh_models.dart';
 import 'package:pica_comic/network/hitomi_network/hitomi_models.dart';
 import 'package:pica_comic/tools/translations.dart';
@@ -73,7 +72,7 @@ class FavoriteImageTile extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         shape: const MiuixSquircleBorder(cornerRadius: 14),
-        clipBehavior: Clip.antiAliasWithSaveLayer,
+        clipBehavior: Clip.antiAlias,
         child: Container(
           decoration: ShapeDecoration(
             shape: MiuixSquircleBorder(
@@ -93,7 +92,7 @@ class FavoriteImageTile extends StatelessWidget {
               ),
             ],
           ),
-          clipBehavior: Clip.antiAliasWithSaveLayer,
+          clipBehavior: Clip.antiAlias,
           child: Stack(
             fit: StackFit.expand,
             children: [

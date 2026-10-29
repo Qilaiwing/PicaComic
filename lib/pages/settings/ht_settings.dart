@@ -1,9 +1,10 @@
 part of pica_settings;
 
 class HtSettings extends StatefulWidget {
-  const HtSettings(this.popUp, {super.key});
+  const HtSettings(this.popUp, {this.embedded = false, super.key});
 
   final bool popUp;
+  final bool embedded;
 
   @override
   State<HtSettings> createState() => _HtSettingsState();
@@ -12,19 +13,21 @@ class HtSettings extends StatefulWidget {
 class _HtSettingsState extends State<HtSettings> {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        MiuixSmallTitle("绅士漫画".tl),
-        MiuixSettingsCard(
-          children: [
+    final tiles = <Widget>[
             MiuixArrowPreference(
-              startAction: const Icon(Icons.dns),
+              startAction: _mi(MiuixIcons.os4.link),
               title: "域名".tl,
               summary: appdata.settings[31].replaceFirst("https://", ""),
               onClick: () => changeDomain(context),
             ),
-          ],
-        ),
+];
+    if (widget.embedded) {
+      return Column(mainAxisSize: MainAxisSize.min, children: tiles);
+    }
+    return Column(
+      children: [
+        MiuixSmallTitle("绅士漫画".tl),
+        MiuixSettingsCard(children: tiles),
       ],
     );
   }

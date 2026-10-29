@@ -15,7 +15,7 @@ class AppUsageTracker {
 
   static const _prefKey = 'app_foreground_usage_ms';
   static const _fileName = 'app_foreground_usage_ms.txt';
-  static const _checkpointInterval = Duration(seconds: 5);
+  static const _checkpointInterval = Duration(seconds: 30);
 
   int _storedMs = 0;
   DateTime? _foregroundSince;
@@ -65,7 +65,7 @@ class AppUsageTracker {
     _timer?.cancel();
     _timer = Timer.periodic(_checkpointInterval, (_) {
       if (_foregroundSince != null) {
-        _checkpoint(stop: false);
+        _checkpoint(stop: false, light: true);
       }
     });
   }
@@ -77,7 +77,7 @@ class AppUsageTracker {
 
   /// 把自 [_foregroundSince] 起的增量并入 [_storedMs] 并立即同步写盘。
   /// [stop] 为 true 时结束本轮前台会话并停掉周期写入。
-  void _checkpoint({required bool stop}) {
+  void _checkpoint({required bool stop, bool light = false}) {
     final since = _foregroundSince;
     if (since != null) {
       final now = DateTime.now();
@@ -90,7 +90,12 @@ class AppUsageTracker {
     if (stop) {
       _stopPeriodicCheckpoint();
     }
-    _persistSync();
+    if (light) {
+      // 周期写入: 异步、不强制 flush, 不阻塞 UI 线程
+      _file.writeAsString('$_storedMs').catchError((_) => _file);
+    } else {
+      _persistSync();
+    }
   }
 
   void _persistSync() {
@@ -117,4 +122,12 @@ class AppUsageTracker {
   }
 
   Duration get totalDuration => Duration(milliseconds: totalMilliseconds);
+
+  /// 合并备份中的累计前台时长 (取较大值)。
+  void mergeImported(int ms) {
+    if (ms > _storedMs) {
+      _storedMs = ms;
+      _persistSync();
+    }
+  }
 }

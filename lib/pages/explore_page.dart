@@ -24,6 +24,10 @@ class ExplorePageController extends StateController {
   late TabController tabController;
 
   void init(TickerProvider vsync) {
+    String? previous;
+    try {
+      previous = pages[tabController.index];
+    } catch (_) {}
     pages = appdata.appSettings.explorePages;
     var all = ComicSource.sources
         .map((e) => e.explorePages)
@@ -38,9 +42,11 @@ class ExplorePageController extends StateController {
         appdata.updateSettings();
       }
     }
+    var initial = previous == null ? 0 : pages.indexOf(previous);
     tabController = TabController(
       length: pages.length,
       vsync: vsync,
+      initialIndex: initial < 0 ? 0 : initial,
     );
   }
 }
@@ -52,6 +58,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   void refresh() {
     final logic = StateController.find<ExplorePageController>();
+    if (logic.pages.isEmpty) return;
     int page = logic.tabController.index;
     String currentPageId = logic.pages[page];
     StateController.find<SimpleController>(tag: currentPageId).refresh();
@@ -96,6 +103,16 @@ class _ExplorePageState extends State<ExplorePage> {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: ComicSource.sourcesChanged,
+      builder: (context, version, _) => KeyedSubtree(
+        key: ValueKey("explore_$version"),
+        child: _buildContent(context),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final logic = StateController.find<ExplorePageController>();
     return Stack(
       children: [

@@ -12,6 +12,7 @@ import 'package:pica_comic/network/app_dio.dart';
 import 'package:html/parser.dart' as html;
 import 'package:html/dom.dart' as dom;
 import 'package:pica_comic/network/cloudflare.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart' hide Cookie;
 import 'package:pica_comic/network/cookie_jar.dart';
 import 'package:pica_comic/tools/extensions.dart';
 import 'package:flutter_qjs/flutter_qjs.dart';
@@ -298,6 +299,14 @@ mixin class _JSEngineApi{
       var uri = Uri.tryParse(domain);
       if(uri == null) continue;
       _cookieJar!.deleteUri(uri);
+      // Also drop WebView-stored cookies so a later web login starts clean.
+      try {
+        final cm = CookieManager.instance();
+        await cm.deleteCookies(url: WebUri(domain));
+        if (uri.hasScheme && uri.host.isNotEmpty) {
+          await cm.deleteCookies(url: WebUri('${uri.scheme}://${uri.host}/'));
+        }
+      } catch (_) {}
     }
   }
 

@@ -38,7 +38,7 @@ class ComicSourceParser {
     }
   }
 
-  Future<ComicSource> parse(String js, String filePath) async {
+  Future<ComicSource> parse(String js, String filePath, {String? replaceKey}) async {
     js = js.replaceAll("\r\n", "\n");
     var line1 = js.split('\n')
         .firstWhereOrNull((element) => element.removeAllBlank.isNotEmpty);
@@ -68,9 +68,12 @@ class ComicSourceParser {
       }
     }
     for(var source in ComicSource.sources){
-      if(source.key == key){
+      if(source.key == key && key != replaceKey){
         throw ComicSourceParseException("key($key) already exists");
       }
+    }
+    if(replaceKey != null && key != replaceKey){
+      throw ComicSourceParseException("key mismatch: $key != $replaceKey");
     }
     _key = key;
     _checkKeyValidation();
@@ -115,12 +118,28 @@ class ComicSourceParser {
         sendCommentFunc);
 
     await source.loadData();
+    source.jsSettings = _loadJsSettings();
 
     Future.delayed(const Duration(milliseconds: 50), () {
       JsEngine().runCode("ComicSource.sources.$_key.init()");
     });
 
     return source;
+  }
+
+  /// 读取 JS 中声明的 `settings`，格式：
+  /// `{ key: { title, type: "select" | "input" | "switch", options: [{value, text}], default } }`
+  Map<String, dynamic> _loadJsSettings() {
+    if (!_checkExists("settings")) return {};
+    try {
+      var json = JsEngine()
+          .runCode("JSON.stringify(ComicSource.sources.$_key.settings)");
+      var res = jsonDecode(json);
+      if (res is Map<String, dynamic>) return res;
+    } catch (e, s) {
+      log("$e\n$s", "ComicSource", LogLevel.error);
+    }
+    return {};
   }
 
   _checkKeyValidation() {
@@ -144,35 +163,59 @@ class ComicSourceParser {
       return null;
     }
 
-    Future<Res<bool>> login(account, pwd) async {
-      try {
-        await JsEngine().runCode("""
-          ComicSource.sources.$_key.account.login(${jsonEncode(account)}, 
+    final key = _key!;
+
+    final bool hasPasswordLogin = JsEngine().runCode(
+            "typeof ComicSource.sources.$key.account.login === 'function'") ==
+        true;
+    final bool hasWebLogin = _checkExists("account.loginWithWebview");
+
+    Future<Res<bool>> Function(String, String)? login;
+    if (hasPasswordLogin) {
+      login = (account, pwd) async {
+        try {
+          await JsEngine().runCode("""
+          ComicSource.sources.$key.account.login(${jsonEncode(account)}, 
           ${jsonEncode(pwd)})
         """);
-        var source = ComicSource.sources
-            .firstWhere((element) => element.key == _key);
-        source.data["account"] = <String>[account, pwd];
-        source.saveData();
-        return const Res(true);
-      } catch (e, s) {
-        log("$e\n$s", "Network", LogLevel.error);
-        return Res.error(e.toString());
+          var source = ComicSource.sources
+              .firstWhere((element) => element.key == key);
+          source.data["account"] = <String>[account, pwd];
+          source.saveData();
+          return const Res(true);
+        } catch (e, s) {
+          log("$e\n$s", "Network", LogLevel.error);
+          return Res.error(e.toString());
+        }
+      };
+    }
+
+    FutureOr<void> Function(BuildContext)? onLogin;
+    if (hasWebLogin) {
+      onLogin = (context) => openJsSourceWebLogin(context, key);
+    }
+
+    void logout() {
+      try {
+        JsEngine().runCode("ComicSource.sources.$key.account.logout()");
+      } catch (_) {}
+    }
+
+    dynamic registerWebsite;
+    try {
+      if (_checkExists("account.registerWebsite")) {
+        registerWebsite = _getValue("account.registerWebsite");
       }
-    }
+    } catch (_) {}
 
-    void logout(){
-      JsEngine().runCode("ComicSource.sources.$_key.account.logout()");
-    }
-
-    return AccountConfig(
-      login,
-      _getValue("account.login.website"),
-      _getValue("account.registerWebsite"),
-      logout
+    return AccountConfig.named(
+      login: login,
+      onLogin: onLogin,
+      registerWebsite: registerWebsite is String ? registerWebsite : null,
+      logout: logout,
+      allowReLogin: hasPasswordLogin,
     );
   }
-
   List<ExplorePageData> _loadExploreData() {
     if (!_checkExists("explore")) {
       return const [];
@@ -395,7 +438,9 @@ class ComicSourceParser {
             _key!,
             id,
             isFavorite: res["isFavorite"],
-            subId: res["subId"],));
+            subId: res["subId"],
+            stars: (res["stars"] as num?)?.toDouble(),
+            rating: res["rating"]?.toString(),));
       } catch (e, s) {
         log("$e\n$s", "Network", LogLevel.error);
         return Res.error(e.toString());

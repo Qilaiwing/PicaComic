@@ -42,7 +42,7 @@ class _LogsPageState extends State<LogsPage> {
                         saveLog(LogManager().toString());
                     }
                   },
-                  child: const Icon(Icons.more_horiz),
+                  child: MiuixIcon(vector: MiuixIcons.os4.more, size: 22),
                 ),
               ),
             ],

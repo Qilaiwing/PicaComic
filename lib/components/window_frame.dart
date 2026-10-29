@@ -15,7 +15,6 @@ import 'package:pica_comic/tools/translations.dart';
 import 'package:pica_comic/pages/download_page.dart';
 import 'package:pica_comic/pages/downloading_page.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:flutter_miuix/miuix.dart';
 import 'components.dart';
 
 const _kTitleBarHeight = 36.0;
@@ -718,7 +717,7 @@ class WindowPlacement {
   static Timer? timer;
 
   static void loop() async {
-    timer ??= Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+    timer ??= Timer.periodic(const Duration(milliseconds: 500), (timer) async {
       var placement = await WindowPlacement.current;
       if (!validate(placement.rect)) {
         return;

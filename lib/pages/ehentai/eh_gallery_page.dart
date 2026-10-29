@@ -207,7 +207,7 @@ class EhGalleryPage extends BaseComicPage<Gallery> {
     }
     showMiuixDialog<void>(
         context: context,
-        title: "评分",
+        title: "评分".tl,
         contentBuilder: (dialogContext, close) => StateBuilder<RatingLogic>(
             init: RatingLogic(),
             builder: (logic) => SizedBox(

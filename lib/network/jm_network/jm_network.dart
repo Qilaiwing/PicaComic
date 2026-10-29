@@ -173,7 +173,7 @@ class JmNetwork {
       }
     } catch (e) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       return Res(null, errorMessage: e.toString());
     }
@@ -199,7 +199,7 @@ class JmNetwork {
       return domains;
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Network", "$e\n$s");
       return [];
@@ -287,7 +287,7 @@ class JmNetwork {
       return Res<dynamic>(data);
     } on DioException catch (e) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       if (e.type != DioExceptionType.unknown) {
         return Res<String>(null, errorMessage: e.message ?? "Network Error");
@@ -296,7 +296,7 @@ class JmNetwork {
       }
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Network", "$e\n$s");
       return Res<String>(null, errorMessage: e.toString());
@@ -326,7 +326,7 @@ class JmNetwork {
       return Res<dynamic>(const JsonDecoder().convert(resData));
     } on DioException catch (e) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       if (e.type != DioExceptionType.unknown) {
         return const Res.error("Network Error");
@@ -335,7 +335,7 @@ class JmNetwork {
       }
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Network", "$e\n$s");
       return const Res.error("Network Error");
@@ -353,11 +353,11 @@ class JmNetwork {
       LogManager.addLog(LogLevel.info, "Network", "Updated JM Image URL: $url");
     } on DioException catch (e) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Network", "$e\n$s");
     }
@@ -404,7 +404,7 @@ class JmNetwork {
       return Res(data);
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Data Analysis", "$e\n$s");
       return Res(null, errorMessage: e.toString());
@@ -444,7 +444,7 @@ class JmNetwork {
       return Res(list);
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Data Analysis", "$e\n$s");
       return Res(null, errorMessage: e.toString());
@@ -486,7 +486,7 @@ class JmNetwork {
       return;
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Data Analysis", "$e\n$s");
       return;
@@ -523,7 +523,7 @@ class JmNetwork {
       return Res(comics, subData: 99999);
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Data Analysis", "$e\n$s");
       return Res(null, errorMessage: e.toString());
@@ -844,7 +844,7 @@ class JmNetwork {
       return Res(comics, subData: pages);
     } catch (e, s) {
       if (kDebugMode) {
-        print(e);
+        if (kDebugMode) print(e);
       }
       LogManager.addLog(LogLevel.error, "Data Analysis", "$e\n$s");
       return Res(null, errorMessage: e.toString());

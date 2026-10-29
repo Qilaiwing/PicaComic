@@ -251,7 +251,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       bottomHeight: pinnedHeaderHeight,
                     ),
                   if (header != null) header!,
-                  SliverGrid(
+                  SliverPadding(padding: comicGridPadding(), sliver: SliverGrid(
                     delegate: SliverChildBuilderDelegate(
                         childCount: comics.length, (context, i) {
                       if (i == comics.length - 1) {
@@ -260,18 +260,19 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       return buildItem(context, comics[i]);
                     }),
                     gridDelegate: SliverGridDelegateWithComics(),
-                  ),
+                  )),
                   if (logic.current < (logic.maxPage ?? 114514) &&
                       logic.loadingData)
                     const SliverToBoxAdapter(
                       child: ListLoadingIndicator(),
-                    )
-                  else
-                    const SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 80,
-                      ),
-                    )
+                    ),
+                  // 列表末尾留出悬浮底栏 + 安全区的高度，避免最后一行被遮挡。
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: math.max(
+                          80.0, FloatingBottomBarScope.bottomInsetOf(context) + 16),
+                    ),
+                  )
                 ],
               );
             } else {
@@ -319,20 +320,20 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
                       appdata.settings[64] == "0" &&
                       logic.maxPage != 1)
                     buildPageSelector(context, logic),
-                  SliverGrid(
+                  SliverPadding(padding: comicGridPadding(), sliver: SliverGrid(
                     delegate: SliverChildBuilderDelegate(
                         childCount: comics.length, (context, i) {
                       return buildItem(context, comics[i]);
                     }),
                     gridDelegate: SliverGridDelegateWithComics(),
-                  ),
+                  )),
                   if (showPageIndicator &&
                       appdata.settings[64] == "0" &&
                       logic.maxPage != 1)
                     buildPageSelector(context, logic),
                   SliverPadding(
                       padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).padding.bottom))
+                          bottom: FloatingBottomBarScope.bottomInsetOf(context)))
                 ],
               );
 
@@ -410,35 +411,38 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
         color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.only(bottom: 8, top: 8),
-          child: SizedBox(
-            width: 300,
-            height: 42,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const SizedBox(
-                  width: 16,
+                Expanded(flex: 2, child: pagerButton("上一页".tl, () => prevPage(logic))),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: pagerButton(
+                      "${"页面".tl}: ${logic.current}/${logic.maxPage?.toString() ?? "?"}",
+                      () => selectPage(logic)),
                 ),
-                MiuixButton(
-                    onPressed: () => prevPage(logic), child: Text("上一页".tl)),
-                const Spacer(),
-                MiuixButton(
-                  minHeight: 36,
-                  insideMargin:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  onPressed: () => selectPage(logic),
-                  child: Text(
-                      "${"页面".tl}: ${logic.current}/${logic.maxPage?.toString() ?? "?"}"),
-                ),
-                const Spacer(),
-                MiuixButton(
-                    onPressed: () => nextPage(logic), child: Text("下一页".tl)),
-                const SizedBox(
-                  width: 16,
-                ),
+                const SizedBox(width: 8),
+                Expanded(flex: 2, child: pagerButton("下一页".tl, () => nextPage(logic))),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// 分页按钮：不固定高度/宽度，文字单行并在过窄时等比缩小，避免被裁剪。
+  Widget pagerButton(String text, VoidCallback onPressed) {
+    return MiuixButton(
+      minWidth: 0,
+      minHeight: 40,
+      insideMargin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      onPressed: onPressed,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(text, maxLines: 1, softWrap: false),
       ),
     );
   }
@@ -531,7 +535,7 @@ abstract class ComicsPage<T extends BaseComic> extends StatelessWidget {
     var controller = TextEditingController();
     await showMiuixDialog<void>(
         context: App.globalContext!,
-        title: "切换页面",
+        title: "切换页面".tl,
         summary: "${"输入范围: ".tl}1-${logic.maxPage?.toString() ?? "?"}",
         contentBuilder: (dialogContext, close) => MiuixTextField(
               label: "页码".tl,
@@ -641,7 +645,7 @@ class _SliverGridComics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverGrid(
+    return SliverPadding(padding: comicGridPadding(), sliver: SliverGrid(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           if (index == comics.length - 1) {
@@ -652,6 +656,6 @@ class _SliverGridComics extends StatelessWidget {
         childCount: comics.length,
       ),
       gridDelegate: SliverGridDelegateWithComics(),
-    );
+    ));
   }
 }

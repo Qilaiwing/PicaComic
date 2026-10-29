@@ -21,7 +21,6 @@ import 'package:pica_comic/tools/file_type.dart';
 import '../base.dart';
 import '../network/eh_network/eh_main_network.dart';
 import '../network/hitomi_network/image.dart';
-import '../network/jm_network/jm_network.dart';
 import '../network/jm_network/headers.dart';
 import '../network/res.dart';
 
@@ -416,7 +415,7 @@ class ImageManager {
                 getGalleryId(galleryLink), imgKey, page, nl);
             image = newImage;
             if (kDebugMode) {
-              print("Get new image: $image, new nl $newNl");
+              if (kDebugMode) print("Get new image: $image, new nl $newNl");
             }
             if (newNl != null) {
               nl = newNl;

@@ -15,6 +15,8 @@ class AnimatedImage extends StatefulWidget {
     this.colorBlendMode,
     this.fit,
     this.forceFit,
+    this.useTileFit = false,
+    this.clipShape,
     this.alignment = Alignment.center,
     this.repeat = ImageRepeat.noRepeat,
     this.centerSlice,
@@ -54,6 +56,13 @@ class AnimatedImage extends StatefulWidget {
 
   /// 强制指定 fit, 忽略全局的缩略图布局设置
   final BoxFit? forceFit;
+
+  /// 仅漫画块封面为 true：此时遵循「缩略图填充方式」设置（settings[66]）。
+  final bool useTileFit;
+
+  /// 在画布内按此形状裁剪后绘制图片（不依赖 Clip 图层），
+  /// 用于头像 / 圆角封面，保证始终是圆形或圆角。
+  final ShapeBorder? clipShape;
 
   final BlendMode? colorBlendMode;
 
@@ -146,10 +155,28 @@ class _AnimatedImageState extends State<AnimatedImage> with WidgetsBindingObserv
         ?? SemanticsBinding.instance.accessibilityFeatures.invertColors;
   }
 
+  /// 封面 / 头像等缩略图按显示尺寸解码, 避免整张原图解码进内存
+  /// (原图可达数千像素, 是滚动掉帧与高内存的主要来源之一)。
+  ImageProvider _decodeSizedImage() {
+    final img = widget.image;
+    if (img is ResizeImage) return img;
+    if (!widget.useTileFit && widget.clipShape == null) return img;
+    final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
+    final w = widget.width, h = widget.height;
+    final int side = (w != null && h != null && w.isFinite && h.isFinite)
+        ? (math.max(w, h) * dpr * 1.25).ceil()
+        : 900;
+    return ResizeImage(img,
+        width: side,
+        height: side,
+        policy: ResizeImagePolicy.fit,
+        allowUpscaling: false);
+  }
+
   void _resolveImage() {
     final ScrollAwareImageProvider provider = ScrollAwareImageProvider<Object>(
       context: _scrollAwareContext,
-      imageProvider: widget.image,
+      imageProvider: _decodeSizedImage(),
     );
     final ImageStream newStream =
     provider.resolve(createLocalImageConfiguration(
@@ -263,7 +290,21 @@ class _AnimatedImageState extends State<AnimatedImage> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     Widget result;
 
-    if(_imageInfo != null){
+    if(_imageInfo != null && widget.clipShape != null){
+      result = SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: CustomPaint(
+          painter: _ShapedImagePainter(
+            info: _imageInfo!,
+            shape: widget.clipShape!,
+            fit: widget.forceFit ?? widget.fit ?? BoxFit.cover,
+            alignment: widget.alignment.resolve(Directionality.maybeOf(context)),
+            filterQuality: widget.filterQuality,
+          ),
+        ),
+      );
+    } else if(_imageInfo != null){
       // build image
       result = RawImage(
         // Do not clone the image, because RawImage is a stateless wrapper.
@@ -278,7 +319,10 @@ class _AnimatedImageState extends State<AnimatedImage> with WidgetsBindingObserv
         color: widget.color,
         opacity: widget.opacity,
         colorBlendMode: widget.colorBlendMode,
-        fit: widget.forceFit ?? (appdata.settings[66] == "0" ? BoxFit.cover : BoxFit.contain),
+        fit: widget.forceFit ??
+            (widget.useTileFit
+                ? (appdata.settings[66] == "0" ? BoxFit.cover : BoxFit.contain)
+                : (widget.fit ?? BoxFit.cover)),
         alignment: widget.alignment,
         repeat: widget.repeat,
         centerSlice: widget.centerSlice,
@@ -320,4 +364,43 @@ class _AnimatedImageState extends State<AnimatedImage> with WidgetsBindingObserv
     description.add(DiagnosticsProperty<int>('frameNumber', _frameNumber));
     description.add(DiagnosticsProperty<bool>('wasSynchronouslyLoaded', _wasSynchronouslyLoaded));
   }
+}
+
+
+class _ShapedImagePainter extends CustomPainter {
+  _ShapedImagePainter({
+    required this.info,
+    required this.shape,
+    required this.fit,
+    required this.alignment,
+    required this.filterQuality,
+  });
+
+  final ImageInfo info;
+  final ShapeBorder shape;
+  final BoxFit fit;
+  final Alignment alignment;
+  final FilterQuality filterQuality;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.save();
+    canvas.clipPath(shape.getOuterPath(rect));
+    paintImage(
+      canvas: canvas,
+      rect: rect,
+      image: info.image,
+      scale: info.scale,
+      fit: fit,
+      alignment: alignment,
+      filterQuality: filterQuality,
+      isAntiAlias: true,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ShapedImagePainter old) =>
+      old.info != info || old.shape != shape || old.fit != fit;
 }

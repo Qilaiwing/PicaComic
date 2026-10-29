@@ -1,8 +1,9 @@
 part of pica_settings;
 
 class EhSettings extends StatefulWidget {
-  const EhSettings(this.popUp, {Key? key}) : super(key: key);
+  const EhSettings(this.popUp, {this.embedded = false, Key? key}) : super(key: key);
   final bool popUp;
+  final bool embedded;
 
   @override
   State<EhSettings> createState() => _EhSettingsState();
@@ -11,13 +12,9 @@ class EhSettings extends StatefulWidget {
 class _EhSettingsState extends State<EhSettings> {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        MiuixSmallTitle("E-Hentai".tl),
-        MiuixSettingsCard(
-          children: [
+    final tiles = <Widget>[
             SelectSetting(
-              leading: const Icon(Icons.dns),
+              leading: _mi(MiuixIcons.os4.link),
               title: "画廊站点".tl,
               initialValue: int.parse(appdata.settings[20]),
               values: const [
@@ -30,7 +27,7 @@ class _EhSettingsState extends State<EhSettings> {
               },
             ),
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.image),
+              startAction: _mi(MiuixIcons.os4.image),
               title: "优先加载原图".tl,
               summary: "可能导致加载失败".tl,
               value: appdata.settings[29] == "1",
@@ -42,7 +39,7 @@ class _EhSettingsState extends State<EhSettings> {
               },
             ),
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.notifications_off_outlined),
+              startAction: _mi(MiuixIcons.os4.notifications),
               title: "忽略警告".tl,
               value: appdata.settings[47] == "1",
               onChanged: (b) {
@@ -53,7 +50,7 @@ class _EhSettingsState extends State<EhSettings> {
               },
             ),
             MiuixSwitchPreference(
-              startAction: const Icon(Icons.notes),
+              startAction: _mi(MiuixIcons.os4.notes),
               title: "优先显示副标题".tl,
               summary: "适用于已下载的画廊".tl,
               value: appdata.settings[78] == "1",
@@ -65,12 +62,18 @@ class _EhSettingsState extends State<EhSettings> {
               },
             ),
             MiuixArrowPreference(
-              startAction: const Icon(Icons.request_page_rounded),
+              startAction: _mi(MiuixIcons.os4.file),
               title: "配置文件".tl,
               onClick: () => App.to(context, () => const EhProfileSelectPage()),
             ),
-          ],
-        ),
+];
+    if (widget.embedded) {
+      return Column(mainAxisSize: MainAxisSize.min, children: tiles);
+    }
+    return Column(
+      children: [
+        MiuixSmallTitle("E-Hentai".tl),
+        MiuixSettingsCard(children: tiles),
       ],
     );
   }
@@ -112,7 +115,7 @@ class _EhProfileSelectPageState extends State<EhProfileSelectPage> {
     return MiuixScaffold(
  topBar: MiuixSmallTopAppBar(color: MiuixTheme.of(context).colors.background, 
  title: "Profile",
- navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: const Icon(Icons.arrow_back)) : null,
+ navigationIcon: Navigator.of(context).canPop() ? MiuixIconButton(onPressed: () => Navigator.of(context).maybePop(), child: _mi(MiuixIcons.os4.chevronBackward)) : null,
 ),
  content: (padding) => ScrollUnderBar(
  padding: padding,

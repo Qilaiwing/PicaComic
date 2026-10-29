@@ -83,3 +83,7 @@ flutter build apk --release --split-per-abi --target-platform android-arm64
 ## 许可证
 
 [MIT](LICENSE)
+
+## 致谢 / Acknowledgements
+
+- [flutter_miuix](https://github.com/ChuxinNeko/flutter_miuix)（Apache License 2.0）：Miuix 风格 UI 组件库，以修改版形式内置于 `packages/flutter_miuix`，修改说明见 `packages/flutter_miuix/MODIFICATIONS.md`。
