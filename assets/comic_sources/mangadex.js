@@ -4,7 +4,7 @@ class MangaDex extends ComicSource {
 
     key = "mangadex"
 
-    version = "1.2.6"
+    version = "1.2.7"
 
     minAppVersion = "4.0.0"
 
@@ -57,61 +57,7 @@ title_language: {
     }
 
 
-    // 账号：论坛网页登录（阅读漫画走公开 API，不需要登录；登录主要用于论坛相关能力）
-    account = {
-        loginWithWebview: {
-            url: "https://forums.mangadex.org/login/",
-            // URL-only: leave /login (main-frame navigations are filtered in Dart).
-            checkStatus: (url, title) => {
-                if (!url) return false
-                let u = String(url)
-                return u.startsWith("https://forums.mangadex.org/") && !u.includes("/login")
-            },
-            onLoginSuccess: async () => {
-                try {
-                    let st = await ComicSource.sources.mangadex.account.checkStatus()
-                    if (st && st.username) {
-                        ComicSource.sources.mangadex.saveData("username", st.username)
-                    }
-                } catch (e) {}
-            },
-        },
-        logout: () => {
-            Network.deleteCookies("https://forums.mangadex.org/")
-            this.deleteData("username")
-        },
-        // 校验登录状态：访问账户页，非登录页即视为有效
-        checkStatus: async () => {
-            let res = await Network.get("https://forums.mangadex.org/account/")
-            let body = typeof res.body === "string" ? res.body : ""
-            let head = body.slice(0, 8000)
-            let looksLogin = res.status !== 200
-                || /<input[^>]+name=["']login["']/i.test(head)
-                || /<form[^>]+action=["'][^"']*\/login/i.test(head)
-                || /must be logged[- ]?in/i.test(head)
-            if (looksLogin) {
-                return { valid: false, username: this.loadData("username") || null }
-            }
-            let username = null
-            let patterns = [
-                /"visitorUsername"\s*:\s*"([^"]+)"/,
-                /data-xf-init="[^"]*"[^>]*title="([^"]+)"/,
-                /class="p-navgroup-linkText"[^>]*>\s*([^<]+?)\s*</,
-                /<span class="username[^"]*"[^>]*>\s*([^<]+?)\s*</i,
-            ]
-            for (let re of patterns) {
-                let m = body.match(re)
-                if (m && m[1] && m[1].trim() && m[1].trim().toLowerCase() !== "log in") {
-                    username = m[1].trim()
-                    break
-                }
-            }
-            if (!username) username = this.loadData("username") || null
-            if (username) this.saveData("username", username)
-            return { valid: true, username: username }
-        },
-    }
-
+    // 不提供账号登录（论坛发帖需官网登录，本源不支持）。
     api = "https://api.mangadex.org"
 
     get headers() {
@@ -684,28 +630,8 @@ title_language: {
         },
 
         sendComment: async (comicId, subId, content, replyTo) => {
-            let info = await this.threadInfo(comicId)
-            if (!info) throw "这部漫画还没有讨论串"
-            let page = await Network.get(`${this.forum}/threads/${info.threadId}/`, this.forumHeaders)
-            let html = typeof page.body === "string" ? page.body : ""
-            let m = html.match(/data-csrf="([^"]+)"/)
-            if (!/data-logged-in="true"/.test(html) || !m) throw "请先登录 MangaDex"
-            let body = "_xfToken=" + encodeURIComponent(m[1])
-                + "&message=" + encodeURIComponent(content)
-                + "&_xfWithData=1&_xfResponseType=json"
-            let headers = Object.assign({
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "X-Requested-With": "XMLHttpRequest",
-            }, this.forumHeaders)
-            let res = await Network.post(`${this.forum}/threads/${info.threadId}/add-reply`, headers, body)
-            let data = null
-            try { data = JSON.parse(res.body) } catch (e) {}
-            if (res.status !== 200 || (data && data.status === "error")) {
-                let msg = data && data.errors ? [].concat(data.errors).join(" ") : res.status
-                throw "发送失败：" + msg
-            }
-            info.replies++
-            return true
+            // 本源不提供登录，无法在 App 内发帖
+            throw "MangaDex 不支持在 App 内登录，请到官网论坛发帖"
         },
 
         onThumbnailLoad: (url) => {
