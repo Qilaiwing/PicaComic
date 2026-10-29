@@ -4,7 +4,7 @@ class MangaDex extends ComicSource {
 
     key = "mangadex"
 
-    version = "1.2.5"
+    version = "1.2.6"
 
     minAppVersion = "4.0.0"
 
@@ -61,17 +61,12 @@ title_language: {
     account = {
         loginWithWebview: {
             url: "https://forums.mangadex.org/login/",
+            // URL-only: leave /login (main-frame navigations are filtered in Dart).
             checkStatus: (url, title) => {
                 if (!url) return false
                 let u = String(url)
-                if (!u.startsWith("https://forums.mangadex.org/")) return false
-                // 仍在登录/注册/找回密码/两步验证或 Cloudflare 验证页时不算成功
-                return !/\/(login|register|lost-password|two-step|security)/.test(u) && !u.includes("__cf_chl")
+                return u.startsWith("https://forums.mangadex.org/") && !u.includes("/login")
             },
-            // 在页面内确认 XenForo 已登录（html 上的 data-logged-in），避免页面未加载完就判定成功
-            pageCheck: "(function(){var h=document.documentElement;return !!h && h.getAttribute('data-logged-in')==='true';})()",
-            // 兜底：WebView 已有 XenForo 登录 cookie 也算成功
-            successCookie: "xf_user",
             onLoginSuccess: async () => {
                 try {
                     let st = await ComicSource.sources.mangadex.account.checkStatus()
