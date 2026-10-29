@@ -4,7 +4,7 @@ class MangaDex extends ComicSource {
 
     key = "mangadex"
 
-    version = "1.2.7"
+    version = "1.2.8"
 
     minAppVersion = "4.0.0"
 
@@ -627,11 +627,6 @@ title_language: {
             let posts = this.parseForumPosts(res.body)
             posts.reverse()
             return { comments: posts, maxPage: maxPage }
-        },
-
-        sendComment: async (comicId, subId, content, replyTo) => {
-            // 本源不提供登录，无法在 App 内发帖
-            throw "MangaDex 不支持在 App 内登录，请到官网论坛发帖"
         },
 
         onThumbnailLoad: (url) => {
