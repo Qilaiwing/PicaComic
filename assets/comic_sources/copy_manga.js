@@ -7,7 +7,7 @@ class CopyManga extends ComicSource {
 
     key = "copy_manga"
 
-    version = "3.1.1"
+    version = "3.2.3"
 
     minAppVersion = "4.0.0"
 
@@ -15,7 +15,7 @@ class CopyManga extends ComicSource {
 
     // 设置项（PicaComic_MIUIX 的 JS 源设置格式，在 设置 - 漫画源 中显示）
     settings = {
-        favorites_ordering: {
+favorites_ordering: {
             title: "收藏排序方式",
             type: "select",
             options: [
@@ -381,6 +381,20 @@ class CopyManga extends ComicSource {
         optionList: []
     }
 
+
+    async previewImages(comicId, chapters) {
+        if (!chapters || chapters.size !== 1) return null
+        let first = null
+        for (let k of chapters.keys()) { first = k; break }
+        if (!first) return null
+        try {
+            let images = (await this.comic.loadEp(comicId, first)).images
+            return images && images.length ? images.slice(0, 20) : null
+        } catch (e) {
+            return null
+        }
+    }
+
     comic = {
         loadInfo: async (id) => {
             let rid = await this.requestId()
@@ -415,7 +429,7 @@ class CopyManga extends ComicSource {
                 chapters: chapters,
                 isFavorite: null,
                 subId: c.uuid,
-                thumbnails: null
+                thumbnails: await this.previewImages(id, chapters)
             }
         },
         loadEp: async (comicId, epId) => {
@@ -440,6 +454,41 @@ class CopyManga extends ComicSource {
         },
         onImageLoad: (url, comicId, epId) => {
             return { headers: { "User-Agent": `COPY/${CopyManga.appVersion}` } }
+        },
+
+        onThumbnailLoad: (url) => {
+            return { headers: { "User-Agent": `COPY/${CopyManga.appVersion}` } }
+        },
+
+        // 评论：subId 为漫画 uuid；replyTo 为楼层 id 时加载楼中楼
+        loadComments: async (comicId, subId, page, replyTo) => {
+            let uuid = subId
+            if (!uuid) uuid = (await this.getJson(`/comic2/${comicId}?platform=3`)).comic.uuid
+            let limit = 20
+            let r = await this.getJson(`/comments?comic_id=${uuid}&limit=${limit}&offset=${(page - 1) * limit}&reply_id=${replyTo || ""}`)
+            let comments = (r.list || []).map(e => ({
+                userName: e.user_name || "匿名",
+                avatar: e.user_avatar || null,
+                content: e.parent_user_name && replyTo ? `回复 @${e.parent_user_name}：${e.comment}` : e.comment,
+                time: e.create_at,
+                replyCount: replyTo ? null : (e.count || 0),
+                id: String(e.id),
+            }))
+            return { comments: comments, maxPage: Math.max(1, Math.ceil((r.total || 0) / limit)) }
+        },
+
+        sendComment: async (comicId, subId, content, replyTo) => {
+            if (!this.token) throw "请先登录拷贝漫画"
+            let uuid = subId
+            if (!uuid) uuid = (await this.getJson(`/comic2/${comicId}?platform=3`)).comic.uuid
+            let body = `comic_id=${encodeURIComponent(uuid)}&comment=${encodeURIComponent(content)}&reply_id=${replyTo || ""}`
+            let headers = Object.assign({}, this.headers, { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" })
+            let res = await this.post(`${await this.apiBase()}/member/comment`, headers, body)
+            if (res.status === 401) throw "Login expired"
+            let data = null
+            try { data = JSON.parse(res.body) } catch (e) {}
+            if (!data || data.code !== 200) throw "发送失败：" + (data?.message ?? res.status)
+            return true
         }
     }
 }

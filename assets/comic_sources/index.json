@@ -1,0 +1,26 @@
+[
+  {
+    "name": "拷贝漫画",
+    "key": "copy_manga",
+    "version": "3.2.3",
+    "fileName": "copy_manga.js"
+  },
+  {
+    "name": "包子漫画",
+    "key": "baozi",
+    "version": "1.4.3",
+    "fileName": "baozi.js"
+  },
+  {
+    "name": "漫画柜",
+    "key": "manhuagui",
+    "version": "1.2.3",
+    "fileName": "manhuagui.js"
+  },
+  {
+    "name": "MangaDex",
+    "key": "mangadex",
+    "version": "1.2.4",
+    "fileName": "mangadex.js"
+  }
+]

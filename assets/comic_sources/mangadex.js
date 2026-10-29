@@ -4,7 +4,7 @@ class MangaDex extends ComicSource {
 
     key = "mangadex"
 
-    version = "1.0.0"
+    version = "1.2.4"
 
     minAppVersion = "4.0.0"
 
@@ -44,7 +44,7 @@ class MangaDex extends ComicSource {
             ],
             default: "data",
         },
-        title_language: {
+title_language: {
             title: "标题语言",
             type: "select",
             options: [
@@ -53,6 +53,65 @@ class MangaDex extends ComicSource {
                 { value: "ja-ro", text: "罗马音优先" },
             ],
             default: "zh",
+        },
+    }
+
+
+    // 账号：论坛网页登录（阅读漫画走公开 API，不需要登录；登录主要用于论坛相关能力）
+    account = {
+        loginWithWebview: {
+            url: "https://forums.mangadex.org/login/",
+            checkStatus: (url, title) => {
+                if (!url) return false
+                let u = String(url)
+                if (!u.startsWith("https://forums.mangadex.org/")) return false
+                // 仍在登录/注册/找回密码/两步验证或 Cloudflare 验证页时不算成功
+                return !/\/(login|register|lost-password|two-step|security)/.test(u) && !u.includes("__cf_chl")
+            },
+            // 在页面内确认 XenForo 已登录（html 上的 data-logged-in），避免页面未加载完就判定成功
+            pageCheck: "(function(){var h=document.documentElement;return !!h && h.getAttribute('data-logged-in')==='true' && !!document.body && document.readyState!=='loading';})()",
+            onLoginSuccess: async () => {
+                try {
+                    let st = await ComicSource.sources.mangadex.account.checkStatus()
+                    if (st && st.username) {
+                        ComicSource.sources.mangadex.saveData("username", st.username)
+                    }
+                } catch (e) {}
+            },
+        },
+        logout: () => {
+            Network.deleteCookies("https://forums.mangadex.org/")
+            this.deleteData("username")
+        },
+        // 校验登录状态：访问账户页，非登录页即视为有效
+        checkStatus: async () => {
+            let res = await Network.get("https://forums.mangadex.org/account/")
+            let body = typeof res.body === "string" ? res.body : ""
+            let head = body.slice(0, 8000)
+            let looksLogin = res.status !== 200
+                || /<input[^>]+name=["']login["']/i.test(head)
+                || /<form[^>]+action=["'][^"']*\/login/i.test(head)
+                || /must be logged[- ]?in/i.test(head)
+            if (looksLogin) {
+                return { valid: false, username: this.loadData("username") || null }
+            }
+            let username = null
+            let patterns = [
+                /"visitorUsername"\s*:\s*"([^"]+)"/,
+                /data-xf-init="[^"]*"[^>]*title="([^"]+)"/,
+                /class="p-navgroup-linkText"[^>]*>\s*([^<]+?)\s*</,
+                /<span class="username[^"]*"[^>]*>\s*([^<]+?)\s*</i,
+            ]
+            for (let re of patterns) {
+                let m = body.match(re)
+                if (m && m[1] && m[1].trim() && m[1].trim().toLowerCase() !== "log in") {
+                    username = m[1].trim()
+                    break
+                }
+            }
+            if (!username) username = this.loadData("username") || null
+            if (username) this.saveData("username", username)
+            return { valid: true, username: username }
         },
     }
 
@@ -485,6 +544,92 @@ class MangaDex extends ComicSource {
         return chapters
     }
 
+    // ---------- 评论（MangaDex 论坛讨论串） ----------
+
+    forum = "https://forums.mangadex.org"
+
+    get forumHeaders() {
+        return { "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36" }
+    }
+
+    // 漫画对应的讨论串 id 与回复数（来自统计接口）
+    async threadInfo(mangaId) {
+        if (!this._threads) this._threads = {}
+        if (this._threads[mangaId]) return this._threads[mangaId]
+        let res = await this.getJson(`/statistics/manga/${mangaId}`)
+        let st = res.statistics ? res.statistics[mangaId] : null
+        let c = st ? st.comments : null
+        if (!c || !c.threadId) return null
+        let info = { threadId: c.threadId, replies: c.repliesCount || 0 }
+        this._threads[mangaId] = info
+        return info
+    }
+
+    decodeEntities(s) {
+        return s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+            .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+            .replace(/&nbsp;/g, " ").replace(/&quot;/g, "\"").replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+    }
+
+    // 帖子 HTML 转纯文本：引用块折叠，换行保留
+    forumText(html) {
+        let s = html
+        let prev = null
+        while (prev !== s) {
+            prev = s
+            s = s.replace(/<blockquote(?:(?!<blockquote)[\s\S])*?<\/blockquote>/i, "〔引用〕\n")
+        }
+        s = s.replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<\/(p|div|li)>/gi, "\n")
+            .replace(/<img[^>]*\balt="([^"]*)"[^>]*>/gi, "$1")
+            .replace(/<[^>]+>/g, "")
+        return this.decodeEntities(s).replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim()
+    }
+
+    parseForumPosts(html) {
+        let list = []
+        for (let b of html.split(/<article class="message message--post/).slice(1)) {
+            let pick = (re) => { let m = b.match(re); return m ? m[1] : null }
+            let id = pick(/data-content="post-(\d+)"/)
+            if (!id) continue
+            let avatar = pick(/class="avatar[^"]*"[^>]*>\s*<img[^>]*\bsrc="([^"]+)"/)
+            if (avatar && avatar.startsWith("/")) avatar = this.forum + avatar
+            let time = pick(/<time[^>]*\bdatetime="([^"]+)"/)
+            let body = pick(/<div class="bbWrapper">([\s\S]*?)<div class="js-selectToQuoteEnd"/)
+            list.push({
+                userName: this.decodeEntities(pick(/data-author="([^"]*)"/) || "匿名"),
+                avatar: avatar,
+                content: body ? this.forumText(body.replace(/<\/div>\s*$/, "")) : "",
+                time: time ? time.slice(0, 16).replace("T", " ") + " UTC" : null,
+                replyCount: null,
+                id: id,
+            })
+        }
+        return list
+    }
+
+
+    async previewImages(comicId, chapters) {
+        if (!chapters || chapters.size !== 1) return null
+        let first = null
+        for (let k of chapters.keys()) { first = k; break }
+        if (!first) return null
+        try {
+            let images = await this.previewFromAtHome(first)
+            return images && images.length ? images.slice(0, 20) : null
+        } catch (e) {
+            return null
+        }
+    }
+
+    async previewFromAtHome(chapterId) {
+        let res = await this.getJson(`/at-home/server/${chapterId}`)
+        let files = res.chapter ? res.chapter.dataSaver : null
+        if (!files) return null
+        return files.map(f => `${res.baseUrl}/data-saver/${res.chapter.hash}/${f}`)
+    }
+
     comic = {
         loadInfo: async (id) => {
             let res = await this.getJson(`/manga/${id}`, { includes: ["cover_art", "author", "artist"] })
@@ -499,6 +644,7 @@ class MangaDex extends ComicSource {
             if (status) tags["状态"] = [status]
             if (a.year) tags["年份"] = [String(a.year)]
             if (a.contentRating) tags["分级"] = [a.contentRating]
+            let chapters = await this.loadChapters(id)
             let genre = (a.tags || []).map(t => t.attributes.name.en)
             if (genre.length) tags["标签"] = genre
             if (a.originalLanguage) tags["原语言"] = [a.originalLanguage]
@@ -507,7 +653,8 @@ class MangaDex extends ComicSource {
                 cover: this.coverOf(m, 512),
                 description: this.pickText(a.description),
                 tags: tags,
-                chapters: await this.loadChapters(id),
+                chapters: chapters,
+                thumbnails: await this.previewImages(id, chapters),
             }
         },
 
@@ -524,6 +671,44 @@ class MangaDex extends ComicSource {
 
         onImageLoad: (url, comicId, epId) => {
             return { headers: this.headers }
+        },
+
+        // 评论：最新回复排在前面（论坛每页 20 楼）
+        loadComments: async (comicId, subId, page, replyTo) => {
+            let info = await this.threadInfo(comicId)
+            if (!info) return { comments: [], maxPage: 1 }
+            let maxPage = Math.max(1, Math.ceil((info.replies + 1) / 20))
+            if (page > maxPage) return { comments: [], maxPage: maxPage }
+            let res = await Network.get(`${this.forum}/threads/${info.threadId}/page-${maxPage - page + 1}`, this.forumHeaders)
+            if (res.status !== 200) throw "评论加载失败：" + res.status
+            let posts = this.parseForumPosts(res.body)
+            posts.reverse()
+            return { comments: posts, maxPage: maxPage }
+        },
+
+        sendComment: async (comicId, subId, content, replyTo) => {
+            let info = await this.threadInfo(comicId)
+            if (!info) throw "这部漫画还没有讨论串"
+            let page = await Network.get(`${this.forum}/threads/${info.threadId}/`, this.forumHeaders)
+            let html = typeof page.body === "string" ? page.body : ""
+            let m = html.match(/data-csrf="([^"]+)"/)
+            if (!/data-logged-in="true"/.test(html) || !m) throw "请先登录 MangaDex"
+            let body = "_xfToken=" + encodeURIComponent(m[1])
+                + "&message=" + encodeURIComponent(content)
+                + "&_xfWithData=1&_xfResponseType=json"
+            let headers = Object.assign({
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest",
+            }, this.forumHeaders)
+            let res = await Network.post(`${this.forum}/threads/${info.threadId}/add-reply`, headers, body)
+            let data = null
+            try { data = JSON.parse(res.body) } catch (e) {}
+            if (res.status !== 200 || (data && data.status === "error")) {
+                let msg = data && data.errors ? [].concat(data.errors).join(" ") : res.status
+                throw "发送失败：" + msg
+            }
+            info.replies++
+            return true
         },
 
         onThumbnailLoad: (url) => {

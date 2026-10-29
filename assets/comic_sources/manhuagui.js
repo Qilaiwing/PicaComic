@@ -4,7 +4,7 @@ class ManHuaGui extends ComicSource {
 
     key = "manhuagui"
 
-    version = "1.1.0"
+    version = "1.2.3"
 
     minAppVersion = "4.0.0"
 
@@ -34,7 +34,7 @@ class ManHuaGui extends ComicSource {
             ],
             default: "i",
         },
-        show_group: {
+show_group: {
             title: "章节名显示分组",
             type: "switch",
             default: true,
@@ -207,6 +207,20 @@ class ManHuaGui extends ComicSource {
 
     favorites = null
 
+
+    async previewImages(comicId, chapters) {
+        if (!chapters || chapters.size !== 1) return null
+        let first = null
+        for (let k of chapters.keys()) { first = k; break }
+        if (!first) return null
+        try {
+            let images = (await this.comic.loadEp(comicId, first)).images
+            return images && images.length ? images.slice(0, 20) : null
+        } catch (e) {
+            return null
+        }
+    }
+
     comic = {
         loadInfo: async (id) => {
             let html = await this.getHtml(`${this.baseUrl}/comic/${id}/`)
@@ -272,6 +286,7 @@ class ManHuaGui extends ComicSource {
                 description: description,
                 tags: tags,
                 chapters: chapters,
+                thumbnails: await this.previewImages(id, chapters),
             }
         },
 
@@ -285,6 +300,42 @@ class ManHuaGui extends ComicSource {
             let query = data.sl ? `?e=${data.sl.e}&m=${data.sl.m}` : ""
             return {
                 images: data.files.map(f => host + encodeURI(data.path + f) + query)
+            }
+        },
+
+        // 评论（只读）：同一条可能带有被回复的上级
+        loadComments: async (comicId, subId, page, replyTo) => {
+            let res = await Network.get(`${this.baseUrl}/tools/submit_ajax.ashx?action=comment_list&book_id=${comicId}&page_index=${page}`,
+                Object.assign({}, this.headers, { "Referer": `${this.baseUrl}/comic/${comicId}/` }))
+            if (res.status !== 200) throw "评论加载失败：" + res.status
+            let data = JSON.parse(res.body)
+            let all = data.comments || {}
+            let comments = []
+            for (let chain of data.commentIds || []) {
+                let ids = String(chain).split(",")
+                let c = all[ids[0]]
+                if (!c) continue
+                let content = c.content || ""
+                let parent = ids.length > 1 ? all[ids[1]] : null
+                if (parent) content = `回复 ${parent.user_name || "匿名"}：${content}`
+                comments.push({
+                    userName: c.user_name || "匿名",
+                    avatar: c.avatar && String(c.avatar).startsWith("http") ? c.avatar : null,
+                    content: content,
+                    time: c.add_time || null,
+                    replyCount: null,
+                    id: String(c.id),
+                })
+            }
+            return { comments: comments, maxPage: Math.max(1, Math.ceil((data.total || 0) / 30)) }
+        },
+
+        onThumbnailLoad: (url) => {
+            return {
+                headers: {
+                    "Referer": this.baseUrl + "/",
+                    "User-Agent": this.headers["User-Agent"],
+                }
             }
         },
 

@@ -8,7 +8,7 @@ class Baozi extends ComicSource {
     // 唯一标识符
     key = "baozi"
 
-    version = "1.3.0"
+    version = "1.4.3"
 
     minAppVersion = "4.0.0"
 
@@ -20,7 +20,7 @@ class Baozi extends ComicSource {
 
     // 设置项（在 设置 - 漫画源 中显示）
     settings = {
-        language: {
+language: {
             title: "简繁切换",
             type: "select",
             options: [
@@ -313,6 +313,20 @@ class Baozi extends ComicSource {
     }
 
     /// 单个漫画相关
+
+    async previewImages(comicId, chapters) {
+        if (!chapters || chapters.size !== 1) return null
+        let first = null
+        for (let k of chapters.keys()) { first = k; break }
+        if (!first) return null
+        try {
+            let images = (await this.comic.loadEp(comicId, first)).images
+            return images && images.length ? images.slice(0, 20) : null
+        } catch (e) {
+            return null
+        }
+    }
+
     comic = {
         // 加载漫画信息
         loadInfo: async (id) => {
@@ -365,6 +379,7 @@ class Baozi extends ComicSource {
                     "标签": tags
                 },
                 chapters: chapters,
+                thumbnails: await this.previewImages(id, chapters),
                 recommend: recommend
             }
         },
