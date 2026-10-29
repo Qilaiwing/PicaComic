@@ -4,7 +4,7 @@ class MangaDex extends ComicSource {
 
     key = "mangadex"
 
-    version = "1.2.4"
+    version = "1.2.5"
 
     minAppVersion = "4.0.0"
 
@@ -69,7 +69,9 @@ title_language: {
                 return !/\/(login|register|lost-password|two-step|security)/.test(u) && !u.includes("__cf_chl")
             },
             // 在页面内确认 XenForo 已登录（html 上的 data-logged-in），避免页面未加载完就判定成功
-            pageCheck: "(function(){var h=document.documentElement;return !!h && h.getAttribute('data-logged-in')==='true' && !!document.body && document.readyState!=='loading';})()",
+            pageCheck: "(function(){var h=document.documentElement;return !!h && h.getAttribute('data-logged-in')==='true';})()",
+            // 兜底：WebView 已有 XenForo 登录 cookie 也算成功
+            successCookie: "xf_user",
             onLoginSuccess: async () => {
                 try {
                     let st = await ComicSource.sources.mangadex.account.checkStatus()
